@@ -1,0 +1,40 @@
+name: Sync chat UI to Novum AI Studio
+
+# This workflow copies the contents of custom_nodes/chat_ai/web from
+# this repository into the `novum-ai-studio` repo whenever the web
+# directory changes.  Vercel can then be pointed at that repo to
+# serve the frontend automatically.
+
+on:
+  push:
+    paths:
+      - 'custom_nodes/chat_ai/web/**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out this repository
+        uses: actions/checkout@v4
+        with:
+          # we only need the web directory, but checkout all for simplicity
+          path: comfy
+
+      - name: Copy frontend files to temporary clone
+        run: |
+          set -e
+          # configure git for the temporary clone
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          rm -rf /tmp/novum
+          git clone https://github.com/NovumForum/novum-ai-studios.git /tmp/novum
+          rsync -a --delete comfy/custom_nodes/chat_ai/web/ /tmp/novum/
+
+      - name: Commit and push to novum-ai-studio
+        run: |
+          cd /tmp/novum
+          git add .
+          git diff --quiet --cached || git commit -m "Automated sync of chat UI"
+          git push origin main
