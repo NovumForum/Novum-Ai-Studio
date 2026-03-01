@@ -271,6 +271,7 @@ class ModelPatcher:
         self.is_clip = False
         self.hook_mode = comfy.hooks.EnumHookMode.MaxSpeed
 
+        self.cached_patcher_init: tuple[Callable, tuple] | None = None
         if not hasattr(self.model, 'model_loaded_weight_memory'):
             self.model.model_loaded_weight_memory = 0
 
@@ -307,8 +308,22 @@ class ModelPatcher:
     def get_free_memory(self, device):
         return comfy.model_management.get_free_memory(device)
 
-    def clone(self):
-        n = self.__class__(self.model, self.load_device, self.offload_device, self.model_size(), weight_inplace_update=self.weight_inplace_update)
+    def get_clone_model_override(self):
+        return self.model, (self.backup, self.object_patches_backup, self.pinned)
+
+    def clone(self, disable_dynamic=False, model_override=None):
+        class_ = self.__class__
+        if self.is_dynamic() and disable_dynamic:
+            class_ = ModelPatcher
+            if model_override is None:
+                if self.cached_patcher_init is None:
+                    raise RuntimeError("Cannot create non-dynamic delegate: cached_patcher_init is not initialized.")
+                temp_model_patcher = self.cached_patcher_init[0](*self.cached_patcher_init[1], disable_dynamic=True)
+                model_override = temp_model_patcher.get_clone_model_override()
+        if model_override is None:
+            model_override = self.get_clone_model_override()
+
+        n = class_(model_override[0], self.load_device, self.offload_device, self.model_size(), weight_inplace_update=self.weight_inplace_update)
         n.patches = {}
         for k in self.patches:
             n.patches[k] = self.patches[k][:]
@@ -317,12 +332,11 @@ class ModelPatcher:
         n.object_patches = self.object_patches.copy()
         n.weight_wrapper_patches = self.weight_wrapper_patches.copy()
         n.model_options = comfy.utils.deepcopy_list_dict(self.model_options)
-        n.backup = self.backup
-        n.object_patches_backup = self.object_patches_backup
         n.parent = self
-        n.pinned = self.pinned
 
         n.force_cast_weights = self.force_cast_weights
+
+        n.backup, n.object_patches_backup, n.pinned = model_override[1]
 
         # attachments
         n.attachments = {}
@@ -361,6 +375,8 @@ class ModelPatcher:
         n.forced_hooks = self.forced_hooks.clone() if self.forced_hooks else self.forced_hooks
         n.is_clip = self.is_clip
         n.hook_mode = self.hook_mode
+
+        n.cached_patcher_init = self.cached_patcher_init
 
         for callback in self.get_all_callbacks(CallbacksMP.ON_CLONE):
             callback(self, n)
@@ -1425,6 +1441,7 @@ class ModelPatcherDynamic(ModelPatcher):
             del self.model.model_loaded_weight_memory
         if not hasattr(self.model, "dynamic_vbars"):
             self.model.dynamic_vbars = {}
+        self.non_dynamic_delegate_model = None
         assert load_device is not None
 
     def is_dynamic(self):
@@ -1658,5 +1675,11 @@ class ModelPatcherDynamic(ModelPatcher):
 
     def unpatch_hooks(self, whitelist_keys_set: set[str]=None) -> None:
         pass
+
+    def get_non_dynamic_delegate(self):
+        model_patcher = self.clone(disable_dynamic=True, model_override=self.non_dynamic_delegate_model)
+        self.non_dynamic_delegate_model = model_patcher.get_clone_model_override()
+        return model_patcher
+
 
 CoreModelPatcher = ModelPatcher
