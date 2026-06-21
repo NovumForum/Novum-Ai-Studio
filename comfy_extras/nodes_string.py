@@ -15,7 +15,7 @@ class StringConcatenate(io.ComfyNode):
             inputs=[
                 io.String.Input("string_a", multiline=True),
                 io.String.Input("string_b", multiline=True),
-                io.String.Input("delimiter", multiline=False, default=""),
+                io.String.Input("delimiter", multiline=False, default="", placeholder="e.g. , or \\n", tooltip="The text inserted between the concatenated strings."),
             ],
             outputs=[
                 io.String.Output(),
@@ -37,8 +37,8 @@ class StringSubstring(io.ComfyNode):
             category="utils/string",
             inputs=[
                 io.String.Input("string", multiline=True),
-                io.Int.Input("start"),
-                io.Int.Input("end"),
+                io.Int.Input("start", tooltip="The starting character index (inclusive). 0 is the beginning."),
+                io.Int.Input("end", tooltip="The ending character index (exclusive)."),
             ],
             outputs=[
                 io.String.Output(),
@@ -145,8 +145,8 @@ class StringReplace(io.ComfyNode):
             category="utils/string",
             inputs=[
                 io.String.Input("string", multiline=True),
-                io.String.Input("find", multiline=True),
-                io.String.Input("replace", multiline=True),
+                io.String.Input("find", multiline=True, placeholder="Text to find", tooltip="The exact text to look for in the input string."),
+                io.String.Input("replace", multiline=True, placeholder="Replacement text", tooltip="The text that will replace every occurrence of the found text."),
             ],
             outputs=[
                 io.String.Output(),
@@ -168,7 +168,7 @@ class StringContains(io.ComfyNode):
             category="utils/string",
             inputs=[
                 io.String.Input("string", multiline=True),
-                io.String.Input("substring", multiline=True),
+                io.String.Input("substring", multiline=True, placeholder="Text to search for", tooltip="The text to check for within the main string."),
                 io.Boolean.Input("case_sensitive", default=True, advanced=True),
             ],
             outputs=[
@@ -232,7 +232,7 @@ class RegexMatch(io.ComfyNode):
             category="utils/string",
             inputs=[
                 io.String.Input("string", multiline=True),
-                io.String.Input("regex_pattern", multiline=True),
+                io.String.Input("regex_pattern", multiline=True, placeholder="e.g. \\d+", tooltip="The regular expression pattern to match against."),
                 io.Boolean.Input("case_insensitive", default=True, advanced=True),
                 io.Boolean.Input("multiline", default=False, advanced=True),
                 io.Boolean.Input("dotall", default=False, advanced=True),
@@ -273,7 +273,7 @@ class RegexExtract(io.ComfyNode):
             category="utils/string",
             inputs=[
                 io.String.Input("string", multiline=True),
-                io.String.Input("regex_pattern", multiline=True),
+                io.String.Input("regex_pattern", multiline=True, placeholder="e.g. \\d+", tooltip="The regular expression pattern used to extract portions of the text."),
                 io.Combo.Input("mode", options=["First Match", "All Matches", "First Group", "All Groups"]),
                 io.Boolean.Input("case_insensitive", default=True, advanced=True),
                 io.Boolean.Input("multiline", default=False, advanced=True),
@@ -349,8 +349,8 @@ class RegexReplace(io.ComfyNode):
             description="Find and replace text using regex patterns.",
             inputs=[
                 io.String.Input("string", multiline=True),
-                io.String.Input("regex_pattern", multiline=True),
-                io.String.Input("replace", multiline=True),
+                io.String.Input("regex_pattern", multiline=True, placeholder="e.g. \\d+", tooltip="The regular expression pattern to search for."),
+                io.String.Input("replace", multiline=True, placeholder="Replacement text", tooltip="The text to substitute for each match. Supports backreferences like \\1."),
                 io.Boolean.Input("case_insensitive", default=True, optional=True, advanced=True),
                 io.Boolean.Input("multiline", default=False, optional=True, advanced=True),
                 io.Boolean.Input("dotall", default=False, optional=True, advanced=True, tooltip="When enabled, the dot (.) character will match any character including newline characters. When disabled, dots won't match newlines."),
