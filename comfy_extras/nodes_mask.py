@@ -153,13 +153,14 @@ class ImageColorToMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ImageColorToMask",
+            description="Creates a binary mask by selecting all pixels in the input image that exactly match the specified color.",
             search_aliases=["color keying", "chroma key"],
             category="mask",
             inputs=[
-                IO.Image.Input("image"),
-                IO.Int.Input("color", default=0, min=0, max=0xFFFFFF, step=1, display_mode=IO.NumberDisplay.number),
+                IO.Image.Input("image", tooltip="The input image to extract the color mask from."),
+                IO.Int.Input("color", default=0, min=0, max=0xFFFFFF, step=1, extra_dict={"display": "color"}, tooltip="The color to mask. Pixels exactly matching this RGB value will be white (1.0) in the output mask."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The resulting mask. White pixels represent where the color matched, black pixels represent where it did not.")],
         )
 
     @classmethod
@@ -177,13 +178,14 @@ class SolidMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="SolidMask",
+            description="Generates a solid grayscale mask of the specified dimensions and pixel value.",
             category="mask",
             inputs=[
-                IO.Float.Input("value", default=1.0, min=0.0, max=1.0, step=0.01),
-                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
+                IO.Float.Input("value", default=1.0, min=0.0, max=1.0, step=0.01, tooltip="The constant value to fill the mask with (0.0 for black, 1.0 for white)."),
+                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="The width of the generated mask in pixels."),
+                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="The height of the generated mask in pixels."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The generated solid mask.")],
         )
 
     @classmethod
@@ -380,13 +382,14 @@ class ThresholdMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ThresholdMask",
+            description="Converts a grayscale mask into a binary mask. Any pixel with a value greater than the threshold becomes white (1.0), and everything else becomes black (0.0).",
             search_aliases=["binary mask"],
             category="mask",
             inputs=[
-                IO.Mask.Input("mask"),
-                IO.Float.Input("value", default=0.5, min=0.0, max=1.0, step=0.01),
+                IO.Mask.Input("mask", tooltip="The grayscale mask to be thresholded."),
+                IO.Float.Input("value", default=0.5, min=0.0, max=1.0, step=0.01, tooltip="The threshold value (0.0 to 1.0). Pixels greater than this value will be set to white."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The resulting binary mask.")],
         )
 
     @classmethod
@@ -408,9 +411,9 @@ class MaskPreview(IO.ComfyNode):
             search_aliases=["show mask", "view mask", "inspect mask", "debug mask"],
             display_name="Preview Mask",
             category="mask",
-            description="Saves the input images to your ComfyUI output directory.",
+            description="Displays a preview of the mask in the ComfyUI interface.",
             inputs=[
-                IO.Mask.Input("mask"),
+                IO.Mask.Input("mask", tooltip="The mask to be previewed."),
             ],
             hidden=[IO.Hidden.prompt, IO.Hidden.extra_pnginfo],
             is_output_node=True,
