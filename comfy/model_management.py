@@ -221,26 +221,22 @@ def get_total_memory(dev=None, torch_total_too=False):
             mem_total = 1024 * 1024 * 1024 #TODO
             mem_total_torch = mem_total
         elif is_intel_xpu():
-            stats = torch.xpu.memory_stats(dev)
-            mem_reserved = stats['reserved_bytes.all.current']
+            mem_reserved = torch.xpu.memory_reserved(dev)
             mem_total_xpu = torch.xpu.get_device_properties(dev).total_memory
             mem_total_torch = mem_reserved
             mem_total = mem_total_xpu
         elif is_ascend_npu():
-            stats = torch.npu.memory_stats(dev)
-            mem_reserved = stats['reserved_bytes.all.current']
+            mem_reserved = torch.npu.memory_reserved(dev)
             _, mem_total_npu = torch.npu.mem_get_info(dev)
             mem_total_torch = mem_reserved
             mem_total = mem_total_npu
         elif is_mlu():
-            stats = torch.mlu.memory_stats(dev)
-            mem_reserved = stats['reserved_bytes.all.current']
+            mem_reserved = torch.mlu.memory_reserved(dev)
             _, mem_total_mlu = torch.mlu.mem_get_info(dev)
             mem_total_torch = mem_reserved
             mem_total = mem_total_mlu
         else:
-            stats = torch.cuda.memory_stats(dev)
-            mem_reserved = stats['reserved_bytes.all.current']
+            mem_reserved = torch.cuda.memory_reserved(dev)
             _, mem_total_cuda = torch.cuda.mem_get_info(dev)
             mem_total_torch = mem_reserved
             mem_total = mem_total_cuda
@@ -1451,30 +1447,26 @@ def get_free_memory(dev=None, torch_free_too=False):
             mem_free_total = 1024 * 1024 * 1024 #TODO
             mem_free_torch = mem_free_total
         elif is_intel_xpu():
-            stats = torch.xpu.memory_stats(dev)
-            mem_active = stats['active_bytes.all.current']
-            mem_reserved = stats['reserved_bytes.all.current']
+            mem_active = torch.xpu.memory_allocated(dev)
+            mem_reserved = torch.xpu.memory_reserved(dev)
             mem_free_xpu = torch.xpu.get_device_properties(dev).total_memory - mem_reserved
             mem_free_torch = mem_reserved - mem_active
             mem_free_total = mem_free_xpu + mem_free_torch
         elif is_ascend_npu():
-            stats = torch.npu.memory_stats(dev)
-            mem_active = stats['active_bytes.all.current']
-            mem_reserved = stats['reserved_bytes.all.current']
+            mem_active = torch.npu.memory_allocated(dev)
+            mem_reserved = torch.npu.memory_reserved(dev)
             mem_free_npu, _ = torch.npu.mem_get_info(dev)
             mem_free_torch = mem_reserved - mem_active
             mem_free_total = mem_free_npu + mem_free_torch
         elif is_mlu():
-            stats = torch.mlu.memory_stats(dev)
-            mem_active = stats['active_bytes.all.current']
-            mem_reserved = stats['reserved_bytes.all.current']
+            mem_active = torch.mlu.memory_allocated(dev)
+            mem_reserved = torch.mlu.memory_reserved(dev)
             mem_free_mlu, _ = torch.mlu.mem_get_info(dev)
             mem_free_torch = mem_reserved - mem_active
             mem_free_total = mem_free_mlu + mem_free_torch
         else:
-            stats = torch.cuda.memory_stats(dev)
-            mem_active = stats['active_bytes.all.current']
-            mem_reserved = stats['reserved_bytes.all.current']
+            mem_active = torch.cuda.memory_allocated(dev)
+            mem_reserved = torch.cuda.memory_reserved(dev)
             mem_free_cuda, _ = torch.cuda.mem_get_info(dev)
             mem_free_torch = mem_reserved - mem_active
             mem_free_total = mem_free_cuda + mem_free_torch
