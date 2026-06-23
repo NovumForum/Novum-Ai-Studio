@@ -24,7 +24,15 @@ class Blend(io.ComfyNode):
             inputs=[
                 io.Image.Input("image1"),
                 io.Image.Input("image2"),
-                io.Float.Input("blend_factor", default=0.5, min=0.0, max=1.0, step=0.01),
+                io.Float.Input(
+                    "blend_factor",
+                    default=0.5,
+                    min=0.0,
+                    max=1.0,
+                    step=0.01,
+                    display_mode=io.NumberDisplay.slider,
+                    tooltip="How much of the second image to blend into the first (0.0 shows only the first image, 1.0 shows only the second).",
+                ),
                 io.Combo.Input("blend_mode", options=["normal", "multiply", "screen", "overlay", "soft_light", "difference"]),
             ],
             outputs=[

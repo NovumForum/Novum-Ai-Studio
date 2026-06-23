@@ -157,7 +157,15 @@ class ImageColorToMask(IO.ComfyNode):
             category="mask",
             inputs=[
                 IO.Image.Input("image"),
-                IO.Int.Input("color", default=0, min=0, max=0xFFFFFF, step=1, display_mode=IO.NumberDisplay.number),
+                IO.Int.Input(
+                    "color",
+                    default=0,
+                    min=0,
+                    max=0xFFFFFF,
+                    step=1,
+                    display_mode=IO.NumberDisplay.color,
+                    tooltip="The specific color in the image to convert into a mask.",
+                ),
             ],
             outputs=[IO.Mask.Output()],
         )
@@ -179,7 +187,15 @@ class SolidMask(IO.ComfyNode):
             node_id="SolidMask",
             category="mask",
             inputs=[
-                IO.Float.Input("value", default=1.0, min=0.0, max=1.0, step=0.01),
+                IO.Float.Input(
+                    "value",
+                    default=1.0,
+                    min=0.0,
+                    max=1.0,
+                    step=0.01,
+                    display_mode=IO.NumberDisplay.slider,
+                    tooltip="The brightness level of the mask (0.0 for black/fully transparent, 1.0 for white/fully opaque).",
+                ),
                 IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
                 IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
             ],
@@ -384,7 +400,15 @@ class ThresholdMask(IO.ComfyNode):
             category="mask",
             inputs=[
                 IO.Mask.Input("mask"),
-                IO.Float.Input("value", default=0.5, min=0.0, max=1.0, step=0.01),
+                IO.Float.Input(
+                    "value",
+                    default=0.5,
+                    min=0.0,
+                    max=1.0,
+                    step=0.01,
+                    display_mode=IO.NumberDisplay.slider,
+                    tooltip="The cutoff point for the binary mask: pixels brighter than this value become white, others become black.",
+                ),
             ],
             outputs=[IO.Mask.Output()],
         )
