@@ -16,7 +16,6 @@ sys.modules['folder_paths'] = MagicMock()
 sys.modules['comfy_api_nodes.util'] = MagicMock()
 sys.modules['comfy_extras.nodes_images'] = MagicMock()
 
-import pytest
 from comfy_api_nodes.nodes_recraft import RecraftColorNode
 from comfy_api_nodes.apis.recraft import RecraftColorChain
 
