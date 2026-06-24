@@ -1,6 +1,8 @@
 import sys
 from unittest.mock import MagicMock
 
+# pylint: disable=import-error, wrong-import-position, import-outside-toplevel
+
 # Define a mock for torch
 mock_torch = MagicMock()
 mock_torch.__version__ = "2.1.0"
