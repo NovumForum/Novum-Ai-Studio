@@ -1,0 +1,3 @@
+## 2025-05-15 - [Color Selection Micro-UX]
+**Learning:** Providing a visual color picker (`IO.Color.Input`) is significantly more intuitive than manual RGB integer inputs for users. It reduces cognitive load and prevents input errors by providing immediate visual feedback. In node-based interfaces like ComfyUI, this standardizes color selection across different providers.
+**Action:** When implementing or modifying nodes that require color input, always prefer `IO.Color.Input` over separate R, G, B channels unless fine-grained numeric control or individual channel modulation (e.g., via other nodes) is a primary requirement.
