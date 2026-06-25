@@ -198,6 +198,38 @@ class RecraftColorRGBNode(IO.ComfyNode):
         return IO.NodeOutput(recraft_color)
 
 
+class RecraftColorPickerNode(IO.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return IO.Schema(
+            node_id="RecraftColorPicker",
+            display_name="Recraft Color Picker",
+            category="api node/image/Recraft",
+            description="Create Recraft Color using a visual color picker.",
+            inputs=[
+                IO.Color.Input("color", default="#ffffff", tooltip="Visual color picker for Recraft color."),
+                IO.Custom(RecraftIO.COLOR).Input("recraft_color", optional=True),
+            ],
+            outputs=[
+                IO.Custom(RecraftIO.COLOR).Output(display_name="recraft_color"),
+            ],
+        )
+
+    @classmethod
+    def execute(cls, color: str, recraft_color: RecraftColorChain = None) -> IO.NodeOutput:
+        recraft_color = recraft_color.clone() if recraft_color else RecraftColorChain()
+        # expect format #RRGGBB
+        if len(color) != 7 or color[0] != "#":
+            raise ValueError(f"Invalid color format: {color}. Expected #RRGGBB")
+
+        r = int(color[1:3], 16)
+        g = int(color[3:5], 16)
+        b = int(color[5:7], 16)
+
+        recraft_color.add(RecraftColor(r, g, b))
+        return IO.NodeOutput(recraft_color)
+
+
 class RecraftControlsNode(IO.ComfyNode):
     @classmethod
     def define_schema(cls):
@@ -1344,6 +1376,7 @@ class RecraftExtension(ComfyExtension):
             RecraftStyleInfiniteStyleLibrary,
             RecraftCreateStyleNode,
             RecraftColorRGBNode,
+            RecraftColorPickerNode,
             RecraftControlsNode,
             RecraftV4TextToImageNode,
             RecraftV4TextToVectorNode,
