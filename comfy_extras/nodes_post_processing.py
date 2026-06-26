@@ -42,7 +42,7 @@ class Blend(io.ComfyNode):
             image2 = image2.permute(0, 2, 3, 1)
 
         blended_image = cls.blend_mode(image1, image2, blend_mode)
-        blended_image = image1 * (1 - blend_factor) + blended_image * blend_factor
+        blended_image = torch.lerp(image1, blended_image, blend_factor)
         blended_image = torch.clamp(blended_image, 0, 1)
         return io.NodeOutput(blended_image)
 
@@ -461,7 +461,7 @@ class ResizeImageMaskNode(io.ComfyNode):
                             io.Int.Input("height", default=512, min=0, max=MAX_RESOLUTION, step=1, tooltip="Target height in pixels. Width auto-adjusts to preserve aspect ratio."),
                         ]),
                         io.DynamicCombo.Option(ResizeType.SCALE_TOTAL_PIXELS, [
-                            io.Float.Input("megapixels", default=1.0, min=0.01, max=16.0, step=0.01, tooltip="Target total megapixels (e.g., 1.0 ≈ 1024×1024). Aspect ratio is preserved."),
+                            io.Float.Input("megapixels", default=1.0, min=0.01, max=16.0, step=0.01, tooltip="Target total megapixels (e.g., 1.0 ~ 1024×1024). Aspect ratio is preserved."),
                         ]),
                         io.DynamicCombo.Option(ResizeType.MATCH_SIZE, [
                             io.MultiType.Input("match", [io.Image, io.Mask], tooltip="Resize input to match the dimensions of this reference image or mask."),

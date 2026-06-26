@@ -292,7 +292,7 @@ class RescaleCFG:
             ro_cfg = torch.std(x_cfg, dim=(1,2,3), keepdim=True)
 
             x_rescaled = x_cfg * (ro_pos / ro_cfg)
-            x_final = multiplier * x_rescaled + (1.0 - multiplier) * x_cfg
+            x_final = torch.lerp(x_cfg, x_rescaled, multiplier)
 
             return x_orig - (x - x_final * sigma / (sigma * sigma + 1.0) ** 0.5)
 
