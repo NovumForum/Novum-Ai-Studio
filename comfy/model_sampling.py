@@ -69,7 +69,7 @@ class CONST:
 
     def noise_scaling(self, sigma, noise, latent_image, max_denoise=False):
         sigma = reshape_sigma(sigma, noise.ndim)
-        return sigma * noise + (1.0 - sigma) * latent_image
+        return torch.lerp(latent_image, noise, sigma)
 
     def inverse_noise_scaling(self, sigma, latent):
         sigma = reshape_sigma(sigma, latent.ndim)
@@ -180,7 +180,7 @@ class ModelSamplingDiscrete(torch.nn.Module):
         low_idx = t.floor().long()
         high_idx = t.ceil().long()
         w = t.frac()
-        log_sigma = (1 - w) * self.log_sigmas[low_idx] + w * self.log_sigmas[high_idx]
+        log_sigma = torch.lerp(self.log_sigmas[low_idx], self.log_sigmas[high_idx], w)
         return log_sigma.exp().to(timestep.device)
 
     def percent_to_sigma(self, percent):
