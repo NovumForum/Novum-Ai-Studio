@@ -172,6 +172,45 @@ class handle_recraft_image_output:
             )
 
 
+class RecraftColorNode(IO.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return IO.Schema(
+            node_id="RecraftColor",
+            display_name="Recraft Color",
+            category="api node/image/Recraft",
+            description="Create Recraft Color by choosing a color from a picker.",
+            inputs=[
+                IO.Int.Input(
+                    "color",
+                    default=0,
+                    min=0,
+                    max=0xFFFFFF,
+                    display_mode=IO.NumberDisplay.color,
+                    tooltip="Select a color. Uses a hex color picker in the UI.",
+                ),
+                IO.Custom(RecraftIO.COLOR).Input(
+                    "recraft_color",
+                    optional=True,
+                    tooltip="An optional additional color(s) to chain together. Allows creating a palette for Recraft nodes.",
+                ),
+            ],
+            outputs=[
+                IO.Custom(RecraftIO.COLOR).Output(display_name="recraft_color"),
+            ],
+        )
+
+    @classmethod
+    def execute(cls, color: int, recraft_color: RecraftColorChain = None) -> IO.NodeOutput:
+        r = (color >> 16) & 0xFF
+        g = (color >> 8) & 0xFF
+        b = color & 0xFF
+
+        recraft_color = recraft_color.clone() if recraft_color else RecraftColorChain()
+        recraft_color.add(RecraftColor(r, g, b))
+        return IO.NodeOutput(recraft_color)
+
+
 class RecraftColorRGBNode(IO.ComfyNode):
     @classmethod
     def define_schema(cls):
@@ -184,7 +223,11 @@ class RecraftColorRGBNode(IO.ComfyNode):
                 IO.Int.Input("r", default=0, min=0, max=255, tooltip="Red value of color."),
                 IO.Int.Input("g", default=0, min=0, max=255, tooltip="Green value of color."),
                 IO.Int.Input("b", default=0, min=0, max=255, tooltip="Blue value of color."),
-                IO.Custom(RecraftIO.COLOR).Input("recraft_color", optional=True),
+                IO.Custom(RecraftIO.COLOR).Input(
+                    "recraft_color",
+                    optional=True,
+                    tooltip="An optional additional color(s) to chain together. Allows creating a palette for Recraft nodes.",
+                ),
             ],
             outputs=[
                 IO.Custom(RecraftIO.COLOR).Output(display_name="recraft_color"),
@@ -1343,6 +1386,7 @@ class RecraftExtension(ComfyExtension):
             RecraftStyleV3LogoRasterNode,
             RecraftStyleInfiniteStyleLibrary,
             RecraftCreateStyleNode,
+            RecraftColorNode,
             RecraftColorRGBNode,
             RecraftControlsNode,
             RecraftV4TextToImageNode,
