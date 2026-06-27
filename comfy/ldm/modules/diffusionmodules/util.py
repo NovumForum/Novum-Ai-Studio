@@ -79,10 +79,8 @@ class AlphaBlender(nn.Module):
         image_only_indicator=None,
     ) -> torch.Tensor:
         alpha = self.get_alpha(image_only_indicator, x_spatial.device)
-        x = (
-            alpha.to(x_spatial.dtype) * x_spatial
-            + (1.0 - alpha).to(x_spatial.dtype) * x_temporal
-        )
+        # Optimized linear interpolation using torch.lerp for performance and numerical stability
+        x = torch.lerp(x_temporal, x_spatial, alpha.to(x_spatial.dtype))
         return x
 
 
