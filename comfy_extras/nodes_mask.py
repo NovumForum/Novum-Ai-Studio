@@ -157,7 +157,15 @@ class ImageColorToMask(IO.ComfyNode):
             category="mask",
             inputs=[
                 IO.Image.Input("image"),
-                IO.Int.Input("color", default=0, min=0, max=0xFFFFFF, step=1, display_mode=IO.NumberDisplay.number),
+                IO.Int.Input(
+                    "color",
+                    default=0,
+                    min=0,
+                    max=0xFFFFFF,
+                    step=1,
+                    display_mode=IO.NumberDisplay.color,
+                    tooltip="Select the color to create a mask from. Uses a hex color picker in the UI.",
+                ),
             ],
             outputs=[IO.Mask.Output()],
         )
