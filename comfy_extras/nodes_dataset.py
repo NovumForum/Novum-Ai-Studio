@@ -18,9 +18,9 @@ def safe_join(base, path):
     try:
         if os.path.commonpath([base, path]) != base:
             raise ValueError(f"Path traversal detected: {path} is outside of {base}")
-    except ValueError:
+    except ValueError as exc:
         # This can happen on Windows if base and path are on different drives
-        raise ValueError(f"Path traversal detected: {path} is outside of {base}")
+        raise ValueError(f"Path traversal detected: {path} is outside of {base}") from exc
     return path
 
 
