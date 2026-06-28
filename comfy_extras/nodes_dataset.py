@@ -1421,7 +1421,7 @@ class SaveTrainingDataset(io.ComfyNode):
             "shard_size": shard_size,
         }
         metadata_path = os.path.join(output_dir, "metadata.json")
-        with open(metadata_path, "w") as f:
+        with open(metadata_path, "w", encoding="utf-8") as f:
             json.dump(metadata, f, indent=2)
 
         logging.info(f"Successfully saved {num_samples} samples to {output_dir}.")
