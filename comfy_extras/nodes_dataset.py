@@ -16,10 +16,12 @@ def safe_join(base, path):
     absolute_base = os.path.abspath(base)
     absolute_path = os.path.abspath(os.path.join(absolute_base, path))
     try:
-        if os.path.commonpath([absolute_base, absolute_path]) != absolute_base:
-            raise ValueError(f"Path '{path}' is outside of base directory '{base}'")
-    except ValueError:
+        is_common = os.path.commonpath([absolute_base, absolute_path]) == absolute_base
+    except ValueError as exc:
         # This can happen on Windows if paths are on different drives
+        raise ValueError(f"Path '{path}' is outside of base directory '{base}'") from exc
+
+    if not is_common:
         raise ValueError(f"Path '{path}' is outside of base directory '{base}'")
     return absolute_path
 
