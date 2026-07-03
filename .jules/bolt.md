@@ -1,3 +1,0 @@
-## 2025-05-15 - [Optimization] Fused Lerp and Conditional Identity Allocation
-**Learning:** Manual linear interpolation (a + w * (b - a)) in PyTorch can be significantly slower than the fused `torch.lerp(a, b, w)` kernel, especially on CPU where it avoids multiple intermediate tensor allocations. Furthermore, in adapters like OFT/BOFT, allocating an identity matrix for interpolation when the weight is 1.0 is a common but avoidable bottleneck.
-**Action:** Always prefer `torch.lerp` for linear interpolations and implement short-circuit logic to skip identity matrix allocation and interpolation when the interpolation weight is exactly 1.0.
