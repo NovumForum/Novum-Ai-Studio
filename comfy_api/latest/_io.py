@@ -1190,29 +1190,29 @@ class DynamicSlot(ComfyTypeI):
 
 @comfytype(io_type="IMAGECOMPARE")
 class ImageCompare(ComfyTypeI):
-  Type = dict
+    Type = dict
 
-  class Input(WidgetInput):
-      def __init__(self, id: str, display_name: str=None, optional=False, tooltip: str=None,
-                   socketless: bool=True, advanced: bool=None):
-          super().__init__(id, display_name, optional, tooltip, None, None, socketless, None, None, None, None, advanced)
+    class Input(WidgetInput):
+        def __init__(self, id: str, display_name: str=None, optional=False, tooltip: str=None,
+                     socketless: bool=True, advanced: bool=None):
+            super().__init__(id, display_name, optional, tooltip, None, None, socketless, None, None, None, None, advanced)
 
-      def as_dict(self):
-          return super().as_dict()
+        def as_dict(self):
+            return super().as_dict()
 
 
 @comfytype(io_type="COLOR")
 class Color(ComfyTypeIO):
-  Type = str
+    Type = str
 
-  class Input(WidgetInput):
-      def __init__(self, id: str, display_name: str=None, optional=False, tooltip: str=None,
-                   socketless: bool=True, advanced: bool=None, default: str="#ffffff"):
-          super().__init__(id, display_name, optional, tooltip, None, default, socketless, None, None, None, None, advanced)
-          self.default: str
+    class Input(WidgetInput):
+        def __init__(self, id: str, display_name: str=None, optional=False, tooltip: str=None,
+                     socketless: bool=True, advanced: bool=None, default: str="#ffffff"):
+            super().__init__(id, display_name, optional, tooltip, None, default, socketless, None, None, None, None, advanced)
+            self.default: str
 
-      def as_dict(self):
-          return super().as_dict()
+        def as_dict(self):
+            return super().as_dict()
 
 @comfytype(io_type="BOUNDING_BOX")
 class BoundingBox(ComfyTypeIO):
