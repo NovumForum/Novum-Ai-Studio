@@ -17,9 +17,9 @@ def safe_join(base, path):
     joined = os.path.abspath(os.path.join(base, path))
     try:
         common = os.path.commonpath([base, joined])
-    except ValueError:
+    except ValueError as exc:
         # Happens on Windows if paths are on different drives
-        raise ValueError(f"Path traversal detected: {path}")
+        raise ValueError(f"Path traversal detected: {path}") from exc
     if common != base:
         raise ValueError(f"Path traversal detected: {path}")
     return joined
@@ -1422,7 +1422,7 @@ class SaveTrainingDataset(io.ComfyNode):
             "shard_size": shard_size,
         }
         metadata_path = os.path.join(output_dir, "metadata.json")
-        with open(metadata_path, "w") as f:
+        with open(metadata_path, "w", encoding="utf-8") as f:
             json.dump(metadata, f, indent=2)
 
         logging.info(f"Successfully saved {num_samples} samples to {output_dir}.")
