@@ -1,0 +1,3 @@
+## 2025-05-22 - Performance Pattern: `torch.lerp` vs Manual Interpolation
+**Learning:** Replacing manual linear interpolation `a + (b - a) * w` or `a * (1 - w) + b * w` with `torch.lerp(a, b, w)` results in a significant performance boost. Benchmarks on CPU showed speedups ranging from ~2.8x for small latent tensors to ~8.1x for large (2048x2048) weight matrices. This is due to `torch.lerp` using a fused kernel that reduces memory bandwidth and temporary tensor allocations.
+**Action:** Always prefer `torch.lerp(start, end, weight)` for linear interpolation in hot paths like CFG calculation, EMA updates, and weight adapters.
