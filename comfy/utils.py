@@ -17,6 +17,7 @@
 """
 
 
+import os
 import torch
 import math
 import struct
@@ -1426,3 +1427,24 @@ def normalize_image_embeddings(embeds, embeds_info, scale_factor):
             start_idx = info["index"]
             end_idx = start_idx + info["size"]
             embeds[:, start_idx:end_idx, :] /= scale_factor
+
+
+def safe_join(base, *paths):
+    """
+    Securely join one or more path components to a base directory.
+
+    Args:
+        base (str): The base directory that the resulting path must be within.
+        *paths (str): The path components to join to the base.
+
+    Returns:
+        str: The joined and normalized absolute path.
+
+    Raises:
+        ValueError: If the resulting path is outside the base directory.
+    """
+    base = os.path.abspath(base)
+    path = os.path.abspath(os.path.join(base, *paths))
+    if os.path.commonpath([base, path]) != base:
+        raise ValueError(f"Path traversal detected: {path} is outside {base}")
+    return path
