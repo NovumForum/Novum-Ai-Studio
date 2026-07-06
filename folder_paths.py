@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import time
 import mimetypes
-import comfy.utils
 import logging
 from typing import Literal, List
 from collections.abc import Collection
@@ -266,7 +265,7 @@ def get_annotated_filepath(name: str, default_dir: str | None=None) -> str:
         else:
             base_dir = get_input_directory()  # fallback path
 
-    return comfy.utils.safe_join(base_dir, name)
+    return os.path.join(base_dir, name)
 
 
 def exists_annotated_filepath(name) -> bool:
