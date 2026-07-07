@@ -74,6 +74,7 @@ class NumberDisplay(str, Enum):
     number = "number"
     slider = "slider"
     gradient_slider = "gradientslider"
+    color = "color"
 
 
 class ControlAfterGenerate(str, Enum):
@@ -286,7 +287,7 @@ class Int(ComfyTypeIO):
                 "max": self.max,
                 "step": self.step,
                 "control_after_generate": self.control_after_generate,
-                "display": self.display_mode.value if self.display_mode else None,
+                "display": self.display_mode,
             })
 
 @comfytype(io_type="FLOAT")
