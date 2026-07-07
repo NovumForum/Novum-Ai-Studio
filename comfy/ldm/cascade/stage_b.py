@@ -250,7 +250,9 @@ class StageB(nn.Module):
         return self.clf(x)
 
     def update_weights_ema(self, src_model, beta=0.999):
+        if beta == 1.0:
+            return
         for self_params, src_params in zip(self.parameters(), src_model.parameters()):
-            self_params.data = self_params.data * beta + src_params.data.clone().to(self_params.device) * (1 - beta)
+            self_params.data = torch.lerp(src_params.data.to(self_params.device), self_params.data, beta)
         for self_buffers, src_buffers in zip(self.buffers(), src_model.buffers()):
-            self_buffers.data = self_buffers.data * beta + src_buffers.data.clone().to(self_buffers.device) * (1 - beta)
+            self_buffers.data = torch.lerp(src_buffers.data.to(self_buffers.device), self_buffers.data, beta)
