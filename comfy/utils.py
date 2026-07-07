@@ -18,6 +18,7 @@
 
 
 import torch
+import os
 import math
 import struct
 import comfy.memory_management
@@ -1426,3 +1427,36 @@ def normalize_image_embeddings(embeds, embeds_info, scale_factor):
             start_idx = info["index"]
             end_idx = start_idx + info["size"]
             embeds[:, start_idx:end_idx, :] /= scale_factor
+
+def safe_join(base, path, create_dir=False):
+    """
+    Safely join a base directory and a user-provided path, ensuring the result
+    stays within the base directory.
+
+    Args:
+        base: The base directory (absolute path recommended).
+        path: The user-provided relative path.
+        create_dir: If True, create the parent directory of the result if it doesn't exist.
+
+    Returns:
+        The absolute path if safe, or None if the path escapes the base directory.
+    """
+    if not path:
+        return os.path.abspath(base)
+
+    base = os.path.abspath(base)
+    # Handle both forward and backward slashes for cross-platform compatibility
+    path = path.replace("\\", "/")
+    joined = os.path.abspath(os.path.join(base, path))
+
+    try:
+        if os.path.commonpath((base, joined)) != base:
+            return None
+    except ValueError:
+        # This can happen on Windows if paths are on different drives
+        return None
+
+    if create_dir:
+        os.makedirs(joined, exist_ok=True)
+
+    return joined
