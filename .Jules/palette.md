@@ -1,0 +1,3 @@
+## 2025-05-15 - Visual Widget Hint Serialization
+**Learning:** `NumberDisplay` in `comfy_api/latest/_io.py` inherits from `(str, Enum)`, which means its members are automatically serialized to their string values when placed in a dictionary or passed to `json.dumps`. Explicitly calling `.value` in `as_dict` methods is redundant and can cause errors if the field already contains a raw string (e.g., from a node that hasn't been updated to use the Enum).
+**Action:** Trust the `(str, Enum)` inheritance for serialization and avoid manual `.value` access for these fields to maintain flexibility and robustness.
