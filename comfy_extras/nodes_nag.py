@@ -71,8 +71,7 @@ class NAGuidance(io.ComfyNode):
 
             guided_normalized = guided * scale_factor
 
-            # Optimized with torch.lerp for fused kernel efficiency
-            z_final = torch.lerp(z_pos, guided_normalized, nag_alpha)
+            z_final = guided_normalized * nag_alpha + z_pos * (1.0 - nag_alpha)
 
             if img_slice is not None:
                 orig_out[half_size * ind_neg:half_size * (ind_neg + 1), img_slice[0]:img_slice[1]] = z_final

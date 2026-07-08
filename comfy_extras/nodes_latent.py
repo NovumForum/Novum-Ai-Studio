@@ -126,12 +126,11 @@ class LatentInterpolate(io.ComfyNode):
         s1 = torch.nan_to_num(s1 / m1)
         s2 = torch.nan_to_num(s2 / m2)
 
-        # Optimized with torch.lerp for fused kernel efficiency
-        t = torch.lerp(s2, s1, ratio)
+        t = (s1 * ratio + s2 * (1.0 - ratio))
         mt = torch.linalg.vector_norm(t, dim=(1))
         st = torch.nan_to_num(t / mt)
 
-        samples_out["samples"] = st * torch.lerp(m2, m1, ratio)
+        samples_out["samples"] = st * (m1 * ratio + m2 * (1.0 - ratio))
         return io.NodeOutput(samples_out)
 
 class LatentConcat(io.ComfyNode):
