@@ -17,6 +17,7 @@
 """
 
 
+import os
 import torch
 import math
 import struct
@@ -1426,3 +1427,12 @@ def normalize_image_embeddings(embeds, embeds_info, scale_factor):
             start_idx = info["index"]
             end_idx = start_idx + info["size"]
             embeds[:, start_idx:end_idx, :] /= scale_factor
+
+def safe_join(base, *paths, create_dir=False):
+    base = os.path.abspath(base)
+    path = os.path.abspath(os.path.join(base, *paths))
+    if os.path.commonpath([base, path]) != base:
+        raise ValueError("Path escapes base directory")
+    if create_dir:
+        os.makedirs(path, exist_ok=True)
+    return path
