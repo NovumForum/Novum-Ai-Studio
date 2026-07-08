@@ -162,7 +162,7 @@ def finalize_default_conds(model: 'BaseModel', hooked_to_run: dict[comfy.hooks.H
     for _ in default_conds:
         default_mults.append(torch.ones_like(x_in))
     # look through each finalized cond in hooked_to_run for 'mult' and subtract it from each cond
-    for lora_hooks, to_run in hooked_to_run.items():
+    for _, to_run in hooked_to_run.items():
         for cond_obj, i in to_run:
             # if no default_cond for cond_type, do nothing
             if len(default_conds[i]) == 0:
