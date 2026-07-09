@@ -180,7 +180,7 @@ class ModelSamplingDiscrete(torch.nn.Module):
         low_idx = t.floor().long()
         high_idx = t.ceil().long()
         w = t.frac()
-        log_sigma = (1 - w) * self.log_sigmas[low_idx] + w * self.log_sigmas[high_idx]
+        log_sigma = torch.lerp(self.log_sigmas[low_idx], self.log_sigmas[high_idx], w)
         return log_sigma.exp().to(timestep.device)
 
     def percent_to_sigma(self, percent):

@@ -83,7 +83,7 @@ class VideoResBlock(ResnetBlock):
             x = self.time_stack(x, temb)
 
             alpha = self.get_alpha(bs=b // timesteps).to(x.device)
-            x = alpha * x + (1.0 - alpha) * x_mix
+            x = torch.lerp(x_mix, x, alpha)
 
             x = rearrange(x, "b c t h w -> (b t) c h w")
         return x
@@ -169,7 +169,7 @@ class AttnVideoBlock(AttnBlock):
 
         alpha = self.get_alpha().to(x.device)
         x_mix = self.time_mix_block(x_mix, timesteps=timesteps)
-        x = alpha * x + (1.0 - alpha) * x_mix  # alpha merge
+        x = torch.lerp(x_mix, x, alpha)  # alpha merge
 
         x = rearrange(x, "b (h w) c -> b c h w", h=h, w=w)
         x = self.proj_out(x)
