@@ -18,6 +18,7 @@
 
 
 import torch
+import os
 import math
 import struct
 import comfy.memory_management
@@ -1426,3 +1427,14 @@ def normalize_image_embeddings(embeds, embeds_info, scale_factor):
             start_idx = info["index"]
             end_idx = start_idx + info["size"]
             embeds[:, start_idx:end_idx, :] /= scale_factor
+
+
+def safe_join(base, *paths, create_dir=False):
+    """Safely join paths and ensure the result is within the base directory."""
+    base = os.path.abspath(base)
+    path = os.path.abspath(os.path.join(base, *paths))
+    if os.path.commonpath([base, path]) != base:
+        raise ValueError(f"Path traversal detected: {path} is outside of {base}")
+    if create_dir:
+        os.makedirs(path, exist_ok=True)
+    return path
