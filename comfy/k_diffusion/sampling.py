@@ -259,7 +259,7 @@ def sample_euler_ancestral_RF(model, x, sigmas, extra_args=None, callback=None, 
             renoise_coeff = (sigmas[i + 1]**2 - sigma_down**2 * alpha_ip1**2 / alpha_down**2)**0.5
             # Euler method
             sigma_down_i_ratio = sigma_down / sigmas[i]
-            x = sigma_down_i_ratio * x + (1 - sigma_down_i_ratio) * denoised
+            x = torch.lerp(denoised, x, sigma_down_i_ratio)
             if eta > 0:
                 x = (alpha_ip1 / alpha_down) * x + noise_sampler(sigmas[i], sigmas[i + 1]) * s_noise * renoise_coeff
     return x
@@ -719,10 +719,10 @@ def sample_dpmpp_2s_ancestral_RF(model, x, sigmas, extra_args=None, callback=Non
                 sigma_s = sigma_fn(s)
             # sigma_s = sigmas[i+1]
             sigma_s_i_ratio = sigma_s / sigmas[i]
-            u = sigma_s_i_ratio * x + (1 - sigma_s_i_ratio) * denoised
+            u = torch.lerp(denoised, x, sigma_s_i_ratio)
             D_i = model(u, sigma_s * s_in, **extra_args)
             sigma_down_i_ratio = sigma_down / sigmas[i]
-            x = sigma_down_i_ratio * x + (1 - sigma_down_i_ratio) * D_i
+            x = torch.lerp(D_i, x, sigma_down_i_ratio)
             # print("sigma_i", sigmas[i], "sigma_ip1", sigmas[i+1],"sigma_down", sigma_down, "sigma_down_i_ratio", sigma_down_i_ratio, "sigma_s_i_ratio", sigma_s_i_ratio, "renoise_coeff", renoise_coeff)
         # Noise addition
         if sigmas[i + 1] > 0 and eta > 0:
@@ -781,7 +781,7 @@ def sample_dpmpp_sde(model, x, sigmas, extra_args=None, callback=None, disable=N
             sd, su = get_ancestral_step(lambda_s.neg().exp(), lambda_t.neg().exp(), eta)
             lambda_t_ = sd.log().neg()
             h_ = lambda_t_ - lambda_s
-            denoised_d = (1 - fac) * denoised + fac * denoised_2
+            denoised_d = torch.lerp(denoised, denoised_2, fac)
             x = (alpha_t / alpha_s) * (-h_).exp() * x - alpha_t * (-h_).expm1() * denoised_d
             if eta > 0 and s_noise > 0:
                 x = x + alpha_t * noise_sampler(sigmas[i], sigmas[i + 1]) * s_noise * su
