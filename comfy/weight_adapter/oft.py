@@ -94,8 +94,9 @@ class OFTDiff(WeightAdapterTrainBase):
 
         # Apply multiplier to interpolate between identity and full transform
         multiplier = getattr(self, "multiplier", 1.0)
-        I = torch.eye(self.block_size, device=y.device, dtype=y.dtype)
-        r = r * multiplier + (1 - multiplier) * I
+        if multiplier != 1.0:
+            I = torch.eye(self.block_size, device=y.device, dtype=y.dtype)
+            r = torch.lerp(I, r, multiplier)
 
         # Use module info from bypass injection
         is_conv = getattr(self, "is_conv", y.dim() > 2)
@@ -230,9 +231,10 @@ class OFTAdapter(WeightAdapterBase):
             # Create I in weight's dtype for the einsum
             I_w = torch.eye(block_size, device=weight.device, dtype=weight.dtype)
             _, *shape = weight.shape
+            r_diff = torch.lerp(I_w, r, strength) - I_w
             lora_diff = torch.einsum(
                 "k n m, k n ... -> k m ...",
-                (r * strength) - strength * I_w,
+                r_diff,
                 weight.view(block_num, block_size, *shape),
             ).view(-1, *shape)
             if dora_scale is not None:
@@ -291,8 +293,9 @@ class OFTAdapter(WeightAdapterBase):
 
         # Apply multiplier to interpolate between identity and full transform
         multiplier = getattr(self, "multiplier", 1.0)
-        I = torch.eye(block_size, device=y.device, dtype=y.dtype)
-        r = r * multiplier + (1 - multiplier) * I
+        if multiplier != 1.0:
+            I = torch.eye(block_size, device=y.device, dtype=y.dtype)
+            r = torch.lerp(I, r, multiplier)
 
         # Use module info from bypass injection to determine conv vs linear
         is_conv = getattr(self, "is_conv", y.dim() > 2)
