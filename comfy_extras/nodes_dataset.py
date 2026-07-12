@@ -9,6 +9,7 @@ from typing_extensions import override
 
 import folder_paths
 import node_helpers
+import comfy.utils
 from comfy_api.latest import ComfyExtension, io
 
 
@@ -68,7 +69,10 @@ class LoadImageDataSetFromFolderNode(io.ComfyNode):
 
     @classmethod
     def execute(cls, folder):
-        sub_input_dir = os.path.join(folder_paths.get_input_directory(), folder)
+        sub_input_dir = comfy.utils.safe_join(folder_paths.get_input_directory(), folder)
+        if sub_input_dir is None:
+            raise ValueError(f"Invalid folder path: {folder}")
+
         valid_extensions = [".png", ".jpg", ".jpeg", ".webp"]
         image_files = [
             f
@@ -110,9 +114,12 @@ class LoadImageTextDataSetFromFolderNode(io.ComfyNode):
 
     @classmethod
     def execute(cls, folder):
-        logging.info(f"Loading images from folder: {folder}")
+        logging.info("Loading images from folder: %s", folder)
 
-        sub_input_dir = os.path.join(folder_paths.get_input_directory(), folder)
+        sub_input_dir = comfy.utils.safe_join(folder_paths.get_input_directory(), folder)
+        if sub_input_dir is None:
+            raise ValueError(f"Invalid folder path: {folder}")
+
         valid_extensions = [".png", ".jpg", ".jpeg", ".webp"]
 
         image_files = []
@@ -234,10 +241,13 @@ class SaveImageDataSetToFolderNode(io.ComfyNode):
         folder_name = folder_name[0]
         filename_prefix = filename_prefix[0]
 
-        output_dir = os.path.join(folder_paths.get_output_directory(), folder_name)
+        output_dir = comfy.utils.safe_join(folder_paths.get_output_directory(), folder_name, create_dir=True)
+        if output_dir is None:
+            raise ValueError(f"Invalid folder name: {folder_name}")
+
         saved_files = save_images_to_folder(images, output_dir, filename_prefix)
 
-        logging.info(f"Saved {len(saved_files)} images to {output_dir}.")
+        logging.info("Saved %d images to %s.", len(saved_files), output_dir)
         return io.NodeOutput()
 
 
@@ -275,7 +285,10 @@ class SaveImageTextDataSetToFolderNode(io.ComfyNode):
         folder_name = folder_name[0]
         filename_prefix = filename_prefix[0]
 
-        output_dir = os.path.join(folder_paths.get_output_directory(), folder_name)
+        output_dir = comfy.utils.safe_join(folder_paths.get_output_directory(), folder_name, create_dir=True)
+        if output_dir is None:
+            raise ValueError(f"Invalid folder name: {folder_name}")
+
         saved_files = save_images_to_folder(images, output_dir, filename_prefix)
 
         # Save captions
@@ -285,7 +298,7 @@ class SaveImageTextDataSetToFolderNode(io.ComfyNode):
             with open(caption_path, "w", encoding="utf-8") as f:
                 f.write(caption)
 
-        logging.info(f"Saved {len(saved_files)} images and captions to {output_dir}.")
+        logging.info("Saved %d images and captions to %s.", len(saved_files), output_dir)
         return io.NodeOutput()
 
 
@@ -1369,15 +1382,17 @@ class SaveTrainingDataset(io.ComfyNode):
             )
 
         # Create output directory
-        output_dir = os.path.join(folder_paths.get_output_directory(), folder_name)
-        os.makedirs(output_dir, exist_ok=True)
+        output_dir = comfy.utils.safe_join(folder_paths.get_output_directory(), folder_name, create_dir=True)
+        if output_dir is None:
+            raise ValueError(f"Invalid folder name: {folder_name}")
 
         # Prepare data pairs
         num_samples = len(latents)
         num_shards = (num_samples + shard_size - 1) // shard_size  # Ceiling division
 
         logging.info(
-            f"Saving {num_samples} samples to {num_shards} shards in {output_dir}..."
+            "Saving %d samples to %d shards in %s...",
+            num_samples, num_shards, output_dir
         )
 
         # Save data in shards
@@ -1399,7 +1414,8 @@ class SaveTrainingDataset(io.ComfyNode):
                 torch.save(shard_data, f)
 
             logging.info(
-                f"Saved shard {shard_idx + 1}/{num_shards}: {shard_filename} ({end_idx - start_idx} samples)"
+                "Saved shard %d/%d: %s (%d samples)",
+                shard_idx + 1, num_shards, shard_filename, end_idx - start_idx
             )
 
         # Save metadata
@@ -1409,10 +1425,10 @@ class SaveTrainingDataset(io.ComfyNode):
             "shard_size": shard_size,
         }
         metadata_path = os.path.join(output_dir, "metadata.json")
-        with open(metadata_path, "w") as f:
+        with open(metadata_path, "w", encoding="utf-8") as f:
             json.dump(metadata, f, indent=2)
 
-        logging.info(f"Successfully saved {num_samples} samples to {output_dir}.")
+        logging.info("Successfully saved %d samples to %s.", num_samples, output_dir)
         return io.NodeOutput()
 
 
@@ -1450,9 +1466,9 @@ class LoadTrainingDataset(io.ComfyNode):
     @classmethod
     def execute(cls, folder_name):
         # Get dataset directory
-        dataset_dir = os.path.join(folder_paths.get_output_directory(), folder_name)
+        dataset_dir = comfy.utils.safe_join(folder_paths.get_output_directory(), folder_name)
 
-        if not os.path.exists(dataset_dir):
+        if dataset_dir is None or not os.path.exists(dataset_dir):
             raise ValueError(f"Dataset directory not found: {dataset_dir}")
 
         # Find all shard files
@@ -1467,7 +1483,7 @@ class LoadTrainingDataset(io.ComfyNode):
         if not shard_files:
             raise ValueError(f"No shard files found in {dataset_dir}")
 
-        logging.info(f"Loading {len(shard_files)} shards from {dataset_dir}...")
+        logging.info("Loading %d shards from %s...", len(shard_files), dataset_dir)
 
         # Load all shards
         all_latents = []  # list[{"samples": tensor}]
@@ -1477,15 +1493,16 @@ class LoadTrainingDataset(io.ComfyNode):
             shard_path = os.path.join(dataset_dir, shard_file)
 
             with open(shard_path, "rb") as f:
-                shard_data = torch.load(f)
+                shard_data = torch.load(f, weights_only=True)
 
             all_latents.extend(shard_data["latents"])
             all_conditioning.extend(shard_data["conditioning"])
 
-            logging.info(f"Loaded {shard_file}: {len(shard_data['latents'])} samples")
+            logging.info("Loaded %s: %d samples", shard_file, len(shard_data['latents']))
 
         logging.info(
-            f"Successfully loaded {len(all_latents)} samples from {dataset_dir}."
+            "Successfully loaded %d samples from %s.",
+            len(all_latents), dataset_dir
         )
         return io.NodeOutput(all_latents, all_conditioning)
 
