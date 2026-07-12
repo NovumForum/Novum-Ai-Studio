@@ -17,7 +17,6 @@
 """
 
 
-import os
 import torch
 import math
 import struct
@@ -1427,18 +1426,3 @@ def normalize_image_embeddings(embeds, embeds_info, scale_factor):
             start_idx = info["index"]
             end_idx = start_idx + info["size"]
             embeds[:, start_idx:end_idx, :] /= scale_factor
-
-def safe_join(base_path, *paths, create_dir=False):
-    """
-    Join path components safely, ensuring the resulting path is within the base_path.
-    """
-    base_path = os.path.abspath(base_path)
-    final_path = os.path.abspath(os.path.join(base_path, *paths))
-
-    if os.path.commonpath((base_path, final_path)) != base_path:
-        return None
-
-    if create_dir:
-        os.makedirs(final_path, exist_ok=True)
-
-    return final_path
