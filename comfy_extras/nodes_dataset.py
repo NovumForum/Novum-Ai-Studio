@@ -156,7 +156,7 @@ class LoadImageTextDataSetFromFolderNode(io.ComfyNode):
 
         output_tensor = load_and_process_images(image_files, sub_input_dir)
 
-        logging.info(f"Loaded {len(output_tensor)} images from {sub_input_dir}.")
+        logging.info("Loaded %d images from %s.", len(output_tensor), sub_input_dir)
         return io.NodeOutput(output_tensor, captions)
 
 
@@ -1469,7 +1469,7 @@ class LoadTrainingDataset(io.ComfyNode):
         dataset_dir = comfy.utils.safe_join(folder_paths.get_output_directory(), folder_name)
 
         if dataset_dir is None or not os.path.exists(dataset_dir):
-            raise ValueError(f"Dataset directory not found: {dataset_dir}")
+            raise ValueError(f"Dataset directory not found: {folder_name}")
 
         # Find all shard files
         shard_files = sorted(

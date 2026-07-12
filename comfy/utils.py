@@ -966,7 +966,7 @@ def bislerp(samples, width, height):
     h_new, w_new = (height, width)
 
     #linear w
-    ratios, coords_1, coords_2 = generate_bilinear_data(w, w_new, samples.device)
+    ratios, coords_1, ratios, coords_2 = generate_bilinear_data(w, w_new, samples.device)
     coords_1 = coords_1.expand((n, c, h, -1))
     coords_2 = coords_2.expand((n, c, h, -1))
     ratios = ratios.expand((n, 1, h, -1))
@@ -979,7 +979,7 @@ def bislerp(samples, width, height):
     result = result.reshape(n, h, w_new, c).movedim(-1, 1)
 
     #linear h
-    ratios, coords_1, coords_2 = generate_bilinear_data(h, h_new, samples.device)
+    ratios, coords_1, ratios, coords_2 = generate_bilinear_data(h, h_new, samples.device)
     coords_1 = coords_1.reshape((1,1,-1,1)).expand((n, c, -1, w_new))
     coords_2 = coords_2.reshape((1,1,-1,1)).expand((n, c, -1, w_new))
     ratios = ratios.reshape((1,1,-1,1)).expand((n, 1, -1, w_new))
