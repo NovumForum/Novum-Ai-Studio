@@ -17,6 +17,7 @@
 """
 
 
+import os
 import torch
 import math
 import struct
@@ -1426,3 +1427,28 @@ def normalize_image_embeddings(embeds, embeds_info, scale_factor):
             start_idx = info["index"]
             end_idx = start_idx + info["size"]
             embeds[:, start_idx:end_idx, :] /= scale_factor
+
+
+def safe_join(base, *paths, create_dir=False):
+    """Safely joins paths and ensures the result is within the base directory.
+
+    Args:
+        base: The base directory that the resulting path must be within.
+        *paths: Paths to join to the base directory.
+        create_dir: If True, the resulting directory will be created if it doesn't exist.
+
+    Returns:
+        The joined path if it is within the base directory.
+
+    Raises:
+        ValueError: If the resulting path is outside the base directory.
+    """
+    base = os.path.abspath(base)
+    path = os.path.abspath(os.path.join(base, *paths))
+    if os.path.commonpath([base, path]) != base:
+        raise ValueError(f"Path '{path}' is outside of base directory '{base}'")
+
+    if create_dir:
+        os.makedirs(path, exist_ok=True)
+
+    return path
