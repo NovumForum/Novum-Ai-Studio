@@ -1,0 +1,3 @@
+## 2026-07-14 - Optimized CFG Path with torch.lerp
+**Learning:** Replacing manual linear interpolation `start + (end - start) * weight` with `torch.lerp(start, end, weight)` in performance-critical paths like Classifier-Free Guidance (CFG) provides a measurable speedup. This is because `torch.lerp` uses fused kernels, which reduce memory bandwidth overhead and eliminate intermediate tensor allocations (like the one created by `(end - start)`).
+**Action:** Always prefer `torch.lerp` for linear interpolation between tensors, especially in hot paths like samplers, conditioning blending, or model weight adapters.
