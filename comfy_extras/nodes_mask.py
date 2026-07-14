@@ -156,8 +156,8 @@ class ImageColorToMask(IO.ComfyNode):
             search_aliases=["color keying", "chroma key"],
             category="mask",
             inputs=[
-                IO.Image.Input("image"),
-                IO.Int.Input("color", default=0, min=0, max=0xFFFFFF, step=1, display_mode=IO.NumberDisplay.color),
+                IO.Image.Input("image", tooltip="The image to convert to a mask."),
+                IO.Int.Input("color", default=0, min=0, max=0xFFFFFF, step=1, display_mode=IO.NumberDisplay.color, tooltip="The color to select for the mask. All pixels matching this color will be set to white in the output mask."),
             ],
             outputs=[IO.Mask.Output()],
         )
@@ -179,9 +179,9 @@ class SolidMask(IO.ComfyNode):
             node_id="SolidMask",
             category="mask",
             inputs=[
-                IO.Float.Input("value", default=1.0, min=0.0, max=1.0, step=0.01),
-                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
+                IO.Float.Input("value", default=1.0, min=0.0, max=1.0, step=0.01, tooltip="The constant value to fill the mask with (0.0 = black, 1.0 = white)."),
+                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="Width of the generated mask."),
+                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="Height of the generated mask."),
             ],
             outputs=[IO.Mask.Output()],
         )
@@ -383,8 +383,8 @@ class ThresholdMask(IO.ComfyNode):
             search_aliases=["binary mask"],
             category="mask",
             inputs=[
-                IO.Mask.Input("mask"),
-                IO.Float.Input("value", default=0.5, min=0.0, max=1.0, step=0.01),
+                IO.Mask.Input("mask", tooltip="The input mask to threshold."),
+                IO.Float.Input("value", default=0.5, min=0.0, max=1.0, step=0.01, tooltip="Values greater than this threshold will be set to 1.0 (white), others to 0.0 (black)."),
             ],
             outputs=[IO.Mask.Output()],
         )
