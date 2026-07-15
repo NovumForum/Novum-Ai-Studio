@@ -355,7 +355,8 @@ def cfg_function(model, cond_pred, uncond_pred, cond_scale, x, timestep, model_o
                 "cond_denoised": cond_pred, "uncond_denoised": uncond_pred, "model": model, "model_options": model_options, "input_cond": cond, "input_uncond": uncond}
         cfg_result = x - model_options["sampler_cfg_function"](args)
     else:
-        cfg_result = uncond_pred + (cond_pred - uncond_pred) * cond_scale
+        # Calculate CFG: uncond_pred + (cond_pred - uncond_pred) * cond_scale
+        cfg_result = torch.lerp(uncond_pred, cond_pred, cond_scale)
 
     for fn in model_options.get("sampler_post_cfg_function", []):
         args = {"denoised": cfg_result, "cond": cond, "uncond": uncond, "cond_scale": cond_scale, "model": model, "uncond_denoised": uncond_pred, "cond_denoised": cond_pred,
@@ -395,11 +396,12 @@ class KSamplerX0Inpaint:
         if denoise_mask is not None:
             if "denoise_mask_function" in model_options:
                 denoise_mask = model_options["denoise_mask_function"](sigma, denoise_mask, extra_options={"model": self.inner_model, "sigmas": self.sigmas})
-            latent_mask = 1. - denoise_mask
-            x = x * denoise_mask + self.inner_model.inner_model.scale_latent_inpaint(x=x, sigma=sigma, noise=self.noise, latent_image=self.latent_image) * latent_mask
+            # Inpainting blend: x * denoise_mask + scale_latent_inpaint(...) * (1 - denoise_mask)
+            x = torch.lerp(self.inner_model.inner_model.scale_latent_inpaint(x=x, sigma=sigma, noise=self.noise, latent_image=self.latent_image), x, denoise_mask)
         out = self.inner_model(x, sigma, model_options=model_options, seed=seed)
         if denoise_mask is not None:
-            out = out * denoise_mask + self.latent_image * latent_mask
+            # Final inpainting blend: out * denoise_mask + latent_image * (1 - denoise_mask)
+            out = torch.lerp(self.latent_image, out, denoise_mask)
         return out
 
 def simple_scheduler(model_sampling, steps):
