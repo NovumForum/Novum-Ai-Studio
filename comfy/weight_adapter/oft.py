@@ -95,7 +95,7 @@ class OFTDiff(WeightAdapterTrainBase):
         # Apply multiplier to interpolate between identity and full transform
         multiplier = getattr(self, "multiplier", 1.0)
         I = torch.eye(self.block_size, device=y.device, dtype=y.dtype)
-        r = r * multiplier + (1 - multiplier) * I
+        r = torch.lerp(I, r, multiplier)
 
         # Use module info from bypass injection
         is_conv = getattr(self, "is_conv", y.dim() > 2)
@@ -292,7 +292,7 @@ class OFTAdapter(WeightAdapterBase):
         # Apply multiplier to interpolate between identity and full transform
         multiplier = getattr(self, "multiplier", 1.0)
         I = torch.eye(block_size, device=y.device, dtype=y.dtype)
-        r = r * multiplier + (1 - multiplier) * I
+        r = torch.lerp(I, r, multiplier)
 
         # Use module info from bypass injection to determine conv vs linear
         is_conv = getattr(self, "is_conv", y.dim() > 2)
