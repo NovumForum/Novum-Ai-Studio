@@ -190,7 +190,7 @@ class BOFTAdapter(WeightAdapterBase):
 
             # Interpolate with identity based on multiplier
             if multiplier != 1:
-                bi = bi * multiplier + (1 - multiplier) * I
+                bi = torch.lerp(I, bi, multiplier)
 
             # Reshape for butterfly: unflatten last dim, transpose, flatten, unflatten
             inp = (

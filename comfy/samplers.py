@@ -355,7 +355,8 @@ def cfg_function(model, cond_pred, uncond_pred, cond_scale, x, timestep, model_o
                 "cond_denoised": cond_pred, "uncond_denoised": uncond_pred, "model": model, "model_options": model_options, "input_cond": cond, "input_uncond": uncond}
         cfg_result = x - model_options["sampler_cfg_function"](args)
     else:
-        cfg_result = uncond_pred + (cond_pred - uncond_pred) * cond_scale
+        # Use fused lerp for performance
+        cfg_result = torch.lerp(uncond_pred, cond_pred, cond_scale)
 
     for fn in model_options.get("sampler_post_cfg_function", []):
         args = {"denoised": cfg_result, "cond": cond, "uncond": uncond, "cond_scale": cond_scale, "model": model, "uncond_denoised": uncond_pred, "cond_denoised": cond_pred,
