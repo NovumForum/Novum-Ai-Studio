@@ -18,6 +18,7 @@
 
 
 import torch
+import os
 import math
 import struct
 import comfy.memory_management
@@ -37,6 +38,16 @@ import warnings
 
 MMAP_TORCH_FILES = args.mmap_torch_files
 DISABLE_MMAP = args.disable_mmap
+
+
+def safe_join(base, *paths, create_dir=False):
+    base_abs = os.path.abspath(base)
+    path_abs = os.path.abspath(os.path.join(base_abs, *paths))
+    if os.path.commonpath([base_abs, path_abs]) != base_abs:
+        raise ValueError("Path is outside the base directory")
+    if create_dir:
+        os.makedirs(path_abs, exist_ok=True)
+    return path_abs
 
 
 if True:  # ckpt/pt file whitelist for safe loading of old sd files
