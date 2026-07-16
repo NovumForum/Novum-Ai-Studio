@@ -69,7 +69,9 @@ class LoadImageDataSetFromFolderNode(io.ComfyNode):
 
     @classmethod
     def execute(cls, folder):
-        sub_input_dir = comfy.utils.safe_join(folder_paths.get_input_directory(), folder)
+        sub_input_dir = comfy.utils.safe_join(
+            folder_paths.get_input_directory(), folder
+        )
         valid_extensions = [".png", ".jpg", ".jpeg", ".webp"]
         image_files = [
             f
@@ -113,7 +115,9 @@ class LoadImageTextDataSetFromFolderNode(io.ComfyNode):
     def execute(cls, folder):
         logging.info(f"Loading images from folder: {folder}")
 
-        sub_input_dir = comfy.utils.safe_join(folder_paths.get_input_directory(), folder)
+        sub_input_dir = comfy.utils.safe_join(
+            folder_paths.get_input_directory(), folder
+        )
         valid_extensions = [".png", ".jpg", ".jpeg", ".webp"]
 
         image_files = []
@@ -232,7 +236,9 @@ class SaveImageDataSetToFolderNode(io.ComfyNode):
         folder_name = folder_name[0]
         filename_prefix = filename_prefix[0]
 
-        output_dir = comfy.utils.safe_join(folder_paths.get_output_directory(), folder_name)
+        output_dir = comfy.utils.safe_join(
+            folder_paths.get_output_directory(), folder_name
+        )
         saved_files = save_images_to_folder(images, output_dir, filename_prefix)
 
         logging.info(f"Saved {len(saved_files)} images to {output_dir}.")
@@ -273,7 +279,9 @@ class SaveImageTextDataSetToFolderNode(io.ComfyNode):
         folder_name = folder_name[0]
         filename_prefix = filename_prefix[0]
 
-        output_dir = comfy.utils.safe_join(folder_paths.get_output_directory(), folder_name)
+        output_dir = comfy.utils.safe_join(
+            folder_paths.get_output_directory(), folder_name
+        )
         saved_files = save_images_to_folder(images, output_dir, filename_prefix)
 
         # Save captions
@@ -1053,7 +1061,12 @@ class ImageGridNode(ImageProcessingNode):
             advanced=True,
         ),
         io.Int.Input(
-            "padding", default=4, min=0, max=50, tooltip="Padding between images.", advanced=True
+            "padding",
+            default=4,
+            min=0,
+            max=50,
+            tooltip="Padding between images.",
+            advanced=True,
         ),
     ]
 
@@ -1222,12 +1235,15 @@ class ResolutionBucket(io.ComfyNode):
                 f"Resolution bucket ({h}x{w}): {len(bucket_data['latents'])} samples"
             )
 
-        logging.info(f"Created {len(buckets)} resolution buckets from {len(flat_latents)} samples")
+        logging.info(
+            f"Created {len(buckets)} resolution buckets from {len(flat_latents)} samples"
+        )
         return io.NodeOutput(output_latents, output_conditions)
 
 
 class MakeTrainingDataset(io.ComfyNode):
     """Encode images with VAE and texts with CLIP to create a training dataset."""
+
     @classmethod
     def define_schema(cls):
         return io.Schema(
@@ -1314,6 +1330,7 @@ class MakeTrainingDataset(io.ComfyNode):
 
 class SaveTrainingDataset(io.ComfyNode):
     """Save encoded training dataset (latents + conditioning) to disk."""
+
     @classmethod
     def define_schema(cls):
         return io.Schema(
@@ -1367,7 +1384,9 @@ class SaveTrainingDataset(io.ComfyNode):
             )
 
         # Create output directory
-        output_dir = comfy.utils.safe_join(folder_paths.get_output_directory(), folder_name, create_dir=True)
+        output_dir = comfy.utils.safe_join(
+            folder_paths.get_output_directory(), folder_name, create_dir=True
+        )
 
         # Prepare data pairs
         num_samples = len(latents)
@@ -1415,6 +1434,7 @@ class SaveTrainingDataset(io.ComfyNode):
 
 class LoadTrainingDataset(io.ComfyNode):
     """Load encoded training dataset from disk."""
+
     @classmethod
     def define_schema(cls):
         return io.Schema(
@@ -1447,7 +1467,9 @@ class LoadTrainingDataset(io.ComfyNode):
     @classmethod
     def execute(cls, folder_name):
         # Get dataset directory
-        dataset_dir = comfy.utils.safe_join(folder_paths.get_output_directory(), folder_name)
+        dataset_dir = comfy.utils.safe_join(
+            folder_paths.get_output_directory(), folder_name
+        )
 
         if not os.path.exists(dataset_dir):
             raise ValueError(f"Dataset directory not found: {dataset_dir}")

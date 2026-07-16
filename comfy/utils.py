@@ -1,21 +1,20 @@
 """
-    This file is part of ComfyUI.
-    Copyright (C) 2024 Comfy
+This file is part of ComfyUI.
+Copyright (C) 2024 Comfy
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-
 
 import torch
 import os
@@ -51,12 +50,15 @@ def safe_join(base, *paths, create_dir=False):
 
 
 if True:  # ckpt/pt file whitelist for safe loading of old sd files
+
     class ModelCheckpoint:
         pass
+
     ModelCheckpoint.__module__ = "pytorch_lightning.callbacks.model_checkpoint"
 
     def scalar(*args, **kwargs):
         return None
+
     scalar.__module__ = "numpy.core.multiarray"
 
     from numpy import dtype
@@ -64,9 +66,12 @@ if True:  # ckpt/pt file whitelist for safe loading of old sd files
 
     def encode(*args, **kwargs):  # no longer necessary on newer torch
         return None
+
     encode.__module__ = "_codecs"
 
-    torch.serialization.add_safe_globals([ModelCheckpoint, scalar, dtype, Float64DType, encode])
+    torch.serialization.add_safe_globals(
+        [ModelCheckpoint, scalar, dtype, Float64DType, encode]
+    )
     logging.info("Checkpoint files will always be loaded safely.")
 
 
@@ -85,11 +90,11 @@ _TYPES = {
     "F8_E4M3": torch.float8_e4m3fn,
     "F8_E5M2": torch.float8_e5m2,
     "C64": torch.complex64,
-
     "U64": torch.uint64,
     "U32": torch.uint32,
     "U16": torch.uint16,
 }
+
 
 def load_safetensors(ckpt):
     f = open(ckpt, "rb")
@@ -97,9 +102,9 @@ def load_safetensors(ckpt):
     mv = memoryview(mapping)
 
     header_size = struct.unpack("<Q", mapping[:8])[0]
-    header = json.loads(mapping[8:8+header_size].decode("utf-8"))
+    header = json.loads(mapping[8 : 8 + header_size].decode("utf-8"))
 
-    mv = mv[8 + header_size:]
+    mv = mv[8 + header_size :]
 
     sd = {}
     for name, info in header.items():
@@ -108,14 +113,21 @@ def load_safetensors(ckpt):
 
         start, end = info["data_offsets"]
         if start == end:
-            sd[name] = torch.empty(info["shape"], dtype =_TYPES[info["dtype"]])
+            sd[name] = torch.empty(info["shape"], dtype=_TYPES[info["dtype"]])
         else:
             with warnings.catch_warnings():
-                #We are working with read-only RAM by design
-                warnings.filterwarnings("ignore", message="The given buffer is not writable")
-                sd[name] = torch.frombuffer(mv[start:end], dtype=_TYPES[info["dtype"]]).view(info["shape"])
+                # We are working with read-only RAM by design
+                warnings.filterwarnings(
+                    "ignore", message="The given buffer is not writable"
+                )
+                sd[name] = torch.frombuffer(
+                    mv[start:end], dtype=_TYPES[info["dtype"]]
+                ).view(info["shape"])
 
-    return sd, header.get("__metadata__", {}),
+    return (
+        sd,
+        header.get("__metadata__", {}),
+    )
 
 
 def load_torch_file(ckpt, safe_load=False, device=None, return_metadata=False):
@@ -129,7 +141,9 @@ def load_torch_file(ckpt, safe_load=False, device=None, return_metadata=False):
                 if not return_metadata:
                     metadata = None
             else:
-                with safetensors.safe_open(ckpt, framework="pt", device=device.type) as f:
+                with safetensors.safe_open(
+                    ckpt, framework="pt", device=device.type
+                ) as f:
                     sd = {}
                     for k in f.keys():
                         tensor = f.get_tensor(k)
@@ -142,9 +156,17 @@ def load_torch_file(ckpt, safe_load=False, device=None, return_metadata=False):
             if len(e.args) > 0:
                 message = e.args[0]
                 if "HeaderTooLarge" in message:
-                    raise ValueError("{}\n\nFile path: {}\n\nThe safetensors file is corrupt or invalid. Make sure this is actually a safetensors file and not a ckpt or pt or other filetype.".format(message, ckpt))
+                    raise ValueError(
+                        "{}\n\nFile path: {}\n\nThe safetensors file is corrupt or invalid. Make sure this is actually a safetensors file and not a ckpt or pt or other filetype.".format(
+                            message, ckpt
+                        )
+                    )
                 if "MetadataIncompleteBuffer" in message:
-                    raise ValueError("{}\n\nFile path: {}\n\nThe safetensors file is corrupt/incomplete. Check the file size and make sure you have copied/downloaded it correctly.".format(message, ckpt))
+                    raise ValueError(
+                        "{}\n\nFile path: {}\n\nThe safetensors file is corrupt/incomplete. Check the file size and make sure you have copied/downloaded it correctly.".format(
+                            message, ckpt
+                        )
+                    )
             raise e
     else:
         torch_args = {}
@@ -165,11 +187,13 @@ def load_torch_file(ckpt, safe_load=False, device=None, return_metadata=False):
                 sd = pl_sd
     return (sd, metadata) if return_metadata else sd
 
+
 def save_torch_file(sd, ckpt, metadata=None):
     if metadata is not None:
         safetensors.torch.save_file(sd, ckpt, metadata=metadata)
     else:
         safetensors.torch.save_file(sd, ckpt)
+
 
 def calculate_parameters(sd, prefix=""):
     params = 0
@@ -178,6 +202,7 @@ def calculate_parameters(sd, prefix=""):
             w = sd[k]
             params += w.nelement()
     return params
+
 
 def weight_dtype(sd, prefix=""):
     dtypes = {}
@@ -191,11 +216,13 @@ def weight_dtype(sd, prefix=""):
 
     return max(dtypes, key=dtypes.get)
 
+
 def state_dict_key_replace(state_dict, keys_to_replace):
     for x in keys_to_replace:
         if x in state_dict:
             state_dict[keys_to_replace[x]] = state_dict.pop(x)
     return state_dict
+
 
 def state_dict_prefix_replace(state_dict, replace_prefix, filter_keys=False):
     if filter_keys:
@@ -203,7 +230,12 @@ def state_dict_prefix_replace(state_dict, replace_prefix, filter_keys=False):
     else:
         out = state_dict
     for rp in replace_prefix:
-        replace = list(map(lambda a: (a, "{}{}".format(replace_prefix[rp], a[len(rp):])), filter(lambda a: a.startswith(rp), state_dict.keys())))
+        replace = list(
+            map(
+                lambda a: (a, "{}{}".format(replace_prefix[rp], a[len(rp) :])),
+                filter(lambda a: a.startswith(rp), state_dict.keys()),
+            )
+        )
         for x in replace:
             w = state_dict.pop(x[0])
             out[x[1]] = w
@@ -234,22 +266,31 @@ def transformers_convert(sd, prefix_from, prefix_to, number):
     for resblock in range(number):
         for x in resblock_to_replace:
             for y in ["weight", "bias"]:
-                k = "{}transformer.resblocks.{}.{}.{}".format(prefix_from, resblock, x, y)
-                k_to = "{}encoder.layers.{}.{}.{}".format(prefix_to, resblock, resblock_to_replace[x], y)
+                k = "{}transformer.resblocks.{}.{}.{}".format(
+                    prefix_from, resblock, x, y
+                )
+                k_to = "{}encoder.layers.{}.{}.{}".format(
+                    prefix_to, resblock, resblock_to_replace[x], y
+                )
                 if k in sd:
                     sd[k_to] = sd.pop(k)
 
         for y in ["weight", "bias"]:
-            k_from = "{}transformer.resblocks.{}.attn.in_proj_{}".format(prefix_from, resblock, y)
+            k_from = "{}transformer.resblocks.{}.attn.in_proj_{}".format(
+                prefix_from, resblock, y
+            )
             if k_from in sd:
                 weights = sd.pop(k_from)
                 shape_from = weights.shape[0] // 3
                 for x in range(3):
                     p = ["self_attn.q_proj", "self_attn.k_proj", "self_attn.v_proj"]
-                    k_to = "{}encoder.layers.{}.{}.{}".format(prefix_to, resblock, p[x], y)
-                    sd[k_to] = weights[shape_from*x:shape_from*(x + 1)]
+                    k_to = "{}encoder.layers.{}.{}.{}".format(
+                        prefix_to, resblock, p[x], y
+                    )
+                    sd[k_to] = weights[shape_from * x : shape_from * (x + 1)]
 
     return sd
+
 
 def clip_text_transformers_convert(sd, prefix_from, prefix_to):
     sd = transformers_convert(sd, prefix_from, "{}text_model.".format(prefix_to), 32)
@@ -260,7 +301,9 @@ def clip_text_transformers_convert(sd, prefix_from, prefix_to):
 
     tp = "{}text_projection".format(prefix_from)
     if tp in sd:
-        sd["{}text_projection.weight".format(prefix_to)] = sd.pop(tp).transpose(0, 1).contiguous()
+        sd["{}text_projection.weight".format(prefix_to)] = (
+            sd.pop(tp).transpose(0, 1).contiguous()
+        )
     return sd
 
 
@@ -329,8 +372,9 @@ UNET_MAP_BASIC = {
     ("time_embed.0.weight", "time_embedding.linear_1.weight"),
     ("time_embed.0.bias", "time_embedding.linear_1.bias"),
     ("time_embed.2.weight", "time_embedding.linear_2.weight"),
-    ("time_embed.2.bias", "time_embedding.linear_2.bias")
+    ("time_embed.2.bias", "time_embedding.linear_2.bias"),
 }
+
 
 def unet_to_diffusers(unet_config):
     if "num_res_blocks" not in unet_config:
@@ -348,28 +392,44 @@ def unet_to_diffusers(unet_config):
         n = 1 + (num_res_blocks[x] + 1) * x
         for i in range(num_res_blocks[x]):
             for b in UNET_MAP_RESNET:
-                diffusers_unet_map["down_blocks.{}.resnets.{}.{}".format(x, i, UNET_MAP_RESNET[b])] = "input_blocks.{}.0.{}".format(n, b)
+                diffusers_unet_map[
+                    "down_blocks.{}.resnets.{}.{}".format(x, i, UNET_MAP_RESNET[b])
+                ] = "input_blocks.{}.0.{}".format(n, b)
             num_transformers = transformer_depth.pop(0)
             if num_transformers > 0:
                 for b in UNET_MAP_ATTENTIONS:
-                    diffusers_unet_map["down_blocks.{}.attentions.{}.{}".format(x, i, b)] = "input_blocks.{}.1.{}".format(n, b)
+                    diffusers_unet_map[
+                        "down_blocks.{}.attentions.{}.{}".format(x, i, b)
+                    ] = "input_blocks.{}.1.{}".format(n, b)
                 for t in range(num_transformers):
                     for b in TRANSFORMER_BLOCKS:
-                        diffusers_unet_map["down_blocks.{}.attentions.{}.transformer_blocks.{}.{}".format(x, i, t, b)] = "input_blocks.{}.1.transformer_blocks.{}.{}".format(n, t, b)
+                        diffusers_unet_map[
+                            "down_blocks.{}.attentions.{}.transformer_blocks.{}.{}".format(
+                                x, i, t, b
+                            )
+                        ] = "input_blocks.{}.1.transformer_blocks.{}.{}".format(n, t, b)
             n += 1
         for k in ["weight", "bias"]:
-            diffusers_unet_map["down_blocks.{}.downsamplers.0.conv.{}".format(x, k)] = "input_blocks.{}.0.op.{}".format(n, k)
+            diffusers_unet_map["down_blocks.{}.downsamplers.0.conv.{}".format(x, k)] = (
+                "input_blocks.{}.0.op.{}".format(n, k)
+            )
 
     i = 0
     for b in UNET_MAP_ATTENTIONS:
-        diffusers_unet_map["mid_block.attentions.{}.{}".format(i, b)] = "middle_block.1.{}".format(b)
+        diffusers_unet_map["mid_block.attentions.{}.{}".format(i, b)] = (
+            "middle_block.1.{}".format(b)
+        )
     for t in range(transformers_mid):
         for b in TRANSFORMER_BLOCKS:
-            diffusers_unet_map["mid_block.attentions.{}.transformer_blocks.{}.{}".format(i, t, b)] = "middle_block.1.transformer_blocks.{}.{}".format(t, b)
+            diffusers_unet_map[
+                "mid_block.attentions.{}.transformer_blocks.{}.{}".format(i, t, b)
+            ] = "middle_block.1.transformer_blocks.{}.{}".format(t, b)
 
     for i, n in enumerate([0, 2]):
         for b in UNET_MAP_RESNET:
-            diffusers_unet_map["mid_block.resnets.{}.{}".format(i, UNET_MAP_RESNET[b])] = "middle_block.{}.{}".format(n, b)
+            diffusers_unet_map[
+                "mid_block.resnets.{}.{}".format(i, UNET_MAP_RESNET[b])
+            ] = "middle_block.{}.{}".format(n, b)
 
     num_res_blocks = list(reversed(num_res_blocks))
     for x in range(num_blocks):
@@ -378,19 +438,31 @@ def unet_to_diffusers(unet_config):
         for i in range(l):
             c = 0
             for b in UNET_MAP_RESNET:
-                diffusers_unet_map["up_blocks.{}.resnets.{}.{}".format(x, i, UNET_MAP_RESNET[b])] = "output_blocks.{}.0.{}".format(n, b)
+                diffusers_unet_map[
+                    "up_blocks.{}.resnets.{}.{}".format(x, i, UNET_MAP_RESNET[b])
+                ] = "output_blocks.{}.0.{}".format(n, b)
             c += 1
             num_transformers = transformer_depth_output.pop()
             if num_transformers > 0:
                 c += 1
                 for b in UNET_MAP_ATTENTIONS:
-                    diffusers_unet_map["up_blocks.{}.attentions.{}.{}".format(x, i, b)] = "output_blocks.{}.1.{}".format(n, b)
+                    diffusers_unet_map[
+                        "up_blocks.{}.attentions.{}.{}".format(x, i, b)
+                    ] = "output_blocks.{}.1.{}".format(n, b)
                 for t in range(num_transformers):
                     for b in TRANSFORMER_BLOCKS:
-                        diffusers_unet_map["up_blocks.{}.attentions.{}.transformer_blocks.{}.{}".format(x, i, t, b)] = "output_blocks.{}.1.transformer_blocks.{}.{}".format(n, t, b)
+                        diffusers_unet_map[
+                            "up_blocks.{}.attentions.{}.transformer_blocks.{}.{}".format(
+                                x, i, t, b
+                            )
+                        ] = "output_blocks.{}.1.transformer_blocks.{}.{}".format(
+                            n, t, b
+                        )
             if i == l - 1:
                 for k in ["weight", "bias"]:
-                    diffusers_unet_map["up_blocks.{}.upsamplers.0.conv.{}".format(x, k)] = "output_blocks.{}.{}.conv.{}".format(n, c, k)
+                    diffusers_unet_map[
+                        "up_blocks.{}.upsamplers.0.conv.{}".format(x, k)
+                    ] = "output_blocks.{}.{}.conv.{}".format(n, c, k)
             n += 1
 
     for k in UNET_MAP_BASIC:
@@ -398,10 +470,12 @@ def unet_to_diffusers(unet_config):
 
     return diffusers_unet_map
 
+
 def swap_scale_shift(weight):
     shift, scale = weight.chunk(2, dim=0)
     new_weight = torch.cat([scale, shift], dim=0)
     return new_weight
+
 
 MMDIT_MAP_BASIC = {
     ("context_embedder.bias", "context_embedder.bias"),
@@ -418,7 +492,11 @@ MMDIT_MAP_BASIC = {
     ("y_embedder.mlp.2.weight", "time_text_embed.text_embedder.linear_2.weight"),
     ("pos_embed", "pos_embed.pos_embed"),
     ("final_layer.adaLN_modulation.1.bias", "norm_out.linear.bias", swap_scale_shift),
-    ("final_layer.adaLN_modulation.1.weight", "norm_out.linear.weight", swap_scale_shift),
+    (
+        "final_layer.adaLN_modulation.1.weight",
+        "norm_out.linear.weight",
+        swap_scale_shift,
+    ),
     ("final_layer.linear.bias", "proj_out.bias"),
     ("final_layer.linear.weight", "proj_out.weight"),
 }
@@ -449,6 +527,7 @@ MMDIT_MAP_BLOCK = {
     ("x_block.mlp.fc2.bias", "ff.net.2.bias"),
     ("x_block.mlp.fc2.weight", "ff.net.2.weight"),
 }
+
 
 def mmdit_to_diffusers(mmdit_config, output_prefix=""):
     key_map = {}
@@ -483,8 +562,20 @@ def mmdit_to_diffusers(mmdit_config, output_prefix=""):
             key_map["{}.{}".format(block_from, k[1])] = "{}.{}".format(block_to, k[0])
 
     map_basic = MMDIT_MAP_BASIC.copy()
-    map_basic.add(("joint_blocks.{}.context_block.adaLN_modulation.1.bias".format(depth - 1), "transformer_blocks.{}.norm1_context.linear.bias".format(depth - 1), swap_scale_shift))
-    map_basic.add(("joint_blocks.{}.context_block.adaLN_modulation.1.weight".format(depth - 1), "transformer_blocks.{}.norm1_context.linear.weight".format(depth - 1), swap_scale_shift))
+    map_basic.add(
+        (
+            "joint_blocks.{}.context_block.adaLN_modulation.1.bias".format(depth - 1),
+            "transformer_blocks.{}.norm1_context.linear.bias".format(depth - 1),
+            swap_scale_shift,
+        )
+    )
+    map_basic.add(
+        (
+            "joint_blocks.{}.context_block.adaLN_modulation.1.weight".format(depth - 1),
+            "transformer_blocks.{}.norm1_context.linear.weight".format(depth - 1),
+            swap_scale_shift,
+        )
+    )
 
     for k in map_basic:
         if len(k) > 2:
@@ -494,14 +585,27 @@ def mmdit_to_diffusers(mmdit_config, output_prefix=""):
 
     return key_map
 
+
 PIXART_MAP_BASIC = {
-    ("csize_embedder.mlp.0.weight", "adaln_single.emb.resolution_embedder.linear_1.weight"),
+    (
+        "csize_embedder.mlp.0.weight",
+        "adaln_single.emb.resolution_embedder.linear_1.weight",
+    ),
     ("csize_embedder.mlp.0.bias", "adaln_single.emb.resolution_embedder.linear_1.bias"),
-    ("csize_embedder.mlp.2.weight", "adaln_single.emb.resolution_embedder.linear_2.weight"),
+    (
+        "csize_embedder.mlp.2.weight",
+        "adaln_single.emb.resolution_embedder.linear_2.weight",
+    ),
     ("csize_embedder.mlp.2.bias", "adaln_single.emb.resolution_embedder.linear_2.bias"),
-    ("ar_embedder.mlp.0.weight", "adaln_single.emb.aspect_ratio_embedder.linear_1.weight"),
+    (
+        "ar_embedder.mlp.0.weight",
+        "adaln_single.emb.aspect_ratio_embedder.linear_1.weight",
+    ),
     ("ar_embedder.mlp.0.bias", "adaln_single.emb.aspect_ratio_embedder.linear_1.bias"),
-    ("ar_embedder.mlp.2.weight", "adaln_single.emb.aspect_ratio_embedder.linear_2.weight"),
+    (
+        "ar_embedder.mlp.2.weight",
+        "adaln_single.emb.aspect_ratio_embedder.linear_2.weight",
+    ),
     ("ar_embedder.mlp.2.bias", "adaln_single.emb.aspect_ratio_embedder.linear_2.bias"),
     ("x_embedder.proj.weight", "pos_embed.proj.weight"),
     ("x_embedder.proj.bias", "pos_embed.proj.bias"),
@@ -529,9 +633,10 @@ PIXART_MAP_BLOCK = {
     ("mlp.fc1.bias", "ff.net.0.proj.bias"),
     ("mlp.fc2.weight", "ff.net.2.weight"),
     ("mlp.fc2.bias", "ff.net.2.bias"),
-    ("cross_attn.proj.weight" ,"attn2.to_out.0.weight"),
-    ("cross_attn.proj.bias"   ,"attn2.to_out.0.bias"),
+    ("cross_attn.proj.weight", "attn2.to_out.0.weight"),
+    ("cross_attn.proj.bias", "attn2.to_out.0.bias"),
 }
+
 
 def pixart_to_diffusers(mmdit_config, output_prefix=""):
     key_map = {}
@@ -566,6 +671,7 @@ def pixart_to_diffusers(mmdit_config, output_prefix=""):
 
     return key_map
 
+
 def auraflow_to_diffusers(mmdit_config, output_prefix=""):
     n_double_layers = mmdit_config.get("n_double_layers", 0)
     n_layers = mmdit_config.get("n_layers", 0)
@@ -577,41 +683,43 @@ def auraflow_to_diffusers(mmdit_config, output_prefix=""):
             prefix_from = "joint_transformer_blocks"
             prefix_to = "{}double_layers".format(output_prefix)
             block_map = {
-                            "attn.to_q.weight": "attn.w2q.weight",
-                            "attn.to_k.weight": "attn.w2k.weight",
-                            "attn.to_v.weight": "attn.w2v.weight",
-                            "attn.to_out.0.weight": "attn.w2o.weight",
-                            "attn.add_q_proj.weight": "attn.w1q.weight",
-                            "attn.add_k_proj.weight": "attn.w1k.weight",
-                            "attn.add_v_proj.weight": "attn.w1v.weight",
-                            "attn.to_add_out.weight": "attn.w1o.weight",
-                            "ff.linear_1.weight": "mlpX.c_fc1.weight",
-                            "ff.linear_2.weight": "mlpX.c_fc2.weight",
-                            "ff.out_projection.weight": "mlpX.c_proj.weight",
-                            "ff_context.linear_1.weight": "mlpC.c_fc1.weight",
-                            "ff_context.linear_2.weight": "mlpC.c_fc2.weight",
-                            "ff_context.out_projection.weight": "mlpC.c_proj.weight",
-                            "norm1.linear.weight": "modX.1.weight",
-                            "norm1_context.linear.weight": "modC.1.weight",
-                        }
+                "attn.to_q.weight": "attn.w2q.weight",
+                "attn.to_k.weight": "attn.w2k.weight",
+                "attn.to_v.weight": "attn.w2v.weight",
+                "attn.to_out.0.weight": "attn.w2o.weight",
+                "attn.add_q_proj.weight": "attn.w1q.weight",
+                "attn.add_k_proj.weight": "attn.w1k.weight",
+                "attn.add_v_proj.weight": "attn.w1v.weight",
+                "attn.to_add_out.weight": "attn.w1o.weight",
+                "ff.linear_1.weight": "mlpX.c_fc1.weight",
+                "ff.linear_2.weight": "mlpX.c_fc2.weight",
+                "ff.out_projection.weight": "mlpX.c_proj.weight",
+                "ff_context.linear_1.weight": "mlpC.c_fc1.weight",
+                "ff_context.linear_2.weight": "mlpC.c_fc2.weight",
+                "ff_context.out_projection.weight": "mlpC.c_proj.weight",
+                "norm1.linear.weight": "modX.1.weight",
+                "norm1_context.linear.weight": "modC.1.weight",
+            }
         else:
             index = i - n_double_layers
             prefix_from = "single_transformer_blocks"
             prefix_to = "{}single_layers".format(output_prefix)
 
             block_map = {
-                            "attn.to_q.weight": "attn.w1q.weight",
-                            "attn.to_k.weight": "attn.w1k.weight",
-                            "attn.to_v.weight": "attn.w1v.weight",
-                            "attn.to_out.0.weight": "attn.w1o.weight",
-                            "norm1.linear.weight": "modCX.1.weight",
-                            "ff.linear_1.weight": "mlp.c_fc1.weight",
-                            "ff.linear_2.weight": "mlp.c_fc2.weight",
-                            "ff.out_projection.weight": "mlp.c_proj.weight"
-                        }
+                "attn.to_q.weight": "attn.w1q.weight",
+                "attn.to_k.weight": "attn.w1k.weight",
+                "attn.to_v.weight": "attn.w1v.weight",
+                "attn.to_out.0.weight": "attn.w1o.weight",
+                "norm1.linear.weight": "modCX.1.weight",
+                "ff.linear_1.weight": "mlp.c_fc1.weight",
+                "ff.linear_2.weight": "mlp.c_fc2.weight",
+                "ff.out_projection.weight": "mlp.c_proj.weight",
+            }
 
         for k in block_map:
-            key_map["{}.{}.{}".format(prefix_from, index, k)] = "{}.{}.{}".format(prefix_to, index, block_map[k])
+            key_map["{}.{}.{}".format(prefix_from, index, k)] = "{}.{}.{}".format(
+                prefix_to, index, block_map[k]
+            )
 
     MAP_BASIC = {
         ("positional_encoding", "pos_embed.pos_embed"),
@@ -635,6 +743,7 @@ def auraflow_to_diffusers(mmdit_config, output_prefix=""):
 
     return key_map
 
+
 def flux_to_diffusers(mmdit_config, output_prefix=""):
     n_double_layers = mmdit_config.get("depth", 0)
     n_single_layers = mmdit_config.get("depth_single_blocks", 0)
@@ -650,47 +759,58 @@ def flux_to_diffusers(mmdit_config, output_prefix=""):
             qkv = "{}.img_attn.qkv.{}".format(prefix_to, end)
             key_map["{}to_q.{}".format(k, end)] = (qkv, (0, 0, hidden_size))
             key_map["{}to_k.{}".format(k, end)] = (qkv, (0, hidden_size, hidden_size))
-            key_map["{}to_v.{}".format(k, end)] = (qkv, (0, hidden_size * 2, hidden_size))
+            key_map["{}to_v.{}".format(k, end)] = (
+                qkv,
+                (0, hidden_size * 2, hidden_size),
+            )
 
             k = "{}.attn.".format(prefix_from)
             qkv = "{}.txt_attn.qkv.{}".format(prefix_to, end)
             key_map["{}add_q_proj.{}".format(k, end)] = (qkv, (0, 0, hidden_size))
-            key_map["{}add_k_proj.{}".format(k, end)] = (qkv, (0, hidden_size, hidden_size))
-            key_map["{}add_v_proj.{}".format(k, end)] = (qkv, (0, hidden_size * 2, hidden_size))
+            key_map["{}add_k_proj.{}".format(k, end)] = (
+                qkv,
+                (0, hidden_size, hidden_size),
+            )
+            key_map["{}add_v_proj.{}".format(k, end)] = (
+                qkv,
+                (0, hidden_size * 2, hidden_size),
+            )
 
         block_map = {
-                        "attn.to_out.0.weight": "img_attn.proj.weight",
-                        "attn.to_out.0.bias": "img_attn.proj.bias",
-                        "norm1.linear.weight": "img_mod.lin.weight",
-                        "norm1.linear.bias": "img_mod.lin.bias",
-                        "norm1_context.linear.weight": "txt_mod.lin.weight",
-                        "norm1_context.linear.bias": "txt_mod.lin.bias",
-                        "attn.to_add_out.weight": "txt_attn.proj.weight",
-                        "attn.to_add_out.bias": "txt_attn.proj.bias",
-                        "ff.net.0.proj.weight": "img_mlp.0.weight",
-                        "ff.net.0.proj.bias": "img_mlp.0.bias",
-                        "ff.net.2.weight": "img_mlp.2.weight",
-                        "ff.net.2.bias": "img_mlp.2.bias",
-                        "ff_context.net.0.proj.weight": "txt_mlp.0.weight",
-                        "ff_context.net.0.proj.bias": "txt_mlp.0.bias",
-                        "ff_context.net.2.weight": "txt_mlp.2.weight",
-                        "ff_context.net.2.bias": "txt_mlp.2.bias",
-                        "ff.linear_in.weight": "img_mlp.0.weight",  # LyCoris LoKr
-                        "ff.linear_in.bias": "img_mlp.0.bias",
-                        "ff.linear_out.weight": "img_mlp.2.weight",
-                        "ff.linear_out.bias": "img_mlp.2.bias",
-                        "ff_context.linear_in.weight": "txt_mlp.0.weight",
-                        "ff_context.linear_in.bias": "txt_mlp.0.bias",
-                        "ff_context.linear_out.weight": "txt_mlp.2.weight",
-                        "ff_context.linear_out.bias": "txt_mlp.2.bias",
-                        "attn.norm_q.weight": "img_attn.norm.query_norm.weight",
-                        "attn.norm_k.weight": "img_attn.norm.key_norm.weight",
-                        "attn.norm_added_q.weight": "txt_attn.norm.query_norm.weight",
-                        "attn.norm_added_k.weight": "txt_attn.norm.key_norm.weight",
-                    }
+            "attn.to_out.0.weight": "img_attn.proj.weight",
+            "attn.to_out.0.bias": "img_attn.proj.bias",
+            "norm1.linear.weight": "img_mod.lin.weight",
+            "norm1.linear.bias": "img_mod.lin.bias",
+            "norm1_context.linear.weight": "txt_mod.lin.weight",
+            "norm1_context.linear.bias": "txt_mod.lin.bias",
+            "attn.to_add_out.weight": "txt_attn.proj.weight",
+            "attn.to_add_out.bias": "txt_attn.proj.bias",
+            "ff.net.0.proj.weight": "img_mlp.0.weight",
+            "ff.net.0.proj.bias": "img_mlp.0.bias",
+            "ff.net.2.weight": "img_mlp.2.weight",
+            "ff.net.2.bias": "img_mlp.2.bias",
+            "ff_context.net.0.proj.weight": "txt_mlp.0.weight",
+            "ff_context.net.0.proj.bias": "txt_mlp.0.bias",
+            "ff_context.net.2.weight": "txt_mlp.2.weight",
+            "ff_context.net.2.bias": "txt_mlp.2.bias",
+            "ff.linear_in.weight": "img_mlp.0.weight",  # LyCoris LoKr
+            "ff.linear_in.bias": "img_mlp.0.bias",
+            "ff.linear_out.weight": "img_mlp.2.weight",
+            "ff.linear_out.bias": "img_mlp.2.bias",
+            "ff_context.linear_in.weight": "txt_mlp.0.weight",
+            "ff_context.linear_in.bias": "txt_mlp.0.bias",
+            "ff_context.linear_out.weight": "txt_mlp.2.weight",
+            "ff_context.linear_out.bias": "txt_mlp.2.bias",
+            "attn.norm_q.weight": "img_attn.norm.query_norm.weight",
+            "attn.norm_k.weight": "img_attn.norm.key_norm.weight",
+            "attn.norm_added_q.weight": "txt_attn.norm.query_norm.weight",
+            "attn.norm_added_k.weight": "txt_attn.norm.key_norm.weight",
+        }
 
         for k in block_map:
-            key_map["{}.{}".format(prefix_from, k)] = "{}.{}".format(prefix_to, block_map[k])
+            key_map["{}.{}".format(prefix_from, k)] = "{}.{}".format(
+                prefix_to, block_map[k]
+            )
 
     for index in range(n_single_layers):
         prefix_from = "single_transformer_blocks.{}".format(index)
@@ -701,22 +821,30 @@ def flux_to_diffusers(mmdit_config, output_prefix=""):
             qkv = "{}.linear1.{}".format(prefix_to, end)
             key_map["{}to_q.{}".format(k, end)] = (qkv, (0, 0, hidden_size))
             key_map["{}to_k.{}".format(k, end)] = (qkv, (0, hidden_size, hidden_size))
-            key_map["{}to_v.{}".format(k, end)] = (qkv, (0, hidden_size * 2, hidden_size))
-            key_map["{}.proj_mlp.{}".format(prefix_from, end)] = (qkv, (0, hidden_size * 3, hidden_size * 4))
+            key_map["{}to_v.{}".format(k, end)] = (
+                qkv,
+                (0, hidden_size * 2, hidden_size),
+            )
+            key_map["{}.proj_mlp.{}".format(prefix_from, end)] = (
+                qkv,
+                (0, hidden_size * 3, hidden_size * 4),
+            )
 
         block_map = {
-                        "norm.linear.weight": "modulation.lin.weight",
-                        "norm.linear.bias": "modulation.lin.bias",
-                        "proj_out.weight": "linear2.weight",
-                        "proj_out.bias": "linear2.bias",
-                        "attn.norm_q.weight": "norm.query_norm.weight",
-                        "attn.norm_k.weight": "norm.key_norm.weight",
-                        "attn.to_qkv_mlp_proj.weight": "linear1.weight", # Flux 2
-                        "attn.to_out.weight": "linear2.weight", # Flux 2
-                    }
+            "norm.linear.weight": "modulation.lin.weight",
+            "norm.linear.bias": "modulation.lin.bias",
+            "proj_out.weight": "linear2.weight",
+            "proj_out.bias": "linear2.bias",
+            "attn.norm_q.weight": "norm.query_norm.weight",
+            "attn.norm_k.weight": "norm.key_norm.weight",
+            "attn.to_qkv_mlp_proj.weight": "linear1.weight",  # Flux 2
+            "attn.to_out.weight": "linear2.weight",  # Flux 2
+        }
 
         for k in block_map:
-            key_map["{}.{}".format(prefix_from, k)] = "{}.{}".format(prefix_to, block_map[k])
+            key_map["{}.{}".format(prefix_from, k)] = "{}.{}".format(
+                prefix_to, block_map[k]
+            )
 
     MAP_BASIC = {
         ("final_layer.linear.bias", "proj_out.bias"),
@@ -724,21 +852,47 @@ def flux_to_diffusers(mmdit_config, output_prefix=""):
         ("img_in.bias", "x_embedder.bias"),
         ("img_in.weight", "x_embedder.weight"),
         ("time_in.in_layer.bias", "time_text_embed.timestep_embedder.linear_1.bias"),
-        ("time_in.in_layer.weight", "time_text_embed.timestep_embedder.linear_1.weight"),
+        (
+            "time_in.in_layer.weight",
+            "time_text_embed.timestep_embedder.linear_1.weight",
+        ),
         ("time_in.out_layer.bias", "time_text_embed.timestep_embedder.linear_2.bias"),
-        ("time_in.out_layer.weight", "time_text_embed.timestep_embedder.linear_2.weight"),
+        (
+            "time_in.out_layer.weight",
+            "time_text_embed.timestep_embedder.linear_2.weight",
+        ),
         ("txt_in.bias", "context_embedder.bias"),
         ("txt_in.weight", "context_embedder.weight"),
         ("vector_in.in_layer.bias", "time_text_embed.text_embedder.linear_1.bias"),
         ("vector_in.in_layer.weight", "time_text_embed.text_embedder.linear_1.weight"),
         ("vector_in.out_layer.bias", "time_text_embed.text_embedder.linear_2.bias"),
         ("vector_in.out_layer.weight", "time_text_embed.text_embedder.linear_2.weight"),
-        ("guidance_in.in_layer.bias", "time_text_embed.guidance_embedder.linear_1.bias"),
-        ("guidance_in.in_layer.weight", "time_text_embed.guidance_embedder.linear_1.weight"),
-        ("guidance_in.out_layer.bias", "time_text_embed.guidance_embedder.linear_2.bias"),
-        ("guidance_in.out_layer.weight", "time_text_embed.guidance_embedder.linear_2.weight"),
-        ("final_layer.adaLN_modulation.1.bias", "norm_out.linear.bias", swap_scale_shift),
-        ("final_layer.adaLN_modulation.1.weight", "norm_out.linear.weight", swap_scale_shift),
+        (
+            "guidance_in.in_layer.bias",
+            "time_text_embed.guidance_embedder.linear_1.bias",
+        ),
+        (
+            "guidance_in.in_layer.weight",
+            "time_text_embed.guidance_embedder.linear_1.weight",
+        ),
+        (
+            "guidance_in.out_layer.bias",
+            "time_text_embed.guidance_embedder.linear_2.bias",
+        ),
+        (
+            "guidance_in.out_layer.weight",
+            "time_text_embed.guidance_embedder.linear_2.weight",
+        ),
+        (
+            "final_layer.adaLN_modulation.1.bias",
+            "norm_out.linear.bias",
+            swap_scale_shift,
+        ),
+        (
+            "final_layer.adaLN_modulation.1.weight",
+            "norm_out.linear.weight",
+            swap_scale_shift,
+        ),
         ("pos_embed_input.bias", "controlnet_x_embedder.bias"),
         ("pos_embed_input.weight", "controlnet_x_embedder.weight"),
     }
@@ -750,6 +904,7 @@ def flux_to_diffusers(mmdit_config, output_prefix=""):
             key_map[k[1]] = "{}{}".format(output_prefix, k[0])
 
     return key_map
+
 
 def z_image_to_diffusers(mmdit_config, output_prefix=""):
     n_layers = mmdit_config.get("n_layers", 0)
@@ -764,7 +919,10 @@ def z_image_to_diffusers(mmdit_config, output_prefix=""):
             qkv = "{}.attention.qkv.{}".format(prefix_to, end)
             key_map["{}to_q.{}".format(k, end)] = (qkv, (0, 0, hidden_size))
             key_map["{}to_k.{}".format(k, end)] = (qkv, (0, hidden_size, hidden_size))
-            key_map["{}to_v.{}".format(k, end)] = (qkv, (0, hidden_size * 2, hidden_size))
+            key_map["{}to_v.{}".format(k, end)] = (
+                qkv,
+                (0, hidden_size * 2, hidden_size),
+            )
 
         block_map = {
             "attention.norm_q.weight": "attention.q_norm.weight",
@@ -789,16 +947,27 @@ def z_image_to_diffusers(mmdit_config, output_prefix=""):
         add_block_keys("layers.{}".format(i), "{}layers.{}".format(output_prefix, i))
 
     for i in range(n_context_refiner):
-        add_block_keys("context_refiner.{}".format(i), "{}context_refiner.{}".format(output_prefix, i))
+        add_block_keys(
+            "context_refiner.{}".format(i),
+            "{}context_refiner.{}".format(output_prefix, i),
+        )
 
     for i in range(n_noise_refiner):
-        add_block_keys("noise_refiner.{}".format(i), "{}noise_refiner.{}".format(output_prefix, i))
+        add_block_keys(
+            "noise_refiner.{}".format(i), "{}noise_refiner.{}".format(output_prefix, i)
+        )
 
     MAP_BASIC = [
         ("final_layer.linear.weight", "all_final_layer.2-1.linear.weight"),
         ("final_layer.linear.bias", "all_final_layer.2-1.linear.bias"),
-        ("final_layer.adaLN_modulation.1.weight", "all_final_layer.2-1.adaLN_modulation.1.weight"),
-        ("final_layer.adaLN_modulation.1.bias", "all_final_layer.2-1.adaLN_modulation.1.bias"),
+        (
+            "final_layer.adaLN_modulation.1.weight",
+            "all_final_layer.2-1.adaLN_modulation.1.weight",
+        ),
+        (
+            "final_layer.adaLN_modulation.1.bias",
+            "all_final_layer.2-1.adaLN_modulation.1.bias",
+        ),
         ("x_embedder.weight", "all_x_embedder.2-1.weight"),
         ("x_embedder.bias", "all_x_embedder.2-1.bias"),
         ("x_pad_token", "x_pad_token"),
@@ -817,12 +986,18 @@ def z_image_to_diffusers(mmdit_config, output_prefix=""):
 
     return key_map
 
+
 def repeat_to_batch_size(tensor, batch_size, dim=0):
     if tensor.shape[dim] > batch_size:
         return tensor.narrow(dim, 0, batch_size)
     elif tensor.shape[dim] < batch_size:
-        return tensor.repeat(dim * [1] + [math.ceil(batch_size / tensor.shape[dim])] + [1] * (len(tensor.shape) - 1 - dim)).narrow(dim, 0, batch_size)
+        return tensor.repeat(
+            dim * [1]
+            + [math.ceil(batch_size / tensor.shape[dim])]
+            + [1] * (len(tensor.shape) - 1 - dim)
+        ).narrow(dim, 0, batch_size)
     return tensor
+
 
 def resize_to_batch_size(tensor, batch_size):
     in_batch_size = tensor.shape[0]
@@ -832,7 +1007,9 @@ def resize_to_batch_size(tensor, batch_size):
     if batch_size <= 1:
         return tensor[:batch_size]
 
-    output = torch.empty([batch_size] + list(tensor.shape)[1:], dtype=tensor.dtype, device=tensor.device)
+    output = torch.empty(
+        [batch_size] + list(tensor.shape)[1:], dtype=tensor.dtype, device=tensor.device
+    )
     if batch_size < in_batch_size:
         scale = (in_batch_size - 1) / (batch_size - 1)
         for i in range(batch_size):
@@ -843,6 +1020,7 @@ def resize_to_batch_size(tensor, batch_size):
             output[i] = tensor[min(math.floor((i + 0.5) * scale), in_batch_size - 1)]
 
     return output
+
 
 def resize_list_to_batch_size(l, batch_size):
     in_batch_size = len(l)
@@ -860,9 +1038,10 @@ def resize_list_to_batch_size(l, batch_size):
     else:
         scale = in_batch_size / batch_size
         for i in range(batch_size):
-           output.append(l[min(math.floor((i + 0.5) * scale), in_batch_size - 1)])
+            output.append(l[min(math.floor((i + 0.5) * scale), in_batch_size - 1)])
 
     return output
+
 
 def convert_sd_to(state_dict, dtype):
     keys = list(state_dict.keys())
@@ -870,15 +1049,18 @@ def convert_sd_to(state_dict, dtype):
         state_dict[k] = state_dict[k].to(dtype)
     return state_dict
 
-def safetensors_header(safetensors_path, max_size=100*1024*1024):
+
+def safetensors_header(safetensors_path, max_size=100 * 1024 * 1024):
     with open(safetensors_path, "rb") as f:
         header = f.read(8)
-        length_of_header = struct.unpack('<Q', header)[0]
+        length_of_header = struct.unpack("<Q", header)[0]
         if length_of_header > max_size:
             return None
         return f.read(length_of_header)
 
-ATTR_UNSET={}
+
+ATTR_UNSET = {}
+
 
 def set_attr(obj, attr, value):
     attrs = attr.split(".")
@@ -891,8 +1073,10 @@ def set_attr(obj, attr, value):
         setattr(obj, attrs[-1], value)
     return prev
 
+
 def set_attr_param(obj, attr, value):
     return set_attr(obj, attr, torch.nn.Parameter(value, requires_grad=False))
+
 
 def copy_to_param(obj, attr, value):
     # inplace update tensor instead of replacing it
@@ -901,6 +1085,7 @@ def copy_to_param(obj, attr, value):
         obj = getattr(obj, name)
     prev = getattr(obj, attrs[-1])
     prev.data.copy_(value)
+
 
 def get_attr(obj, attr: str):
     """Retrieves a nested attribute from an object using dot notation.
@@ -926,132 +1111,176 @@ def get_attr(obj, attr: str):
         obj = getattr(obj, name)
     return obj
 
+
 def bislerp(samples, width, height):
     def slerp(b1, b2, r):
-        '''slerps batches b1, b2 according to ratio r, batches should be flat e.g. NxC'''
+        """slerps batches b1, b2 according to ratio r, batches should be flat e.g. NxC"""
 
         c = b1.shape[-1]
 
-        #norms
+        # norms
         b1_norms = torch.norm(b1, dim=-1, keepdim=True)
         b2_norms = torch.norm(b2, dim=-1, keepdim=True)
 
-        #normalize
+        # normalize
         b1_normalized = b1 / b1_norms
         b2_normalized = b2 / b2_norms
 
-        #zero when norms are zero
-        b1_normalized[b1_norms.expand(-1,c) == 0.0] = 0.0
-        b2_normalized[b2_norms.expand(-1,c) == 0.0] = 0.0
+        # zero when norms are zero
+        b1_normalized[b1_norms.expand(-1, c) == 0.0] = 0.0
+        b2_normalized[b2_norms.expand(-1, c) == 0.0] = 0.0
 
-        #slerp
-        dot = (b1_normalized*b2_normalized).sum(1)
+        # slerp
+        dot = (b1_normalized * b2_normalized).sum(1)
         omega = torch.acos(dot)
         so = torch.sin(omega)
 
-        #technically not mathematically correct, but more pleasing?
-        res = (torch.sin((1.0-r.squeeze(1))*omega)/so).unsqueeze(1)*b1_normalized + (torch.sin(r.squeeze(1)*omega)/so).unsqueeze(1) * b2_normalized
-        res *= (b1_norms * (1.0-r) + b2_norms * r).expand(-1,c)
+        # technically not mathematically correct, but more pleasing?
+        res = (torch.sin((1.0 - r.squeeze(1)) * omega) / so).unsqueeze(
+            1
+        ) * b1_normalized + (torch.sin(r.squeeze(1) * omega) / so).unsqueeze(
+            1
+        ) * b2_normalized
+        res *= (b1_norms * (1.0 - r) + b2_norms * r).expand(-1, c)
 
-        #edge cases for same or polar opposites
+        # edge cases for same or polar opposites
         res[dot > 1 - 1e-5] = b1[dot > 1 - 1e-5]
-        res[dot < 1e-5 - 1] = (b1 * (1.0-r) + b2 * r)[dot < 1e-5 - 1]
+        res[dot < 1e-5 - 1] = (b1 * (1.0 - r) + b2 * r)[dot < 1e-5 - 1]
         return res
 
     def generate_bilinear_data(length_old, length_new, device):
-        coords_1 = torch.arange(length_old, dtype=torch.float32, device=device).reshape((1,1,1,-1))
-        coords_1 = torch.nn.functional.interpolate(coords_1, size=(1, length_new), mode="bilinear")
+        coords_1 = torch.arange(length_old, dtype=torch.float32, device=device).reshape(
+            (1, 1, 1, -1)
+        )
+        coords_1 = torch.nn.functional.interpolate(
+            coords_1, size=(1, length_new), mode="bilinear"
+        )
         ratios = coords_1 - coords_1.floor()
         coords_1 = coords_1.to(torch.int64)
 
-        coords_2 = torch.arange(length_old, dtype=torch.float32, device=device).reshape((1,1,1,-1)) + 1
-        coords_2[:,:,:,-1] -= 1
-        coords_2 = torch.nn.functional.interpolate(coords_2, size=(1, length_new), mode="bilinear")
+        coords_2 = (
+            torch.arange(length_old, dtype=torch.float32, device=device).reshape(
+                (1, 1, 1, -1)
+            )
+            + 1
+        )
+        coords_2[:, :, :, -1] -= 1
+        coords_2 = torch.nn.functional.interpolate(
+            coords_2, size=(1, length_new), mode="bilinear"
+        )
         coords_2 = coords_2.to(torch.int64)
         return ratios, coords_1, coords_2
 
     orig_dtype = samples.dtype
     samples = samples.float()
-    n,c,h,w = samples.shape
+    n, c, h, w = samples.shape
     h_new, w_new = (height, width)
 
-    #linear w
+    # linear w
     ratios, coords_1, coords_2 = generate_bilinear_data(w, w_new, samples.device)
     coords_1 = coords_1.expand((n, c, h, -1))
     coords_2 = coords_2.expand((n, c, h, -1))
     ratios = ratios.expand((n, 1, h, -1))
 
-    pass_1 = samples.gather(-1,coords_1).movedim(1, -1).reshape((-1,c))
-    pass_2 = samples.gather(-1,coords_2).movedim(1, -1).reshape((-1,c))
-    ratios = ratios.movedim(1, -1).reshape((-1,1))
+    pass_1 = samples.gather(-1, coords_1).movedim(1, -1).reshape((-1, c))
+    pass_2 = samples.gather(-1, coords_2).movedim(1, -1).reshape((-1, c))
+    ratios = ratios.movedim(1, -1).reshape((-1, 1))
 
     result = slerp(pass_1, pass_2, ratios)
     result = result.reshape(n, h, w_new, c).movedim(-1, 1)
 
-    #linear h
+    # linear h
     ratios, coords_1, coords_2 = generate_bilinear_data(h, h_new, samples.device)
-    coords_1 = coords_1.reshape((1,1,-1,1)).expand((n, c, -1, w_new))
-    coords_2 = coords_2.reshape((1,1,-1,1)).expand((n, c, -1, w_new))
-    ratios = ratios.reshape((1,1,-1,1)).expand((n, 1, -1, w_new))
+    coords_1 = coords_1.reshape((1, 1, -1, 1)).expand((n, c, -1, w_new))
+    coords_2 = coords_2.reshape((1, 1, -1, 1)).expand((n, c, -1, w_new))
+    ratios = ratios.reshape((1, 1, -1, 1)).expand((n, 1, -1, w_new))
 
-    pass_1 = result.gather(-2,coords_1).movedim(1, -1).reshape((-1,c))
-    pass_2 = result.gather(-2,coords_2).movedim(1, -1).reshape((-1,c))
-    ratios = ratios.movedim(1, -1).reshape((-1,1))
+    pass_1 = result.gather(-2, coords_1).movedim(1, -1).reshape((-1, c))
+    pass_2 = result.gather(-2, coords_2).movedim(1, -1).reshape((-1, c))
+    ratios = ratios.movedim(1, -1).reshape((-1, 1))
 
     result = slerp(pass_1, pass_2, ratios)
     result = result.reshape(n, h_new, w_new, c).movedim(-1, 1)
     return result.to(orig_dtype)
 
+
 def lanczos(samples, width, height):
-    #the below API is strict and expects grayscale to be squeezed
+    # the below API is strict and expects grayscale to be squeezed
     samples = samples.squeeze(1) if samples.shape[1] == 1 else samples.movedim(1, -1)
-    images = [Image.fromarray(np.clip(255. * image.cpu().numpy(), 0, 255).astype(np.uint8)) for image in samples]
-    images = [image.resize((width, height), resample=Image.Resampling.LANCZOS) for image in images]
-    images = [torch.from_numpy(np.array(image).astype(np.float32) / 255.0).movedim(-1, 0) for image in images]
+    images = [
+        Image.fromarray(np.clip(255.0 * image.cpu().numpy(), 0, 255).astype(np.uint8))
+        for image in samples
+    ]
+    images = [
+        image.resize((width, height), resample=Image.Resampling.LANCZOS)
+        for image in images
+    ]
+    images = [
+        torch.from_numpy(np.array(image).astype(np.float32) / 255.0).movedim(-1, 0)
+        for image in images
+    ]
     result = torch.stack(images)
     return result.to(samples.device, samples.dtype)
 
+
 def common_upscale(samples, width, height, upscale_method, crop):
-        orig_shape = tuple(samples.shape)
-        if len(orig_shape) > 4:
-            samples = samples.reshape(samples.shape[0], samples.shape[1], -1, samples.shape[-2], samples.shape[-1])
-            samples = samples.movedim(2, 1)
-            samples = samples.reshape(-1, orig_shape[1], orig_shape[-2], orig_shape[-1])
-        if crop == "center":
-            old_width = samples.shape[-1]
-            old_height = samples.shape[-2]
-            old_aspect = old_width / old_height
-            new_aspect = width / height
-            x = 0
-            y = 0
-            if old_aspect > new_aspect:
-                x = round((old_width - old_width * (new_aspect / old_aspect)) / 2)
-            elif old_aspect < new_aspect:
-                y = round((old_height - old_height * (old_aspect / new_aspect)) / 2)
-            s = samples.narrow(-2, y, old_height - y * 2).narrow(-1, x, old_width - x * 2)
-        else:
-            s = samples
+    orig_shape = tuple(samples.shape)
+    if len(orig_shape) > 4:
+        samples = samples.reshape(
+            samples.shape[0], samples.shape[1], -1, samples.shape[-2], samples.shape[-1]
+        )
+        samples = samples.movedim(2, 1)
+        samples = samples.reshape(-1, orig_shape[1], orig_shape[-2], orig_shape[-1])
+    if crop == "center":
+        old_width = samples.shape[-1]
+        old_height = samples.shape[-2]
+        old_aspect = old_width / old_height
+        new_aspect = width / height
+        x = 0
+        y = 0
+        if old_aspect > new_aspect:
+            x = round((old_width - old_width * (new_aspect / old_aspect)) / 2)
+        elif old_aspect < new_aspect:
+            y = round((old_height - old_height * (old_aspect / new_aspect)) / 2)
+        s = samples.narrow(-2, y, old_height - y * 2).narrow(-1, x, old_width - x * 2)
+    else:
+        s = samples
 
-        if upscale_method == "bislerp":
-            out = bislerp(s, width, height)
-        elif upscale_method == "lanczos":
-            out = lanczos(s, width, height)
-        else:
-            out = torch.nn.functional.interpolate(s, size=(height, width), mode=upscale_method)
+    if upscale_method == "bislerp":
+        out = bislerp(s, width, height)
+    elif upscale_method == "lanczos":
+        out = lanczos(s, width, height)
+    else:
+        out = torch.nn.functional.interpolate(
+            s, size=(height, width), mode=upscale_method
+        )
 
-        if len(orig_shape) == 4:
-            return out
+    if len(orig_shape) == 4:
+        return out
 
-        out = out.reshape((orig_shape[0], -1, orig_shape[1]) + (height, width))
-        return out.movedim(2, 1).reshape(orig_shape[:-2] + (height, width))
+    out = out.reshape((orig_shape[0], -1, orig_shape[1]) + (height, width))
+    return out.movedim(2, 1).reshape(orig_shape[:-2] + (height, width))
+
 
 def get_tiled_scale_steps(width, height, tile_x, tile_y, overlap):
     rows = 1 if height <= tile_y else math.ceil((height - overlap) / (tile_y - overlap))
     cols = 1 if width <= tile_x else math.ceil((width - overlap) / (tile_x - overlap))
     return rows * cols
 
+
 @torch.inference_mode()
-def tiled_scale_multidim(samples, function, tile=(64, 64), overlap=8, upscale_amount=4, out_channels=3, output_device="cpu", downscale=False, index_formulas=None, pbar=None):
+def tiled_scale_multidim(
+    samples,
+    function,
+    tile=(64, 64),
+    overlap=8,
+    upscale_amount=4,
+    out_channels=3,
+    output_device="cpu",
+    downscale=False,
+    index_formulas=None,
+    pbar=None,
+):
     dims = len(tile)
 
     if not (isinstance(upscale_amount, (tuple, list))):
@@ -1107,22 +1336,36 @@ def tiled_scale_multidim(samples, function, tile=(64, 64), overlap=8, upscale_am
             out.append(round(get_scale(i, a[i])))
         return out
 
-    output = torch.empty([samples.shape[0], out_channels] + mult_list_upscale(samples.shape[2:]), device=output_device)
+    output = torch.empty(
+        [samples.shape[0], out_channels] + mult_list_upscale(samples.shape[2:]),
+        device=output_device,
+    )
 
     for b in range(samples.shape[0]):
-        s = samples[b:b+1]
+        s = samples[b : b + 1]
 
         # handle entire input fitting in a single tile
-        if all(s.shape[d+2] <= tile[d] for d in range(dims)):
-            output[b:b+1] = function(s).to(output_device)
+        if all(s.shape[d + 2] <= tile[d] for d in range(dims)):
+            output[b : b + 1] = function(s).to(output_device)
             if pbar is not None:
                 pbar.update(1)
             continue
 
-        out = torch.zeros([s.shape[0], out_channels] + mult_list_upscale(s.shape[2:]), device=output_device)
-        out_div = torch.zeros([s.shape[0], out_channels] + mult_list_upscale(s.shape[2:]), device=output_device)
+        out = torch.zeros(
+            [s.shape[0], out_channels] + mult_list_upscale(s.shape[2:]),
+            device=output_device,
+        )
+        out_div = torch.zeros(
+            [s.shape[0], out_channels] + mult_list_upscale(s.shape[2:]),
+            device=output_device,
+        )
 
-        positions = [range(0, s.shape[d+2] - overlap[d], tile[d] - overlap[d]) if s.shape[d+2] > tile[d] else [0] for d in range(dims)]
+        positions = [
+            range(0, s.shape[d + 2] - overlap[d], tile[d] - overlap[d])
+            if s.shape[d + 2] > tile[d]
+            else [0]
+            for d in range(dims)
+        ]
 
         for it in itertools.product(*positions):
             s_in = s
@@ -1158,11 +1401,32 @@ def tiled_scale_multidim(samples, function, tile=(64, 64), overlap=8, upscale_am
             if pbar is not None:
                 pbar.update(1)
 
-        output[b:b+1] = out/out_div
+        output[b : b + 1] = out / out_div
     return output
 
-def tiled_scale(samples, function, tile_x=64, tile_y=64, overlap = 8, upscale_amount = 4, out_channels = 3, output_device="cpu", pbar = None):
-    return tiled_scale_multidim(samples, function, (tile_y, tile_x), overlap=overlap, upscale_amount=upscale_amount, out_channels=out_channels, output_device=output_device, pbar=pbar)
+
+def tiled_scale(
+    samples,
+    function,
+    tile_x=64,
+    tile_y=64,
+    overlap=8,
+    upscale_amount=4,
+    out_channels=3,
+    output_device="cpu",
+    pbar=None,
+):
+    return tiled_scale_multidim(
+        samples,
+        function,
+        (tile_y, tile_x),
+        overlap=overlap,
+        upscale_amount=upscale_amount,
+        out_channels=out_channels,
+        output_device=output_device,
+        pbar=pbar,
+    )
+
 
 def model_trange(*args, **kwargs):
     if not comfy.memory_management.aimdo_enabled:
@@ -1180,8 +1444,8 @@ def model_trange(*args, **kwargs):
             pbar.i1_time = time.time()
             pbar.set_postfix_str(" Model Initialization complete!  ")
         elif pbar._i == 2:
-            #bring forward the effective start time based the the diff between first and second iteration
-            #to attempt to remove load overhead from the final step rate estimate.
+            # bring forward the effective start time based the the diff between first and second iteration
+            # to attempt to remove load overhead from the final step rate estimate.
             pbar.start_t = pbar.i1_time - (time.time() - pbar.i1_time)
             pbar.set_postfix_str("")
 
@@ -1190,19 +1454,27 @@ def model_trange(*args, **kwargs):
     pbar.update = warmup_update
     return pbar
 
+
 PROGRESS_BAR_ENABLED = True
+
+
 def set_progress_bar_enabled(enabled):
     global PROGRESS_BAR_ENABLED
     PROGRESS_BAR_ENABLED = enabled
 
+
 PROGRESS_BAR_HOOK = None
+
+
 def set_progress_bar_global_hook(function):
     global PROGRESS_BAR_HOOK
     PROGRESS_BAR_HOOK = function
 
+
 # Throttle settings for progress bar updates to reduce WebSocket flooding
 PROGRESS_THROTTLE_MIN_INTERVAL = 0.1  # 100ms minimum between updates
-PROGRESS_THROTTLE_MIN_PERCENT = 0.5   # 0.5% minimum progress change
+PROGRESS_THROTTLE_MIN_PERCENT = 0.5  # 0.5% minimum progress change
+
 
 class ProgressBar:
     def __init__(self, total, node_id=None):
@@ -1222,9 +1494,9 @@ class ProgressBar:
         self.current = value
         if self.hook is not None:
             current_time = time.perf_counter()
-            is_first = (self._last_sent_value < 0)
-            is_final = (value >= self.total)
-            has_preview = (preview is not None)
+            is_first = self._last_sent_value < 0
+            is_final = value >= self.total
+            has_preview = preview is not None
 
             # Always send immediately for previews, first update, or final update
             if has_preview or is_first or is_final:
@@ -1235,18 +1507,24 @@ class ProgressBar:
 
             # Apply throttling for regular progress updates
             if self.total > 0:
-                percent_changed = ((value - max(0, self._last_sent_value)) / self.total) * 100
+                percent_changed = (
+                    (value - max(0, self._last_sent_value)) / self.total
+                ) * 100
             else:
                 percent_changed = 100
             time_elapsed = current_time - self._last_update_time
 
-            if time_elapsed >= PROGRESS_THROTTLE_MIN_INTERVAL and percent_changed >= PROGRESS_THROTTLE_MIN_PERCENT:
+            if (
+                time_elapsed >= PROGRESS_THROTTLE_MIN_INTERVAL
+                and percent_changed >= PROGRESS_THROTTLE_MIN_PERCENT
+            ):
                 self.hook(self.current, self.total, preview, node_id=self.node_id)
                 self._last_update_time = current_time
                 self._last_sent_value = value
 
     def update(self, value):
         self.update_absolute(self.current + value)
+
 
 def reshape_mask(input_mask, output_shape):
     dims = len(output_shape) - 2
@@ -1255,60 +1533,76 @@ def reshape_mask(input_mask, output_shape):
         scale_mode = "linear"
 
     if dims == 2:
-        input_mask = input_mask.reshape((-1, 1, input_mask.shape[-2], input_mask.shape[-1]))
+        input_mask = input_mask.reshape(
+            (-1, 1, input_mask.shape[-2], input_mask.shape[-1])
+        )
         scale_mode = "bilinear"
 
     if dims == 3:
         if len(input_mask.shape) < 5:
-            input_mask = input_mask.reshape((1, 1, -1, input_mask.shape[-2], input_mask.shape[-1]))
+            input_mask = input_mask.reshape(
+                (1, 1, -1, input_mask.shape[-2], input_mask.shape[-1])
+            )
         scale_mode = "trilinear"
 
-    mask = torch.nn.functional.interpolate(input_mask, size=output_shape[2:], mode=scale_mode)
+    mask = torch.nn.functional.interpolate(
+        input_mask, size=output_shape[2:], mode=scale_mode
+    )
     if mask.shape[1] < output_shape[1]:
-        mask = mask.repeat((1, output_shape[1]) + (1,) * dims)[:,:output_shape[1]]
+        mask = mask.repeat((1, output_shape[1]) + (1,) * dims)[:, : output_shape[1]]
     mask = repeat_to_batch_size(mask, output_shape[0])
     return mask
 
+
 def upscale_dit_mask(mask: torch.Tensor, img_size_in, img_size_out):
-        hi, wi = img_size_in
-        ho, wo = img_size_out
-        # if it's already the correct size, no need to do anything
-        if (hi, wi) == (ho, wo):
-            return mask
-        if mask.ndim == 2:
-            mask = mask.unsqueeze(0)
-        if mask.ndim != 3:
-            raise ValueError(f"Got a mask of shape {list(mask.shape)}, expected [b, q, k] or [q, k]")
-        txt_tokens = mask.shape[1] - (hi * wi)
-        # quadrants of the mask
-        txt_to_txt = mask[:, :txt_tokens, :txt_tokens]
-        txt_to_img = mask[:, :txt_tokens, txt_tokens:]
-        img_to_img = mask[:, txt_tokens:, txt_tokens:]
-        img_to_txt = mask[:, txt_tokens:, :txt_tokens]
-
-        # convert to 1d x 2d, interpolate, then back to 1d x 1d
-        txt_to_img = rearrange  (txt_to_img, "b t (h w) -> b t h w", h=hi, w=wi)
-        txt_to_img = interpolate(txt_to_img, size=img_size_out, mode="bilinear")
-        txt_to_img = rearrange  (txt_to_img, "b t h w -> b t (h w)")
-        # this one is hard because we have to do it twice
-        # convert to 1d x 2d, interpolate, then to 2d x 1d, interpolate, then 1d x 1d
-        img_to_img = rearrange  (img_to_img, "b hw (h w) -> b hw h w", h=hi, w=wi)
-        img_to_img = interpolate(img_to_img, size=img_size_out, mode="bilinear")
-        img_to_img = rearrange  (img_to_img, "b (hk wk) hq wq -> b (hq wq) hk wk", hk=hi, wk=wi)
-        img_to_img = interpolate(img_to_img, size=img_size_out, mode="bilinear")
-        img_to_img = rearrange  (img_to_img, "b (hq wq) hk wk -> b (hk wk) (hq wq)", hq=ho, wq=wo)
-        # convert to 2d x 1d, interpolate, then back to 1d x 1d
-        img_to_txt = rearrange  (img_to_txt, "b (h w) t -> b t h w", h=hi, w=wi)
-        img_to_txt = interpolate(img_to_txt, size=img_size_out, mode="bilinear")
-        img_to_txt = rearrange  (img_to_txt, "b t h w -> b (h w) t")
-
-        # reassemble the mask from blocks
-        out = torch.cat([
-            torch.cat([txt_to_txt, txt_to_img], dim=2),
-            torch.cat([img_to_txt, img_to_img], dim=2)],
-            dim=1
+    hi, wi = img_size_in
+    ho, wo = img_size_out
+    # if it's already the correct size, no need to do anything
+    if (hi, wi) == (ho, wo):
+        return mask
+    if mask.ndim == 2:
+        mask = mask.unsqueeze(0)
+    if mask.ndim != 3:
+        raise ValueError(
+            f"Got a mask of shape {list(mask.shape)}, expected [b, q, k] or [q, k]"
         )
-        return out
+    txt_tokens = mask.shape[1] - (hi * wi)
+    # quadrants of the mask
+    txt_to_txt = mask[:, :txt_tokens, :txt_tokens]
+    txt_to_img = mask[:, :txt_tokens, txt_tokens:]
+    img_to_img = mask[:, txt_tokens:, txt_tokens:]
+    img_to_txt = mask[:, txt_tokens:, :txt_tokens]
+
+    # convert to 1d x 2d, interpolate, then back to 1d x 1d
+    txt_to_img = rearrange(txt_to_img, "b t (h w) -> b t h w", h=hi, w=wi)
+    txt_to_img = interpolate(txt_to_img, size=img_size_out, mode="bilinear")
+    txt_to_img = rearrange(txt_to_img, "b t h w -> b t (h w)")
+    # this one is hard because we have to do it twice
+    # convert to 1d x 2d, interpolate, then to 2d x 1d, interpolate, then 1d x 1d
+    img_to_img = rearrange(img_to_img, "b hw (h w) -> b hw h w", h=hi, w=wi)
+    img_to_img = interpolate(img_to_img, size=img_size_out, mode="bilinear")
+    img_to_img = rearrange(
+        img_to_img, "b (hk wk) hq wq -> b (hq wq) hk wk", hk=hi, wk=wi
+    )
+    img_to_img = interpolate(img_to_img, size=img_size_out, mode="bilinear")
+    img_to_img = rearrange(
+        img_to_img, "b (hq wq) hk wk -> b (hk wk) (hq wq)", hq=ho, wq=wo
+    )
+    # convert to 2d x 1d, interpolate, then back to 1d x 1d
+    img_to_txt = rearrange(img_to_txt, "b (h w) t -> b t h w", h=hi, w=wi)
+    img_to_txt = interpolate(img_to_txt, size=img_size_out, mode="bilinear")
+    img_to_txt = rearrange(img_to_txt, "b t h w -> b (h w) t")
+
+    # reassemble the mask from blocks
+    out = torch.cat(
+        [
+            torch.cat([txt_to_txt, txt_to_img], dim=2),
+            torch.cat([img_to_txt, img_to_img], dim=2),
+        ],
+        dim=1,
+    )
+    return out
+
 
 def pack_latents(latents):
     latent_shapes = []
@@ -1319,6 +1613,7 @@ def pack_latents(latents):
 
     latent = torch.cat(tensors, dim=-1)
     return latent, latent_shapes
+
 
 def unpack_latents(combined_latent, latent_shapes):
     if len(latent_shapes) > 1:
@@ -1332,12 +1627,14 @@ def unpack_latents(combined_latent, latent_shapes):
         output_tensors = [combined_latent]
     return output_tensors
 
+
 def detect_layer_quantization(state_dict, prefix):
     for k in state_dict:
         if k.startswith(prefix) and k.endswith(".comfy_quant"):
             logging.info("Found quantization metadata version 1")
             return {"mixed_ops": True}
     return None
+
 
 def convert_old_quants(state_dict, model_prefix="", metadata={}):
     if metadata is None:
@@ -1370,17 +1667,21 @@ def convert_old_quants(state_dict, model_prefix="", metadata={}):
                 w = state_dict.pop(k)
                 layer = None
                 if k_out.endswith(".scale_weight"):
-                    layer = k_out[:-len(".scale_weight")]
+                    layer = k_out[: -len(".scale_weight")]
                     k_out = "{}.weight_scale".format(layer)
 
                 if layer is not None:
-                    layer_conf = {"format": "float8_e4m3fn"}  # TODO: check if anyone did some non e4m3fn scaled checkpoints
+                    layer_conf = {
+                        "format": "float8_e4m3fn"
+                    }  # TODO: check if anyone did some non e4m3fn scaled checkpoints
                     if full_precision_matrix_mult:
-                        layer_conf["full_precision_matrix_mult"] = full_precision_matrix_mult
+                        layer_conf["full_precision_matrix_mult"] = (
+                            full_precision_matrix_mult
+                        )
                     layers[layer] = layer_conf
 
                 if k_out.endswith(".scale_input"):
-                    layer = k_out[:-len(".scale_input")]
+                    layer = k_out[: -len(".scale_input")]
                     k_out = "{}.input_scale".format(layer)
                     if w.item() == 1.0:
                         continue
@@ -1395,9 +1696,12 @@ def convert_old_quants(state_dict, model_prefix="", metadata={}):
     if quant_metadata is not None:
         layers = quant_metadata["layers"]
         for k, v in layers.items():
-            state_dict["{}.comfy_quant".format(k)] = torch.tensor(list(json.dumps(v).encode('utf-8')), dtype=torch.uint8)
+            state_dict["{}.comfy_quant".format(k)] = torch.tensor(
+                list(json.dumps(v).encode("utf-8")), dtype=torch.uint8
+            )
 
     return state_dict, metadata
+
 
 def string_to_seed(data):
     crc = 0xFFFFFFFF
@@ -1412,6 +1716,7 @@ def string_to_seed(data):
                 crc >>= 1
     return crc ^ 0xFFFFFFFF
 
+
 def deepcopy_list_dict(obj, memo=None):
     if memo is None:
         memo = {}
@@ -1421,7 +1726,10 @@ def deepcopy_list_dict(obj, memo=None):
         return memo[obj_id]
 
     if isinstance(obj, dict):
-        res = {deepcopy_list_dict(k, memo): deepcopy_list_dict(v, memo) for k, v in obj.items()}
+        res = {
+            deepcopy_list_dict(k, memo): deepcopy_list_dict(v, memo)
+            for k, v in obj.items()
+        }
     elif isinstance(obj, list):
         res = [deepcopy_list_dict(i, memo) for i in obj]
     else:
@@ -1429,6 +1737,7 @@ def deepcopy_list_dict(obj, memo=None):
 
     memo[obj_id] = res
     return res
+
 
 def normalize_image_embeddings(embeds, embeds_info, scale_factor):
     """Normalize image embeddings to match text embedding scale"""
