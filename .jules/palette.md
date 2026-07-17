@@ -1,0 +1,3 @@
+## 2025-07-17 - Interactive Display Modes for Node Schemas
+**Learning:** Providing explicit display hints in API schemas (e.g., color pickers and numeric sliders) greatly lowers cognitive load and input errors. It bridges the gap between raw backend values (integers representing RGB hex values or float thresholds) and intuitive human controls, turning technical details into interactive, direct-manipulation UI components.
+**Action:** When defining or updating node schemas, always seek to map numerical color codes to `NumberDisplay.color` and float values in range [0, 1] to `NumberDisplay.slider` to automatically trigger visual controls on the frontend.
