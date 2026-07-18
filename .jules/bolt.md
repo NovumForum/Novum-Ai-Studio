@@ -1,0 +1,3 @@
+## 2026-03-01 - Optimizing Orthogonal Fine-Tuning (OFT) and BOFT via Fused lerp Kernels
+**Learning:** Manual linear interpolation pattern `a * w + (1 - w) * b` can be replaced with `torch.lerp(b, a, w)`. In critical adapter paths (like OFT and BOFT transformations), this reduces temporary tensor allocations and leverages highly optimized fused CUDA/CPU kernels, resulting in cleaner and faster forward passes. Short-circuiting the interpolation when `w == 1.0` avoids unnecessary matrix allocations and kernel launches.
+**Action:** Always search for manual linear interpolations in PyTorch hot-paths and replace them with `torch.lerp` with short-circuiting checks where applicable.
