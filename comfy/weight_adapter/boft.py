@@ -92,8 +92,9 @@ class BOFTAdapter(WeightAdapterBase):
                 bi = r[i]
                 g = 2
                 k = 2**i * r_b
-                if strength != 1:
-                    bi = bi * strength + (1 - strength) * I
+                if strength != 1.0:
+                    # Use fused lerp for performance
+                    bi = torch.lerp(I, bi, strength)
                 inp = (
                     inp.unflatten(0, (-1, g, k))
                     .transpose(1, 2)
@@ -189,8 +190,9 @@ class BOFTAdapter(WeightAdapterBase):
             k = 2**i * r_b
 
             # Interpolate with identity based on multiplier
-            if multiplier != 1:
-                bi = bi * multiplier + (1 - multiplier) * I
+            if multiplier != 1.0:
+                # Use fused lerp for performance
+                bi = torch.lerp(I, bi, multiplier)
 
             # Reshape for butterfly: unflatten last dim, transpose, flatten, unflatten
             inp = (
