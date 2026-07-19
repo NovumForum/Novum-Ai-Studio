@@ -1,0 +1,4 @@
+## 2025-07-19 - Centralized Path Traversal Protection
+**Vulnerability:** Insecure `os.path.join` calls on user-supplied filenames and directory names in dataset loading, saving, and training nodes in `comfy_extras/nodes_dataset.py` allowed directory traversal, enabling attackers to read and write arbitrary files anywhere on the file system.
+**Learning:** Simple path joining (`os.path.join`) does not validate directory bounds. Path traversal validation should be centralized and leverage strict resolution via `os.path.abspath` and `os.path.commonpath` rather than fragile string prefixes, matching absolute paths to their intended root.
+**Prevention:** Use a centralized `safe_join` helper that always checks `os.path.commonpath([base_path, final_path]) == base_path` to guarantee that all resolved paths remain strictly under the intended base directory.
