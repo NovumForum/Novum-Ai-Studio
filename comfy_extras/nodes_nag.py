@@ -60,7 +60,7 @@ class NAGuidance(io.ComfyNode):
             z_pos = out[half_size * ind_pos:half_size * (ind_pos + 1)]
             z_neg = out[half_size * ind_neg:half_size * (ind_neg + 1)]
 
-            guided = z_pos * nag_scale - z_neg * (nag_scale - 1.0)
+            guided = torch.lerp(z_neg, z_pos, nag_scale) # Use fused lerp for performance
 
             eps = 1e-6
             norm_pos = torch.norm(z_pos, p=1, dim=-1, keepdim=True).clamp_min(eps)
@@ -71,7 +71,7 @@ class NAGuidance(io.ComfyNode):
 
             guided_normalized = guided * scale_factor
 
-            z_final = guided_normalized * nag_alpha + z_pos * (1.0 - nag_alpha)
+            z_final = torch.lerp(z_pos, guided_normalized, nag_alpha) # Use fused lerp for performance
 
             if img_slice is not None:
                 orig_out[half_size * ind_neg:half_size * (ind_neg + 1), img_slice[0]:img_slice[1]] = z_final
