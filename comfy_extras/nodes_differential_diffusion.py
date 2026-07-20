@@ -55,7 +55,7 @@ class DifferentialDiffusion(io.ComfyNode):
 
         # Blend binary mask with the original denoise_mask using strength
         if strength and strength < 1:
-            blended_mask = strength * binary_mask + (1 - strength) * denoise_mask
+            blended_mask = torch.lerp(denoise_mask, binary_mask, strength) # Use fused lerp for performance
             return blended_mask
         else:
             return binary_mask

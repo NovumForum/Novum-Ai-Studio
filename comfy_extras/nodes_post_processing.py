@@ -42,7 +42,7 @@ class Blend(io.ComfyNode):
             image2 = image2.permute(0, 2, 3, 1)
 
         blended_image = cls.blend_mode(image1, image2, blend_mode)
-        blended_image = image1 * (1 - blend_factor) + blended_image * blend_factor
+        blended_image = torch.lerp(image1, blended_image, blend_factor) # Use fused lerp for performance
         blended_image = torch.clamp(blended_image, 0, 1)
         return io.NodeOutput(blended_image)
 

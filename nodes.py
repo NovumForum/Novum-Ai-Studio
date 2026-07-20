@@ -1478,7 +1478,7 @@ class LatentBlend:
             samples2.permute(0, 2, 3, 1)
 
         samples_blended = self.blend_mode(samples1, samples2, blend_mode)
-        samples_blended = samples1 * blend_factor + samples_blended * (1 - blend_factor)
+        samples_blended = torch.lerp(samples_blended, samples1, blend_factor) # Use fused lerp for performance
         samples_out["samples"] = samples_blended
         return (samples_out,)
 
