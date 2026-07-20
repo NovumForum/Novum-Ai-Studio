@@ -34,6 +34,7 @@ import json
 import time
 import mmap
 import warnings
+import os
 
 MMAP_TORCH_FILES = args.mmap_torch_files
 DISABLE_MMAP = args.disable_mmap
@@ -1426,3 +1427,32 @@ def normalize_image_embeddings(embeds, embeds_info, scale_factor):
             start_idx = info["index"]
             end_idx = start_idx + info["size"]
             embeds[:, start_idx:end_idx, :] /= scale_factor
+
+
+def safe_join(base_dir: str, *paths: str, create_dir: bool = False) -> str:
+    """Centralized utility for preventing path traversal.
+
+    It uses os.path.abspath and os.path.commonpath to ensure the final path remains
+    within the base directory.
+
+    When create_dir=True is specified, it creates the target directory itself
+    using os.makedirs(path, exist_ok=True).
+    """
+    if not base_dir:
+        raise ValueError("Base directory cannot be empty")
+    base_abs = os.path.abspath(base_dir)
+    joined = os.path.join(base_abs, *paths)
+    joined_abs = os.path.abspath(joined)
+
+    try:
+        common = os.path.commonpath((base_abs, joined_abs))
+    except ValueError as e:
+        raise ValueError(f"Invalid path traversal attempt: {joined}") from e
+
+    if common != base_abs:
+        raise ValueError(f"Path traversal detected: {joined_abs} is outside {base_abs}")
+
+    if create_dir:
+        os.makedirs(joined_abs, exist_ok=True)
+
+    return joined_abs
