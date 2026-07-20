@@ -1,0 +1,4 @@
+## 2025-07-20 - Centralized Path Traversal Prevention
+**Vulnerability:** In custom image/text dataset loading, saving, and training nodes in `comfy_extras/nodes_dataset.py`, file path construction was vulnerable to path traversal. Since user-controlled inputs (like prefix and folders) were joined using standard `os.path.join` without checks, files could be read/written outside the designated input/output directories.
+**Learning:** Standard path joining in Python (`os.path.join`) does not restrict paths to a base directory and permits relative traversal sequences like `..`. Centralizing path sanitization in a robust, reusable `safe_join` utility ensures all modules can securely construct safe paths.
+**Prevention:** Always use a helper like `comfy.utils.safe_join` which uses `os.path.abspath` and `os.path.commonpath` to verify the resulting path remains within the intended base directory.

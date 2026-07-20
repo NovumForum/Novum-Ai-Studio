@@ -23,13 +23,14 @@ def load_and_process_images(image_files, input_dir):
     Returns:
         torch.Tensor: Batch of processed images
     """
+    import comfy.utils
     if not image_files:
         raise ValueError("No valid images found in input")
 
     output_images = []
 
     for file in image_files:
-        image_path = os.path.join(input_dir, file)
+        image_path = comfy.utils.safe_join(input_dir, file)
         img = node_helpers.pillow(Image.open, image_path)
 
         if img.mode == "I":
@@ -68,7 +69,8 @@ class LoadImageDataSetFromFolderNode(io.ComfyNode):
 
     @classmethod
     def execute(cls, folder):
-        sub_input_dir = os.path.join(folder_paths.get_input_directory(), folder)
+        import comfy.utils
+        sub_input_dir = comfy.utils.safe_join(folder_paths.get_input_directory(), folder)
         valid_extensions = [".png", ".jpg", ".jpeg", ".webp"]
         image_files = [
             f
@@ -110,9 +112,10 @@ class LoadImageTextDataSetFromFolderNode(io.ComfyNode):
 
     @classmethod
     def execute(cls, folder):
+        import comfy.utils
         logging.info(f"Loading images from folder: {folder}")
 
-        sub_input_dir = os.path.join(folder_paths.get_input_directory(), folder)
+        sub_input_dir = comfy.utils.safe_join(folder_paths.get_input_directory(), folder)
         valid_extensions = [".png", ".jpg", ".jpeg", ".webp"]
 
         image_files = []
@@ -139,7 +142,7 @@ class LoadImageTextDataSetFromFolderNode(io.ComfyNode):
         ]
         captions = []
         for caption_file in caption_file_path:
-            caption_path = os.path.join(sub_input_dir, caption_file)
+            caption_path = comfy.utils.safe_join(sub_input_dir, caption_file)
             if os.path.exists(caption_path):
                 with open(caption_path, "r", encoding="utf-8") as f:
                     caption = f.read().strip()
@@ -164,6 +167,7 @@ def save_images_to_folder(image_list, output_dir, prefix="image"):
     Returns:
         List of saved filenames
     """
+    import comfy.utils
     os.makedirs(output_dir, exist_ok=True)
     saved_files = []
 
@@ -194,7 +198,7 @@ def save_images_to_folder(image_list, output_dir, prefix="image"):
 
         # Save image
         filename = f"{prefix}_{idx:05d}.png"
-        filepath = os.path.join(output_dir, filename)
+        filepath = comfy.utils.safe_join(output_dir, filename)
         img.save(filepath)
         saved_files.append(filename)
 
@@ -230,11 +234,12 @@ class SaveImageDataSetToFolderNode(io.ComfyNode):
 
     @classmethod
     def execute(cls, images, folder_name, filename_prefix):
+        import comfy.utils
         # Extract scalar values
         folder_name = folder_name[0]
         filename_prefix = filename_prefix[0]
 
-        output_dir = os.path.join(folder_paths.get_output_directory(), folder_name)
+        output_dir = comfy.utils.safe_join(folder_paths.get_output_directory(), folder_name)
         saved_files = save_images_to_folder(images, output_dir, filename_prefix)
 
         logging.info(f"Saved {len(saved_files)} images to {output_dir}.")
@@ -271,17 +276,18 @@ class SaveImageTextDataSetToFolderNode(io.ComfyNode):
 
     @classmethod
     def execute(cls, images, texts, folder_name, filename_prefix):
+        import comfy.utils
         # Extract scalar values
         folder_name = folder_name[0]
         filename_prefix = filename_prefix[0]
 
-        output_dir = os.path.join(folder_paths.get_output_directory(), folder_name)
+        output_dir = comfy.utils.safe_join(folder_paths.get_output_directory(), folder_name)
         saved_files = save_images_to_folder(images, output_dir, filename_prefix)
 
         # Save captions
         for idx, (filename, caption) in enumerate(zip(saved_files, texts)):
             caption_filename = filename.replace(".png", ".txt")
-            caption_path = os.path.join(output_dir, caption_filename)
+            caption_path = comfy.utils.safe_join(output_dir, caption_filename)
             with open(caption_path, "w", encoding="utf-8") as f:
                 f.write(caption)
 
@@ -1354,6 +1360,7 @@ class SaveTrainingDataset(io.ComfyNode):
 
     @classmethod
     def execute(cls, latents, conditioning, folder_name, shard_size):
+        import comfy.utils
         # Extract scalars
         folder_name = folder_name[0]
         shard_size = shard_size[0]
@@ -1369,8 +1376,7 @@ class SaveTrainingDataset(io.ComfyNode):
             )
 
         # Create output directory
-        output_dir = os.path.join(folder_paths.get_output_directory(), folder_name)
-        os.makedirs(output_dir, exist_ok=True)
+        output_dir = comfy.utils.safe_join(folder_paths.get_output_directory(), folder_name, create_dir=True)
 
         # Prepare data pairs
         num_samples = len(latents)
@@ -1393,7 +1399,7 @@ class SaveTrainingDataset(io.ComfyNode):
 
             # Save shard
             shard_filename = f"shard_{shard_idx:04d}.pkl"
-            shard_path = os.path.join(output_dir, shard_filename)
+            shard_path = comfy.utils.safe_join(output_dir, shard_filename)
 
             with open(shard_path, "wb") as f:
                 torch.save(shard_data, f)
@@ -1408,7 +1414,7 @@ class SaveTrainingDataset(io.ComfyNode):
             "num_shards": num_shards,
             "shard_size": shard_size,
         }
-        metadata_path = os.path.join(output_dir, "metadata.json")
+        metadata_path = comfy.utils.safe_join(output_dir, "metadata.json")
         with open(metadata_path, "w") as f:
             json.dump(metadata, f, indent=2)
 
@@ -1449,8 +1455,9 @@ class LoadTrainingDataset(io.ComfyNode):
 
     @classmethod
     def execute(cls, folder_name):
+        import comfy.utils
         # Get dataset directory
-        dataset_dir = os.path.join(folder_paths.get_output_directory(), folder_name)
+        dataset_dir = comfy.utils.safe_join(folder_paths.get_output_directory(), folder_name)
 
         if not os.path.exists(dataset_dir):
             raise ValueError(f"Dataset directory not found: {dataset_dir}")
@@ -1474,7 +1481,7 @@ class LoadTrainingDataset(io.ComfyNode):
         all_conditioning = []  # list[list[cond]]
 
         for shard_file in shard_files:
-            shard_path = os.path.join(dataset_dir, shard_file)
+            shard_path = comfy.utils.safe_join(dataset_dir, shard_file)
 
             with open(shard_path, "rb") as f:
                 shard_data = torch.load(f)
