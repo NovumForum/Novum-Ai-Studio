@@ -1,6 +1,7 @@
 import torch
 from nodes import ConditioningAverage
 
+
 def test_conditioning_average():
     # Setup test conditioning vectors
     t0 = torch.rand((1, 5, 10))
@@ -17,11 +18,15 @@ def test_conditioning_average():
 
     # Expected results
     expected_tw = t0 + strength * (t1 - t0)
-    expected_pooled = conditioning_from[0][1]["pooled_output"] + strength * (conditioning_to[0][1]["pooled_output"] - conditioning_from[0][1]["pooled_output"])
+    expected_pooled = conditioning_from[0][1]["pooled_output"] + strength * (
+        conditioning_to[0][1]["pooled_output"]
+        - conditioning_from[0][1]["pooled_output"]
+    )
 
     # Assertions
     assert torch.allclose(out[0][0], expected_tw, atol=1e-6)
     assert torch.allclose(out[0][1]["pooled_output"], expected_pooled, atol=1e-6)
+
 
 def test_conditioning_average_padding():
     # Setup test with different shapes (t0 smaller)
