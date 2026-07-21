@@ -122,10 +122,12 @@ class ConditioningAverage :
             if t0.shape[1] < t1.shape[1]:
                 t0 = torch.cat([t0] + [torch.zeros((1, (t1.shape[1] - t0.shape[1]), t1.shape[2]))], dim=1)
 
-            tw = torch.mul(t1, conditioning_to_strength) + torch.mul(t0, (1.0 - conditioning_to_strength))
+            # Use fused lerp for performance, avoiding multiple intermediate tensor allocations
+            tw = torch.lerp(t0, t1, conditioning_to_strength)
             t_to = conditioning_to[i][1].copy()
             if pooled_output_from is not None and pooled_output_to is not None:
-                t_to["pooled_output"] = torch.mul(pooled_output_to, conditioning_to_strength) + torch.mul(pooled_output_from, (1.0 - conditioning_to_strength))
+                # Use fused lerp for performance to compute blended pooled CLIP outputs
+                t_to["pooled_output"] = torch.lerp(pooled_output_from, pooled_output_to, conditioning_to_strength)
             elif pooled_output_from is not None:
                 t_to["pooled_output"] = pooled_output_from
 
