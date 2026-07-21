@@ -58,15 +58,22 @@ class InternalRoutes:
                 return web.json_response({"error": "Invalid directory type"}, status=400)
 
             directory = get_directory_by_type(directory_type)
+            # Security: If get_directory_by_type returns None, os.scandir(None) defaults to '.'
+            # which would leak the repository/current directory contents. We must validate the directory.
+            if not directory or not os.path.isdir(directory):
+                return web.json_response({"error": "Directory not found"}, status=404)
 
             def is_visible_file(entry: os.DirEntry) -> bool:
                 """Filter out hidden files (e.g., .DS_Store on macOS)."""
                 return entry.is_file() and not entry.name.startswith('.')
 
-            sorted_files = sorted(
-                (entry for entry in os.scandir(directory) if is_visible_file(entry)),
-                key=lambda entry: -entry.stat().st_mtime
-            )
+            try:
+                sorted_files = sorted(
+                    (entry for entry in os.scandir(directory) if is_visible_file(entry)),
+                    key=lambda entry: -entry.stat().st_mtime
+                )
+            except OSError:
+                return web.json_response({"error": "Failed to read directory"}, status=500)
             return web.json_response([entry.name for entry in sorted_files], status=200)
 
 
