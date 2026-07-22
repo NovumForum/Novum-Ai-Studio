@@ -74,7 +74,6 @@ class NumberDisplay(str, Enum):
     number = "number"
     slider = "slider"
     gradient_slider = "gradientslider"
-    color = "color"
 
 
 class ControlAfterGenerate(str, Enum):
