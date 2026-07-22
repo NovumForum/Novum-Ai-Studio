@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import pytest
 from unittest.mock import MagicMock, patch
 from api_server.routes.internal.internal_routes import InternalRoutes
