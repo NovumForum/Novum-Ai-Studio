@@ -1,0 +1,4 @@
+## 2025-07-22 - Directory scanning fallback vulnerability in python os.scandir
+**Vulnerability:** If the target directory argument passed to `os.scandir` is `None`, Python defaults to scanning the current working directory (`'.'`). This can result in unintended directory listing/leakage of the workspace and application codebase to API consumers if a directory utility returns `None` (e.g. because it is unconfigured).
+**Learning:** Python's library design for `os.scandir(path=None)` fallback can create silent security risks of directory information leakage if input/directory variables are assumed to be non-None and are not validated before passing them to OS-level utilities.
+**Prevention:** Always validate that directories resolved from configuration utilities are not `None` and are valid existing directories (e.g., using `os.path.isdir()`) before passing them to scanning/listing functions like `os.scandir()`, `os.listdir()`, etc.
