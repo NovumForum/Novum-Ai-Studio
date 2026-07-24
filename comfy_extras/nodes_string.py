@@ -37,8 +37,8 @@ class StringSubstring(io.ComfyNode):
             category="utils/string",
             inputs=[
                 io.String.Input("string", multiline=True),
-                io.Int.Input("start"),
-                io.Int.Input("end"),
+                io.Int.Input("start", tooltip="0-based start index (inclusive) of the substring"),
+                io.Int.Input("end", tooltip="0-based end index (exclusive) of the substring"),
             ],
             outputs=[
                 io.String.Output(),
@@ -169,7 +169,7 @@ class StringContains(io.ComfyNode):
             inputs=[
                 io.String.Input("string", multiline=True),
                 io.String.Input("substring", multiline=True),
-                io.Boolean.Input("case_sensitive", default=True, advanced=True),
+                io.Boolean.Input("case_sensitive", default=True, advanced=True, tooltip="Enable for exact case matching, or disable for case-insensitive matching"),
             ],
             outputs=[
                 io.Boolean.Output(display_name="contains"),
@@ -278,7 +278,7 @@ class RegexExtract(io.ComfyNode):
                 io.Boolean.Input("case_insensitive", default=True, advanced=True),
                 io.Boolean.Input("multiline", default=False, advanced=True),
                 io.Boolean.Input("dotall", default=False, advanced=True),
-                io.Int.Input("group_index", default=1, min=0, max=100, advanced=True),
+                io.Int.Input("group_index", default=1, min=0, max=100, advanced=True, tooltip="Index of the regex capture group to extract. Use 0 for the entire match, or 1 for the first captured group in parentheses."),
             ],
             outputs=[
                 io.String.Output(),
