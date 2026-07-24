@@ -1,0 +1,3 @@
+## 2025-07-24 - Contextual Tooltips for Technical Node Parameters
+**Learning:** In ComfyUI's V3 node system, technical inputs (such as indices for regex groups, substring boundaries, or case sensitivity flags) can confuse non-technical users. Adding specific `tooltip` properties directly to input definitions solves this by rendering contextual help on hover/focus, improving visual/screen-reader accessibility without cluttering the main workspace.
+**Action:** Always declare descriptive `tooltip` fields for all technical or potentially confusing input parameters within `define_schema` when designing or updating ComfyUI nodes.
