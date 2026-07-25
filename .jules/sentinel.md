@@ -1,0 +1,4 @@
+## 2025-02-14 - Python Directory Disclosure via scandir(None)
+**Vulnerability:** In Python, calling `os.scandir(None)` falls back to scanning the current working directory (`'.'`), which can leak internal root folder structures if a directory configuration utility returns `None`.
+**Learning:** This unexpected behavior in the standard library means that any API endpoint listing directory files using dynamic directory configurations can accidentally expose the entire application's source code, configurations, and sensitive internal directories if the path config evaluates to `None` or is missing.
+**Prevention:** Always explicitly validate that a path is not `None` and is a valid directory via `os.path.isdir(path)` before attempting to list its contents using `os.scandir(path)` or similar filesystem APIs.
