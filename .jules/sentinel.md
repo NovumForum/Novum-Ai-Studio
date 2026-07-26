@@ -1,4 +1,0 @@
-## 2025-02-17 - Prevent Directory Leakage from os.scandir(None)
-**Vulnerability:** Calling `os.scandir(None)` in Python defaults to scanning the current working directory (`'.'`), exposing root directory structures, repository files, and system configuration names to clients.
-**Learning:** In standard directory mapping lookup endpoints, retrieving a directory by its name can return `None` if that folder category is not configured or disabled. If the resulting value is passed straight into standard filesystem functions like `os.scandir()` without validation, Python treats it as a scan of the current directory, resulting in directory structure disclosure.
-**Prevention:** Always validate that resolved paths are explicitly checked for `None` and are verified as valid directories via `os.path.isdir(path)` prior to scanning files.
