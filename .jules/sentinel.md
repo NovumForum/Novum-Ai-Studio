@@ -1,0 +1,4 @@
+## 2024-07-27 - Python scandir CWD fallback leakage
+**Vulnerability:** Passing `None` to python's `os.scandir(None)` falls back to scanning the current working directory (`'.'`). In a web application where directory configuration or retrieval functions return `None` (for example, when a directory type is disabled or not configured), this behavior can lead to scanning the root application folder and leaking its sensitive structure and configuration files to the client.
+**Learning:** Python built-in functions like `os.scandir` and `os.listdir` fallback to the active working directory if the target path is `None`. This unexpected behavior bypasses basic type-checking if not explicitly validated.
+**Prevention:** Always check if a retrieved directory path is explicitly `None` or not an existing directory using `os.path.isdir(directory)` before performing scanning operations like `os.scandir` or `os.listdir`.
