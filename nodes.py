@@ -122,10 +122,12 @@ class ConditioningAverage :
             if t0.shape[1] < t1.shape[1]:
                 t0 = torch.cat([t0] + [torch.zeros((1, (t1.shape[1] - t0.shape[1]), t1.shape[2]))], dim=1)
 
-            tw = torch.mul(t1, conditioning_to_strength) + torch.mul(t0, (1.0 - conditioning_to_strength))
+            # Use fused lerp for performance
+            tw = torch.lerp(t0, t1, conditioning_to_strength)
             t_to = conditioning_to[i][1].copy()
             if pooled_output_from is not None and pooled_output_to is not None:
-                t_to["pooled_output"] = torch.mul(pooled_output_to, conditioning_to_strength) + torch.mul(pooled_output_from, (1.0 - conditioning_to_strength))
+                # Use fused lerp for performance
+                t_to["pooled_output"] = torch.lerp(pooled_output_from, pooled_output_to, conditioning_to_strength)
             elif pooled_output_from is not None:
                 t_to["pooled_output"] = pooled_output_from
 
@@ -1478,7 +1480,8 @@ class LatentBlend:
             samples2.permute(0, 2, 3, 1)
 
         samples_blended = self.blend_mode(samples1, samples2, blend_mode)
-        samples_blended = samples1 * blend_factor + samples_blended * (1 - blend_factor)
+        # Use fused lerp for performance
+        samples_blended = torch.lerp(samples_blended, samples1, blend_factor)
         samples_out["samples"] = samples_blended
         return (samples_out,)
 
