@@ -21,11 +21,13 @@ class Blend(io.ComfyNode):
             node_id="ImageBlend",
             display_name="Image Blend",
             category="image/postprocessing",
+            description="Blend two images together using a selectable blend mode and factor.",
+            search_aliases=["blend", "image blend", "mix images", "overlay", "merge images", "combine images"],
             inputs=[
-                io.Image.Input("image1"),
-                io.Image.Input("image2"),
-                io.Float.Input("blend_factor", default=0.5, min=0.0, max=1.0, step=0.01),
-                io.Combo.Input("blend_mode", options=["normal", "multiply", "screen", "overlay", "soft_light", "difference"]),
+                io.Image.Input("image1", tooltip="The base background image (image blend target 1)."),
+                io.Image.Input("image2", tooltip="The foreground image to blend onto the base image (image blend target 2)."),
+                io.Float.Input("blend_factor", default=0.5, min=0.0, max=1.0, step=0.01, tooltip="Controls the blend intensity. At 0.0, only the base image (image1) is visible. At 1.0, the foreground image (image2) is fully blended using the selected blend mode."),
+                io.Combo.Input("blend_mode", options=["normal", "multiply", "screen", "overlay", "soft_light", "difference"], tooltip="The mathematical formula used to combine the colors of both images (e.g., normal, multiply, screen, overlay, soft_light, difference)."),
             ],
             outputs=[
                 io.Image.Output(),
