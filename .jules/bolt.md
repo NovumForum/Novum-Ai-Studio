@@ -1,0 +1,3 @@
+## 2025-07-28 - Fused Linear Interpolation for Weight Adapters
+**Learning:** Manual linear interpolation of PyTorch tensors (e.g. `r * multiplier + (1 - multiplier) * I`) requires multiple intermediate memory allocations and separate kernel launches. Using `torch.lerp(I, r, multiplier)` utilizes a single fused CUDA/CPU kernel, which is both mathematically equivalent and significantly more efficient.
+**Action:** When encountering patterns of the form `A * weight + (1 - weight) * B` or similar linear transitions, refactor them to use PyTorch's native `torch.lerp` for optimal memory and computational efficiency.
