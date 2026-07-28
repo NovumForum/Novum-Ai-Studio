@@ -1,0 +1,4 @@
+## 2026-07-28 - Path Traversal in Experimental Model Preview Endpoint
+**Vulnerability:** Path traversal vulnerability on `/experiment/models/preview/{folder}/{path_index}/{filename:.*}` allows reading of arbitrary image files beyond the designated model paths. Additionally, missing bounds checks on `path_index` would crash the application with an unhandled `IndexError`.
+**Learning:** Experimental or internal-use routes, such as those prefixed with `/experiment/`, are often overlooked during routine security audits but remain accessible to clients. If these routes construct file paths directly from user input without validation, they expose system files to containment bypass.
+**Prevention:** Always restrict wildcard or relative filenames mapped from route variables. Ensure folder indexing is safe from out-of-bound errors, and consistently apply path containment verification using `os.path.commonpath` against the resolved absolute destination path.
