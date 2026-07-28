@@ -59,8 +59,16 @@ class ModelFileManager:
                 return web.Response(status=404)
 
             folders = folder_paths.folder_names_and_paths[folder_name]
+            if not folders[0] or path_index < 0 or path_index >= len(folders[0]):
+                return web.Response(status=404)
+
             folder = folders[0][path_index]
-            full_filename = os.path.join(folder, filename)
+            folder_abs = os.path.abspath(folder)
+            full_filename = os.path.abspath(os.path.join(folder_abs, filename))
+
+            # Prevent path traversal outside the model folder
+            if os.path.commonpath((folder_abs, full_filename)) != folder_abs:
+                return web.Response(status=403)
 
             previews = self.get_model_previews(full_filename)
             default_preview = previews[0] if len(previews) > 0 else None

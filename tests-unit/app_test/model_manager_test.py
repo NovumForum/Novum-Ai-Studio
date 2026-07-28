@@ -60,3 +60,36 @@ async def test_get_model_preview_safetensors(aiohttp_client, app, tmp_path):
 
         # Clean up
         img.close()
+
+
+async def test_get_model_preview_path_traversal(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+
+        # Traversing to absolute system root /etc/passwd
+        response1 = await client.get('/experiment/models/preview/test_folder/0//etc/passwd')
+        assert response1.status == 403
+
+        # Traversing up using relative path .. (URL encoded to avoid client-side collapsing)
+        response2 = await client.get('/experiment/models/preview/test_folder/0/..%2foutside_file.png')
+        assert response2.status == 403
+
+        response3 = await client.get('/experiment/models/preview/test_folder/0/%2e%2e%2foutside_file.png')
+        assert response3.status == 403
+
+
+async def test_get_model_preview_out_of_bounds_path_index(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+
+        # Index out of bounds (greater than or equal to length)
+        response1 = await client.get('/experiment/models/preview/test_folder/1/test_model.safetensors')
+        assert response1.status == 404
+
+        # Negative index
+        response2 = await client.get('/experiment/models/preview/test_folder/-1/test_model.safetensors')
+        assert response2.status == 404
