@@ -1,0 +1,3 @@
+## 2026-03-01 - Enhance Node Discovery with Explicit Parameter Tooltips
+**Learning:** In a nodes-based schema architecture (like ComfyUI V3 nodes), UI elements are constructed dynamically on the frontend using backend-defined API metadata. Adding clear, user-focused descriptions and parameter tooltips directly inside the schema definition dramatically improves on-hover context and discoverability without requiring external documentation or complex tutorial overlays.
+**Action:** Always provide descriptive `tooltip` parameters for all inputs and detailed class-level `description` properties when defining or modifying V3 node schemas.
