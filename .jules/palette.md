@@ -1,3 +1,0 @@
-## 2026-03-06 - Modern V3 Node Metadata as UX Documentation
-**Learning:** Modern V3 node schemas (`io.Schema`) in ComfyUI expose rich, declarative fields such as schema `description` and input parameter `tooltip`. Utilizing these properties ensures that the modern editor can automatically display accessible tooltips and documentation directly in-context, resolving help accessibility issues without introducing heavy dependencies or frontend modifications.
-**Action:** When adding or extending custom V3 backend nodes, always supply clear, precise `description` attributes on `io.Schema` and `tooltip` parameters on inputs to make the node interface self-documenting and user-friendly.
