@@ -1,0 +1,4 @@
+## 2025-02-14 - Directory Scanner Fallback Leakage
+**Vulnerability:** In Python, calling `os.scandir(None)` falls back to scanning the current working directory (`'.'`). If a folder/directory helper (such as `get_directory_by_type`) returns `None` due to disabled configuration, calling `os.scandir` on it directly without a `None` check leaks the root project directory structure.
+**Learning:** The `/internal/files/{directory_type}` endpoint in `api_server/routes/internal/internal_routes.py` parsed valid inputs but failed to verify that the retrieved directory path from `get_directory_by_type` was valid or not `None`, which triggered the default path traversal fallback.
+**Prevention:** Always validate that directories returned by folder management/lookup routines are not `None` and point to actual directories on disk via `os.path.isdir()` before passing them to OS directory utilities.
