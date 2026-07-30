@@ -12,14 +12,15 @@ class ImageCompare(IO.ComfyNode):
         return IO.Schema(
             node_id="ImageCompare",
             display_name="Image Compare",
-            description="Compares two images side by side with a slider.",
+            description="Compares two images side-by-side with an interactive comparison slider.",
             category="image",
             is_experimental=True,
             is_output_node=True,
+            search_aliases=["compare", "slider", "side-by-side", "diff", "image comparison"],
             inputs=[
-                IO.Image.Input("image_a", optional=True),
-                IO.Image.Input("image_b", optional=True),
-                IO.ImageCompare.Input("compare_view"),
+                IO.Image.Input("image_a", optional=True, tooltip="The first image (left side) to compare."),
+                IO.Image.Input("image_b", optional=True, tooltip="The second image (right side) to compare."),
+                IO.ImageCompare.Input("compare_view", tooltip="Interactive comparison view with slider control."),
             ],
             outputs=[],
         )
