@@ -1,0 +1,3 @@
+## 2025-02-15 - Enhancing Discoverability and Inline Guidance for Logic Nodes
+**Learning:** In metadata-driven node architectures (like ComfyUI V3), lack of inline documentation (tooltips) and rigid search vocabularies can significantly degrade user experience. Non-expert users often search for utility nodes using terms from traditional programming or different design patterns (e.g., searching "if else" or "router" instead of "Switch", or "choices" instead of "Custom Combo").
+**Action:** Always enrich modern V3 node schemas with comprehensive, user-friendly descriptive tooltips on input parameters and provide extensive, common-sense search aliases in schemas to maximize accessibility, reduce cognitive load, and optimize discoverability.

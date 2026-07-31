@@ -17,10 +17,12 @@ class SwitchNode(io.ComfyNode):
             display_name="Switch",
             category="logic",
             is_experimental=True,
+            description="Selects and routes between two inputs ('on_true' or 'on_false') based on a boolean switch.",
+            search_aliases=["switch", "router", "if-else", "if else", "conditional", "logic gate"],
             inputs=[
-                io.Boolean.Input("switch"),
-                io.MatchType.Input("on_false", template=template, lazy=True),
-                io.MatchType.Input("on_true", template=template, lazy=True),
+                io.Boolean.Input("switch", tooltip="If True, routes 'on_true' to the output. If False, routes 'on_false'."),
+                io.MatchType.Input("on_false", template=template, lazy=True, tooltip="The value or stream to output when the switch is False."),
+                io.MatchType.Input("on_true", template=template, lazy=True, tooltip="The value or stream to output when the switch is True."),
             ],
             outputs=[
                 io.MatchType.Output(template=template, display_name="output"),
@@ -103,7 +105,9 @@ class CustomComboNode(io.ComfyNode):
             display_name="Custom Combo",
             category="utils",
             is_experimental=True,
-            inputs=[io.Combo.Input("choice", options=[])],
+            description="A utility node that allows defining and selecting custom options directly from the interface.",
+            search_aliases=["custom combo", "dropdown list", "user choices", "options dropdown"],
+            inputs=[io.Combo.Input("choice", options=[], tooltip="The selected custom option from the dropdown list.")],
             outputs=[
                 io.String.Output(display_name="STRING"),
                 io.Int.Output(display_name="INDEX"),
