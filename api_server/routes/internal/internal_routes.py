@@ -58,6 +58,8 @@ class InternalRoutes:
                 return web.json_response({"error": "Invalid directory type"}, status=400)
 
             directory = get_directory_by_type(directory_type)
+            if directory is None or not os.path.isdir(directory):
+                return web.json_response({"error": "Directory not found or unconfigured"}, status=404)
 
             def is_visible_file(entry: os.DirEntry) -> bool:
                 """Filter out hidden files (e.g., .DS_Store on macOS)."""
