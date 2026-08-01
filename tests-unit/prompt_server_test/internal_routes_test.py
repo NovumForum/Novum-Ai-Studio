@@ -1,10 +1,9 @@
 import pytest
-import os
-from aiohttp import web
 from api_server.routes.internal.internal_routes import InternalRoutes
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
 pytestmark = pytest.mark.asyncio
+
 
 @pytest.fixture
 def internal_routes_app():
@@ -14,7 +13,10 @@ def internal_routes_app():
     app = ir.get_app()
     return app
 
-async def test_get_files_success(aiohttp_client, internal_routes_app, tmp_path, monkeypatch):
+
+async def test_get_files_success(
+    aiohttp_client, internal_routes_app, tmp_path, monkeypatch
+):
     client = await aiohttp_client(internal_routes_app)
 
     # Create some files in input folder
@@ -25,12 +27,16 @@ async def test_get_files_success(aiohttp_client, internal_routes_app, tmp_path, 
     (input_dir / ".hidden").write_text("hidden")
 
     # Mock get_directory_by_type to return our temp input directory
-    monkeypatch.setattr("api_server.routes.internal.internal_routes.get_directory_by_type", lambda dt: str(input_dir) if dt == "input" else None)
+    monkeypatch.setattr(
+        "api_server.routes.internal.internal_routes.get_directory_by_type",
+        lambda dt: str(input_dir) if dt == "input" else None,
+    )
 
     resp = await client.get("/files/input")
     assert resp.status == 200
     files = await resp.json()
     assert set(files) == {"file1.txt", "file2.txt"}
+
 
 async def test_get_files_invalid_type(aiohttp_client, internal_routes_app):
     client = await aiohttp_client(internal_routes_app)
@@ -39,18 +45,27 @@ async def test_get_files_invalid_type(aiohttp_client, internal_routes_app):
     data = await resp.json()
     assert data["error"] == "Invalid directory type"
 
-async def test_get_files_directory_not_configured_or_not_exist(aiohttp_client, internal_routes_app, monkeypatch):
+
+async def test_get_files_directory_not_configured_or_not_exist(
+    aiohttp_client, internal_routes_app, monkeypatch
+):
     client = await aiohttp_client(internal_routes_app)
 
     # Case 1: get_directory_by_type returns None (unconfigured)
-    monkeypatch.setattr("api_server.routes.internal.internal_routes.get_directory_by_type", lambda dt: None)
+    monkeypatch.setattr(
+        "api_server.routes.internal.internal_routes.get_directory_by_type",
+        lambda dt: None,
+    )
     resp = await client.get("/files/input")
     assert resp.status == 404
     data = await resp.json()
     assert data["error"] == "Directory not found"
 
     # Case 2: get_directory_by_type returns a non-existent path
-    monkeypatch.setattr("api_server.routes.internal.internal_routes.get_directory_by_type", lambda dt: "/nonexistent/path/here")
+    monkeypatch.setattr(
+        "api_server.routes.internal.internal_routes.get_directory_by_type",
+        lambda dt: "/nonexistent/path/here",
+    )
     resp = await client.get("/files/input")
     assert resp.status == 404
     data = await resp.json()
