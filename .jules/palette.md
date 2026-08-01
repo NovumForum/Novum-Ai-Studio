@@ -1,0 +1,3 @@
+## 2025-02-17 - Enriching V3 schemas for in-context help
+**Learning:** ComfyUI utilizes modern V3 schema definitions (e.g., in `comfy_extras/`) where node-level `description`, parameter-level `tooltip`, and search-level `search_aliases` can be configured directly in Python. This enables rich, in-context documentation, search discovery, and screen-reader accessible helper text directly in the modern React frontend without having to rebuild the prebuilt assets.
+**Action:** When adding or improving nodes in ComfyUI, always ensure that modern V3 definitions contain detailed `description`, `search_aliases`, and parameter-level `tooltip` properties to maximize visual accessibility and usability.

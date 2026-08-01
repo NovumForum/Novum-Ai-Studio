@@ -79,10 +79,12 @@ class Blur(io.ComfyNode):
             node_id="ImageBlur",
             display_name="Image Blur",
             category="image/postprocessing",
+            description="Blurs an image using a Gaussian filter.",
+            search_aliases=["gaussian blur", "soften", "defocus", "blur image", "smooth image"],
             inputs=[
-                io.Image.Input("image"),
-                io.Int.Input("blur_radius", default=1, min=1, max=31, step=1),
-                io.Float.Input("sigma", default=1.0, min=0.1, max=10.0, step=0.1),
+                io.Image.Input("image", tooltip="The input image to blur."),
+                io.Int.Input("blur_radius", default=1, min=1, max=31, step=1, tooltip="The radius of the blur. Higher values increase the blur effect."),
+                io.Float.Input("sigma", default=1.0, min=0.1, max=10.0, step=0.1, tooltip="The sigma value for the Gaussian kernel, controlling the blur distribution."),
             ],
             outputs=[
                 io.Image.Output(),
@@ -114,10 +116,12 @@ class Quantize(io.ComfyNode):
         return io.Schema(
             node_id="ImageQuantize",
             category="image/postprocessing",
+            description="Reduces the number of unique colors in an image and optionally applies dithering.",
+            search_aliases=["color reduction", "dither", "retro", "pixel art", "palette limit", "gif effect"],
             inputs=[
-                io.Image.Input("image"),
-                io.Int.Input("colors", default=256, min=1, max=256, step=1),
-                io.Combo.Input("dither", options=["none", "floyd-steinberg", "bayer-2", "bayer-4", "bayer-8", "bayer-16"]),
+                io.Image.Input("image", tooltip="The input image to quantize."),
+                io.Int.Input("colors", default=256, min=1, max=256, step=1, tooltip="The maximum number of colors allowed in the output image palette (1 to 256)."),
+                io.Combo.Input("dither", options=["none", "floyd-steinberg", "bayer-2", "bayer-4", "bayer-8", "bayer-16"], tooltip="The dithering algorithm to use to approximate missing colors."),
             ],
             outputs=[
                 io.Image.Output(),
@@ -179,11 +183,13 @@ class Sharpen(io.ComfyNode):
         return io.Schema(
             node_id="ImageSharpen",
             category="image/postprocessing",
+            description="Sharpens an image by enhancing high-frequency details (unsharp masking).",
+            search_aliases=["sharpen image", "unsharp mask", "clarity", "enhance details", "crisp"],
             inputs=[
-                io.Image.Input("image"),
-                io.Int.Input("sharpen_radius", default=1, min=1, max=31, step=1, advanced=True),
-                io.Float.Input("sigma", default=1.0, min=0.1, max=10.0, step=0.01, advanced=True),
-                io.Float.Input("alpha", default=1.0, min=0.0, max=5.0, step=0.01, advanced=True),
+                io.Image.Input("image", tooltip="The input image to sharpen."),
+                io.Int.Input("sharpen_radius", default=1, min=1, max=31, step=1, advanced=True, tooltip="The radius of the sharpening kernel."),
+                io.Float.Input("sigma", default=1.0, min=0.1, max=10.0, step=0.01, advanced=True, tooltip="The sigma value for the Gaussian kernel used to generate the unsharp mask."),
+                io.Float.Input("alpha", default=1.0, min=0.0, max=5.0, step=0.01, advanced=True, tooltip="The strength of the sharpening effect applied to high-frequency components."),
             ],
             outputs=[
                 io.Image.Output(),
