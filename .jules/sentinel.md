@@ -1,0 +1,4 @@
+## 2026-08-01 - Preventing Directory Leakage from os.scandir(None) Fallback
+**Vulnerability:** In Python, calling `os.scandir(None)` falls back to scanning the current working directory (`'.'`), which can leak root folder structures if a directory configuration utility returns `None`.
+**Learning:** Functions like `os.scandir()` or `os.listdir()` in standard libraries can have subtle fallbacks to the current working directory. If directory resolving functions (`get_directory_by_type`) return `None` (for unconfigured resources) or invalid paths, failure to validate those results can expose sensitive codebase layouts or cause server-side crashes.
+**Prevention:** Always validate that resolved directory paths are not `None` and are valid directories using `os.path.isdir(directory)` before passing them to file system scanning utilities.
