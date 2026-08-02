@@ -15,15 +15,34 @@ class SwitchNode(io.ComfyNode):
         return io.Schema(
             node_id="ComfySwitchNode",
             display_name="Switch",
+            description="Select and pass through one of the two inputs based on a boolean condition.",
             category="logic",
             is_experimental=True,
+            search_aliases=["conditional", "if else", "multiplexer", "route", "branch", "toggle"],
             inputs=[
-                io.Boolean.Input("switch"),
-                io.MatchType.Input("on_false", template=template, lazy=True),
-                io.MatchType.Input("on_true", template=template, lazy=True),
+                io.Boolean.Input(
+                    "switch",
+                    tooltip="Condition to control the switch. If True, passes through 'on_true'; if False, passes through 'on_false'."
+                ),
+                io.MatchType.Input(
+                    "on_false",
+                    template=template,
+                    lazy=True,
+                    tooltip="The input value to return when the switch is False."
+                ),
+                io.MatchType.Input(
+                    "on_true",
+                    template=template,
+                    lazy=True,
+                    tooltip="The input value to return when the switch is True."
+                ),
             ],
             outputs=[
-                io.MatchType.Output(template=template, display_name="output"),
+                io.MatchType.Output(
+                    template=template,
+                    display_name="output",
+                    tooltip="The selected input value (either 'on_true' or 'on_false')."
+                ),
             ],
         )
 
@@ -101,12 +120,26 @@ class CustomComboNode(io.ComfyNode):
         return io.Schema(
             node_id="CustomCombo",
             display_name="Custom Combo",
+            description="Create a custom dropdown menu selection. Allows defining user-specified options directly in the frontend.",
             category="utils",
             is_experimental=True,
-            inputs=[io.Combo.Input("choice", options=[])],
+            search_aliases=["dropdown", "select list", "choice list", "user menu", "custom option"],
+            inputs=[
+                io.Combo.Input(
+                    "choice",
+                    options=[],
+                    tooltip="The user-specified menu option currently selected."
+                )
+            ],
             outputs=[
-                io.String.Output(display_name="STRING"),
-                io.Int.Output(display_name="INDEX"),
+                io.String.Output(
+                    display_name="STRING",
+                    tooltip="The text of the chosen option."
+                ),
+                io.Int.Output(
+                    display_name="INDEX",
+                    tooltip="The zero-based index of the selected option."
+                ),
             ],
             accept_all_inputs=True,
         )
