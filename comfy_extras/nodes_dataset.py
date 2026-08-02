@@ -12,6 +12,28 @@ import node_helpers
 from comfy_api.latest import ComfyExtension, io
 
 
+def safe_join(base, path):
+    if path is None:
+        return base
+
+    # Try to prevent traversal
+    resolved_path = os.path.abspath(os.path.join(base, path))
+    base_path = os.path.abspath(base)
+
+    try:
+        common = os.path.commonpath([base_path, resolved_path])
+    except ValueError as e:
+        # On Windows, if drives are different, commonpath raises ValueError
+        raise ValueError(
+            f"Path traversal detected: {path} is on a different drive than {base}"
+        ) from e
+
+    if common != base_path:
+        raise ValueError(f"Path traversal detected: {path} is outside of {base}")
+
+    return resolved_path
+
+
 def load_and_process_images(image_files, input_dir):
     """Utility function to load and process a list of images.
 
@@ -68,7 +90,7 @@ class LoadImageDataSetFromFolderNode(io.ComfyNode):
 
     @classmethod
     def execute(cls, folder):
-        sub_input_dir = os.path.join(folder_paths.get_input_directory(), folder)
+        sub_input_dir = safe_join(folder_paths.get_input_directory(), folder)
         valid_extensions = [".png", ".jpg", ".jpeg", ".webp"]
         image_files = [
             f
@@ -112,12 +134,12 @@ class LoadImageTextDataSetFromFolderNode(io.ComfyNode):
     def execute(cls, folder):
         logging.info(f"Loading images from folder: {folder}")
 
-        sub_input_dir = os.path.join(folder_paths.get_input_directory(), folder)
+        sub_input_dir = safe_join(folder_paths.get_input_directory(), folder)
         valid_extensions = [".png", ".jpg", ".jpeg", ".webp"]
 
         image_files = []
         for item in os.listdir(sub_input_dir):
-            path = os.path.join(sub_input_dir, item)
+            path = safe_join(sub_input_dir, item)
             if any(item.lower().endswith(ext) for ext in valid_extensions):
                 image_files.append(path)
             elif os.path.isdir(path):
@@ -127,7 +149,7 @@ class LoadImageTextDataSetFromFolderNode(io.ComfyNode):
                     repeat = int(item.split("_")[0])
                 image_files.extend(
                     [
-                        os.path.join(path, f)
+                        safe_join(path, f)
                         for f in os.listdir(path)
                         if any(f.lower().endswith(ext) for ext in valid_extensions)
                     ]
@@ -139,7 +161,7 @@ class LoadImageTextDataSetFromFolderNode(io.ComfyNode):
         ]
         captions = []
         for caption_file in caption_file_path:
-            caption_path = os.path.join(sub_input_dir, caption_file)
+            caption_path = safe_join(sub_input_dir, caption_file)
             if os.path.exists(caption_path):
                 with open(caption_path, "r", encoding="utf-8") as f:
                     caption = f.read().strip()
@@ -166,6 +188,7 @@ def save_images_to_folder(image_list, output_dir, prefix="image"):
     """
     os.makedirs(output_dir, exist_ok=True)
     saved_files = []
+    prefix = os.path.basename(prefix)
 
     for idx, img_tensor in enumerate(image_list):
         # Handle different tensor shapes
@@ -194,7 +217,7 @@ def save_images_to_folder(image_list, output_dir, prefix="image"):
 
         # Save image
         filename = f"{prefix}_{idx:05d}.png"
-        filepath = os.path.join(output_dir, filename)
+        filepath = safe_join(output_dir, filename)
         img.save(filepath)
         saved_files.append(filename)
 
@@ -232,9 +255,9 @@ class SaveImageDataSetToFolderNode(io.ComfyNode):
     def execute(cls, images, folder_name, filename_prefix):
         # Extract scalar values
         folder_name = folder_name[0]
-        filename_prefix = filename_prefix[0]
+        filename_prefix = os.path.basename(filename_prefix[0])
 
-        output_dir = os.path.join(folder_paths.get_output_directory(), folder_name)
+        output_dir = safe_join(folder_paths.get_output_directory(), folder_name)
         saved_files = save_images_to_folder(images, output_dir, filename_prefix)
 
         logging.info(f"Saved {len(saved_files)} images to {output_dir}.")
@@ -273,15 +296,15 @@ class SaveImageTextDataSetToFolderNode(io.ComfyNode):
     def execute(cls, images, texts, folder_name, filename_prefix):
         # Extract scalar values
         folder_name = folder_name[0]
-        filename_prefix = filename_prefix[0]
+        filename_prefix = os.path.basename(filename_prefix[0])
 
-        output_dir = os.path.join(folder_paths.get_output_directory(), folder_name)
+        output_dir = safe_join(folder_paths.get_output_directory(), folder_name)
         saved_files = save_images_to_folder(images, output_dir, filename_prefix)
 
         # Save captions
         for idx, (filename, caption) in enumerate(zip(saved_files, texts)):
             caption_filename = filename.replace(".png", ".txt")
-            caption_path = os.path.join(output_dir, caption_filename)
+            caption_path = safe_join(output_dir, caption_filename)
             with open(caption_path, "w", encoding="utf-8") as f:
                 f.write(caption)
 
@@ -1369,7 +1392,7 @@ class SaveTrainingDataset(io.ComfyNode):
             )
 
         # Create output directory
-        output_dir = os.path.join(folder_paths.get_output_directory(), folder_name)
+        output_dir = safe_join(folder_paths.get_output_directory(), folder_name)
         os.makedirs(output_dir, exist_ok=True)
 
         # Prepare data pairs
@@ -1393,7 +1416,7 @@ class SaveTrainingDataset(io.ComfyNode):
 
             # Save shard
             shard_filename = f"shard_{shard_idx:04d}.pkl"
-            shard_path = os.path.join(output_dir, shard_filename)
+            shard_path = safe_join(output_dir, shard_filename)
 
             with open(shard_path, "wb") as f:
                 torch.save(shard_data, f)
@@ -1408,7 +1431,7 @@ class SaveTrainingDataset(io.ComfyNode):
             "num_shards": num_shards,
             "shard_size": shard_size,
         }
-        metadata_path = os.path.join(output_dir, "metadata.json")
+        metadata_path = safe_join(output_dir, "metadata.json")
         with open(metadata_path, "w") as f:
             json.dump(metadata, f, indent=2)
 
@@ -1450,7 +1473,7 @@ class LoadTrainingDataset(io.ComfyNode):
     @classmethod
     def execute(cls, folder_name):
         # Get dataset directory
-        dataset_dir = os.path.join(folder_paths.get_output_directory(), folder_name)
+        dataset_dir = safe_join(folder_paths.get_output_directory(), folder_name)
 
         if not os.path.exists(dataset_dir):
             raise ValueError(f"Dataset directory not found: {dataset_dir}")
@@ -1474,10 +1497,10 @@ class LoadTrainingDataset(io.ComfyNode):
         all_conditioning = []  # list[list[cond]]
 
         for shard_file in shard_files:
-            shard_path = os.path.join(dataset_dir, shard_file)
+            shard_path = safe_join(dataset_dir, shard_file)
 
             with open(shard_path, "rb") as f:
-                shard_data = torch.load(f)
+                shard_data = torch.load(f, weights_only=True)
 
             all_latents.extend(shard_data["latents"])
             all_conditioning.extend(shard_data["conditioning"])
