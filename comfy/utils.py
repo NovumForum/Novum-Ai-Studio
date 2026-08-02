@@ -19,7 +19,6 @@
 
 import torch
 import math
-import binascii
 import struct
 import comfy.memory_management
 import safetensors.torch
@@ -1390,16 +1389,6 @@ def convert_old_quants(state_dict, model_prefix="", metadata={}):
     return state_dict, metadata
 
 def string_to_seed(data):
-    # Optimized with fast-path for performance using binascii.crc32 C-extension
-    if isinstance(data, str):
-        try:
-            return binascii.crc32(data.encode('ascii'))
-        except UnicodeEncodeError:
-            pass
-    elif isinstance(data, (bytes, bytearray)):
-        return binascii.crc32(data)
-
-    # Fallback to manual CRC32 calculation for non-ASCII characters or custom sequence types
     crc = 0xFFFFFFFF
     for byte in data:
         if isinstance(byte, str):
