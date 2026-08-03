@@ -1,3 +1,0 @@
-## 2025-02-15 - Separable 1D Gaussian Convolution Optimization
-**Learning:** A 2D Gaussian convolution of size $K \times K$ can be mathematically decomposed into two sequential 1D convolutions (horizontal then vertical) of size $1 \times K$ and $K \times 1$. This reduces the computational complexity from $O(K^2)$ per pixel to $O(K)$, resulting in up to 130x speedups on CPU for standard image sizes and larger radii (e.g., $K = 31$). It is crucial to verify that the kernel is indeed separable (unlike sharpening, where center modifications break separability).
-**Action:** Always identify if multi-dimensional convolutions/operations are separable before implementing standard 2D/3D operations, especially in CPU-bound or edge environments.
