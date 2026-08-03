@@ -72,6 +72,12 @@ def gaussian_kernel(kernel_size: int, sigma: float, device=None):
     g = torch.exp(-(d * d) / (2.0 * sigma * sigma))
     return g / g.sum()
 
+def gaussian_kernel_1d(kernel_size: int, sigma: float, device=None):
+    # Generates a 1D Gaussian kernel
+    x = torch.linspace(-1, 1, kernel_size, device=device)
+    g = torch.exp(-(x * x) / (2.0 * sigma * sigma))
+    return g / g.sum()
+
 class Blur(io.ComfyNode):
     @classmethod
     def define_schema(cls):
@@ -98,11 +104,23 @@ class Blur(io.ComfyNode):
         batch_size, height, width, channels = image.shape
 
         kernel_size = blur_radius * 2 + 1
-        kernel = gaussian_kernel(kernel_size, sigma, device=image.device).repeat(channels, 1, 1).unsqueeze(1)
+
+        # Use separable 1D Gaussian kernels for performance
+        kernel_1d = gaussian_kernel_1d(kernel_size, sigma, device=image.device)
+        kernel_1d = kernel_1d.to(dtype=image.dtype)
+
+        # Format horizontal and vertical 1D kernels for depthwise separable conv2d
+        kernel_h = kernel_1d.view(1, 1, 1, kernel_size).repeat(channels, 1, 1, 1)
+        kernel_v = kernel_1d.view(1, 1, kernel_size, 1).repeat(channels, 1, 1, 1)
 
         image = image.permute(0, 3, 1, 2) # Torch wants (B, C, H, W) we use (B, H, W, C)
-        padded_image = F.pad(image, (blur_radius,blur_radius,blur_radius,blur_radius), 'reflect')
-        blurred = F.conv2d(padded_image, kernel, padding=kernel_size // 2, groups=channels)[:,:,blur_radius:-blur_radius, blur_radius:-blur_radius]
+        padded_image = F.pad(image, (blur_radius, blur_radius, blur_radius, blur_radius), 'reflect')
+
+        # Apply horizontal 1D pass, then vertical 1D pass
+        blurred_h = F.conv2d(padded_image, kernel_h, padding=(0, blur_radius), groups=channels)
+        blurred_v = F.conv2d(blurred_h, kernel_v, padding=(blur_radius, 0), groups=channels)
+
+        blurred = blurred_v[:, :, blur_radius:-blur_radius, blur_radius:-blur_radius]
         blurred = blurred.permute(0, 2, 3, 1)
 
         return io.NodeOutput(blurred.to(comfy.model_management.intermediate_device()))
