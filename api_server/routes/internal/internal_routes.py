@@ -58,15 +58,23 @@ class InternalRoutes:
                 return web.json_response({"error": "Invalid directory type"}, status=400)
 
             directory = get_directory_by_type(directory_type)
+            if directory is None or not os.path.isdir(directory):
+                return web.json_response({"error": f"Directory for '{directory_type}' is unconfigured or not found"}, status=404)
 
             def is_visible_file(entry: os.DirEntry) -> bool:
                 """Filter out hidden files (e.g., .DS_Store on macOS)."""
                 return entry.is_file() and not entry.name.startswith('.')
 
-            sorted_files = sorted(
-                (entry for entry in os.scandir(directory) if is_visible_file(entry)),
-                key=lambda entry: -entry.stat().st_mtime
-            )
+            try:
+                sorted_files = sorted(
+                    (entry for entry in os.scandir(directory) if is_visible_file(entry)),
+                    key=lambda entry: -entry.stat().st_mtime
+                )
+            except Exception as e:
+                import logging
+                logging.error(f"Error scanning internal directory '{directory_type}': {e}")
+                return web.json_response({"error": "Failed to scan directory"}, status=500)
+
             return web.json_response([entry.name for entry in sorted_files], status=200)
 
 
