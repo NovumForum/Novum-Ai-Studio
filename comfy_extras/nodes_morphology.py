@@ -12,19 +12,21 @@ class Morphology(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="Morphology",
-            search_aliases=["erode", "dilate"],
             display_name="ImageMorphology",
+            description="Applies mathematical morphology operations (like erosion, dilation, opening, closing, morphological gradient, top-hat, or bottom-hat) to an image using a square kernel of specified size. This is useful for noise reduction, feature extraction, boundary detection, or mask refinement.",
+            search_aliases=["erode", "dilate", "opening", "closing", "gradient", "top hat", "bottom hat", "morphology", "mask refinement"],
             category="image/postprocessing",
             inputs=[
-                io.Image.Input("image"),
+                io.Image.Input("image", tooltip="The input image to apply the morphological operation to."),
                 io.Combo.Input(
                     "operation",
                     options=["erode", "dilate", "open", "close", "gradient", "bottom_hat", "top_hat"],
+                    tooltip="The mathematical morphology operation to perform (e.g., 'erode' to shrink bright regions, 'dilate' to expand bright regions, 'open' to remove small bright details, 'close' to fill small holes).",
                 ),
-                io.Int.Input("kernel_size", default=3, min=3, max=999, step=1),
+                io.Int.Input("kernel_size", default=3, min=3, max=999, step=1, tooltip="The size of the square structuring element kernel (must be an odd integer >= 3)."),
             ],
             outputs=[
-                io.Image.Output(),
+                io.Image.Output(tooltip="The morphologically processed image."),
             ],
         )
 
@@ -58,15 +60,17 @@ class ImageRGBToYUV(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="ImageRGBToYUV",
-            search_aliases=["color space conversion"],
+            display_name="Image RGB to YUV",
+            description="Converts an RGB image into its individual luminance (Y) and chrominance (U, V) component channels in the YCbCr/YUV color space. This allows independent processing of brightness and color details (e.g., for advanced masking, color correction, or compression/filtering operations).",
+            search_aliases=["color space conversion", "rgb to yuv", "ycbcr", "luma", "chroma", "split channels"],
             category="image/batch",
             inputs=[
-                io.Image.Input("image"),
+                io.Image.Input("image", tooltip="The input RGB image to be converted."),
             ],
             outputs=[
-                io.Image.Output(display_name="Y"),
-                io.Image.Output(display_name="U"),
-                io.Image.Output(display_name="V"),
+                io.Image.Output(display_name="Y", tooltip="The luminance (brightness) component channel of the image."),
+                io.Image.Output(display_name="U", tooltip="The blue-difference chrominance component channel of the image."),
+                io.Image.Output(display_name="V", tooltip="The red-difference chrominance component channel of the image."),
             ],
         )
 
@@ -80,15 +84,17 @@ class ImageYUVToRGB(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="ImageYUVToRGB",
-            search_aliases=["color space conversion"],
+            display_name="Image YUV to RGB",
+            description="Reconstructs an RGB image from its individual luminance (Y) and chrominance (U, V) component channels in the YCbCr/YUV color space. This is used to convert processed channels back to the standard RGB space.",
+            search_aliases=["color space conversion", "yuv to rgb", "ycbcr", "combine channels"],
             category="image/batch",
             inputs=[
-                io.Image.Input("Y"),
-                io.Image.Input("U"),
-                io.Image.Input("V"),
+                io.Image.Input("Y", tooltip="The luminance (brightness) component channel."),
+                io.Image.Input("U", tooltip="The blue-difference chrominance component channel."),
+                io.Image.Input("V", tooltip="The red-difference chrominance component channel."),
             ],
             outputs=[
-                io.Image.Output(),
+                io.Image.Output(tooltip="The reconstructed RGB image."),
             ],
         )
 
