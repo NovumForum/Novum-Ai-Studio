@@ -1,0 +1,4 @@
+## 2025-03-05 - Folder Paths Directory Fallback Leakage
+**Vulnerability:** Unconfigured or missing directory paths returning `None` fallback to scanning the current working directory (`'.'`) when passed directly to `os.scandir(None)`.
+**Learning:** In standard Python, calling `os.scandir(None)` defaults to the working directory. In ComfyUI, unconfigured directory directories (such as unconfigured `output`, `input`, or `temp` folders) can return `None` from path utilities, leading to unintended file listings of the repository root containing sensitive system files, code, and configurations.
+**Prevention:** Always validate that directories resolved from path utility functions are not `None` and point to valid, existing directories on the system via `os.path.isdir(directory)` before scanning or listing files.
