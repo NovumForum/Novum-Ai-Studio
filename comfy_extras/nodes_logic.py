@@ -9,6 +9,9 @@ MISSING = object()
 
 
 class SwitchNode(io.ComfyNode):
+    """
+    Routes one of two inputs to the output based on a boolean switch value.
+    """
     @classmethod
     def define_schema(cls):
         template = io.MatchType.Template("switch")
@@ -16,14 +19,16 @@ class SwitchNode(io.ComfyNode):
             node_id="ComfySwitchNode",
             display_name="Switch",
             category="logic",
+            description="Routes one of two inputs to the output based on a boolean switch value.",
+            search_aliases=["if else", "conditional", "route", "choose", "toggle", "binary switch"],
             is_experimental=True,
             inputs=[
-                io.Boolean.Input("switch"),
-                io.MatchType.Input("on_false", template=template, lazy=True),
-                io.MatchType.Input("on_true", template=template, lazy=True),
+                io.Boolean.Input("switch", tooltip="When true, 'on_true' is routed to the output; when false, 'on_false' is routed."),
+                io.MatchType.Input("on_false", template=template, lazy=True, tooltip="The value routed to the output when the switch is false."),
+                io.MatchType.Input("on_true", template=template, lazy=True, tooltip="The value routed to the output when the switch is true."),
             ],
             outputs=[
-                io.MatchType.Output(template=template, display_name="output"),
+                io.MatchType.Output(template=template, display_name="output", tooltip="The selected input value (either 'on_true' or 'on_false')."),
             ],
         )
 
@@ -102,11 +107,13 @@ class CustomComboNode(io.ComfyNode):
             node_id="CustomCombo",
             display_name="Custom Combo",
             category="utils",
+            description="Enables users to write and select custom option list values in a dynamic combo dropdown.",
+            search_aliases=["custom dropdown", "user list", "combo select", "custom choice", "dynamic selection"],
             is_experimental=True,
-            inputs=[io.Combo.Input("choice", options=[])],
+            inputs=[io.Combo.Input("choice", options=[], tooltip="Select the custom option from the user-defined dropdown list.")],
             outputs=[
-                io.String.Output(display_name="STRING"),
-                io.Int.Output(display_name="INDEX"),
+                io.String.Output(display_name="STRING", tooltip="The string value of the selected combo choice."),
+                io.Int.Output(display_name="INDEX", tooltip="The zero-based index of the selected combo choice in the options list."),
             ],
             accept_all_inputs=True,
         )
