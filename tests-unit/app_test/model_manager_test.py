@@ -60,3 +60,43 @@ async def test_get_model_preview_safetensors(aiohttp_client, app, tmp_path):
 
         # Clean up
         img.close()
+
+
+async def test_get_model_preview_path_traversal(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+
+        # Test URL-encoded path traversal which gets decoded and routed
+        response = await client.get('/experiment/models/preview/test_folder/0/..%2f..%2fetc/passwd')
+        assert response.status in (403, 404)
+
+        # Test path traversal with absolute path style or extra slash
+        response = await client.get('/experiment/models/preview/test_folder/0//etc/passwd')
+        assert response.status in (403, 404)
+
+        # Let's test a direct traversal check by matching with subfolder
+        # Since 'filename:.*' is used, any dots that don't simplify out can traverse.
+        # But our commonpath check will block them.
+        response = await client.get('/experiment/models/preview/test_folder/0/subdir/..%2f..%2fpasswd')
+        assert response.status == 403
+
+
+async def test_get_model_preview_bounds_validation(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+
+        # Test path_index out of bounds positive
+        response = await client.get('/experiment/models/preview/test_folder/1/some_file.png')
+        assert response.status == 404
+
+        # Test path_index negative
+        response = await client.get('/experiment/models/preview/test_folder/-1/some_file.png')
+        assert response.status == 404
+
+        # Test path_index non-integer
+        response = await client.get('/experiment/models/preview/test_folder/invalid_index/some_file.png')
+        assert response.status == 404
