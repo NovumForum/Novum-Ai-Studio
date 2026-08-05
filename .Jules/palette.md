@@ -1,0 +1,3 @@
+## 2025-08-05 - Semantic Search Aliases and Parameter-Level Tooltips in V3 Schema Definitions
+**Learning:** ComfyUI's V3 schema allows backend-defined search aliases and individual parameter-level tooltips that translate directly to screen reader compatibility and dynamic visual help states in the frontend. This decouples localizable in-context assistance from the client.
+**Action:** When creating or refining utility/logic nodes, always provide `search_aliases` with natural-language synonyms (e.g. "if else" for a switch node) and explicit parameter `tooltip` strings to make nodes discoverable and accessible.
