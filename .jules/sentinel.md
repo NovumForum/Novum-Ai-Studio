@@ -1,0 +1,4 @@
+## 2026-08-06 - Prevent Directory Listing Fallback Leaks
+**Vulnerability:** Calling `os.scandir(None)` or `os.listdir(None)` in Python defaults to scanning/listing the current working directory (`"."`). If a system/folder configuration utility evaluates to `None` (for instance, when unconfigured or failing to map), scanning the directory without checking if it is `None` will inadvertently leak the root repository structure and files.
+**Learning:** Python's design allows `None` as an argument to filesystem traversal functions as a shorthand for the current working directory. Developers must explicitly validate that paths are not `None` and point to valid, existing directories before executing filesystem discovery calls.
+**Prevention:** Always enforce a validation check such as `if directory is None or not os.path.isdir(directory):` before invoking `os.scandir` or `os.listdir` on potentially dynamic or configurable variables.
