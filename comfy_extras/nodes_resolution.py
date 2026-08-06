@@ -37,13 +37,26 @@ class ResolutionSelector(io.ComfyNode):
             node_id="ResolutionSelector",
             display_name="Resolution Selector",
             category="utils",
-            description="Calculate width and height from aspect ratio and megapixel target. Useful for setting up Empty Latent Image dimensions.",
+            search_aliases=[
+                "aspect ratio",
+                "aspect",
+                "dimensions",
+                "resolution",
+                "image size",
+                "latent size",
+                "megapixels",
+                "empty latent size",
+                "width",
+                "height",
+                "ratio",
+            ],
+            description="Automatically calculate the optimal width and height dimensions in pixels (rounded to multiples of 8) based on a target aspect ratio and total megapixels. Perfect for dynamically setting the size of Empty Latent Images for Stable Diffusion, Flux, or upscale pipelines without manually doing the math.",
             inputs=[
                 io.Combo.Input(
                     "aspect_ratio",
                     options=AspectRatio,
                     default=AspectRatio.SQUARE,
-                    tooltip="The aspect ratio for the output dimensions.",
+                    tooltip="Choose from standard aspect ratios like 1:1, 16:9, or portrait formats. Calculates dimensions keeping this ratio.",
                 ),
                 io.Float.Input(
                     "megapixels",
@@ -51,15 +64,17 @@ class ResolutionSelector(io.ComfyNode):
                     min=0.1,
                     max=16.0,
                     step=0.1,
-                    tooltip="Target total megapixels. 1.0 MP ≈ 1024×1024 for square.",
+                    tooltip="Target total pixel count in megapixels (e.g. 1.0 MP is 1024x1024, 0.25 MP is 512x512). Higher values generate larger, higher-fidelity images but require more VRAM.",
                 ),
             ],
             outputs=[
                 io.Int.Output(
-                    "width", tooltip="Calculated width in pixels (multiple of 8)."
+                    "width",
+                    tooltip="Calculated target width in pixels, rounded to the nearest multiple of 8 for optimal neural network processing.",
                 ),
                 io.Int.Output(
-                    "height", tooltip="Calculated height in pixels (multiple of 8)."
+                    "height",
+                    tooltip="Calculated target height in pixels, rounded to the nearest multiple of 8 for optimal neural network processing.",
                 ),
             ],
         )
