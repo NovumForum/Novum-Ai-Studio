@@ -1,3 +1,4 @@
+# pylint: disable=unsubscriptable-object,unpacking-non-sequence
 from comfy_extras.nodes_resolution import ResolutionSelector, AspectRatio
 
 
