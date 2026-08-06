@@ -34,6 +34,7 @@ import json
 import time
 import mmap
 import warnings
+import binascii
 
 MMAP_TORCH_FILES = args.mmap_torch_files
 DISABLE_MMAP = args.disable_mmap
@@ -1389,6 +1390,13 @@ def convert_old_quants(state_dict, model_prefix="", metadata={}):
     return state_dict, metadata
 
 def string_to_seed(data):
+    # Optimize using C-extension binascii.crc32 for pure ASCII strings and bytes/bytearrays.
+    # We maintain 100% backward compatibility via the original manual loop fallback.
+    if isinstance(data, str) and data.isascii():
+        return binascii.crc32(data.encode('ascii'))
+    elif isinstance(data, (bytes, bytearray)):
+        return binascii.crc32(data)
+
     crc = 0xFFFFFFFF
     for byte in data:
         if isinstance(byte, str):
