@@ -1,0 +1,3 @@
+## 2025-02-18 - Discoverability and Semantic Layout of Dimension Configuration Utilities
+**Learning:** Utilities that map aspect ratios to actual pixel values (e.g., `ResolutionSelector`) are critical for dynamic node configuration but often remain hidden in search engines due to a lack of precise synonyms like "image size" or "latent size". Providing deep, multi-level tooltips that explain target Megapixels and multiple-of-8 restrictions directly improves cognitive ease, reducing setup errors.
+**Action:** When working on node schemas that configure spatial sizes, ensure a comprehensive list of synonyms is added to search aliases and the description outlines rounding constraints (like multiples of 8) to optimize clarity and accessibility.
