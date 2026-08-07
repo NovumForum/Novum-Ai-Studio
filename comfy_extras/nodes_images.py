@@ -431,14 +431,40 @@ class ResizeAndPadImage(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ResizeAndPadImage",
-            search_aliases=["fit to size"],
+            display_name="Resize and Pad Image",
+            description="Resizes the image proportionally to fit within the target dimensions, padding any remaining empty area with a solid color to prevent stretching.",
+            search_aliases=["fit to size", "resize", "pad image", "letterbox", "pillarbox"],
             category="image/transform",
             inputs=[
                 IO.Image.Input("image"),
-                IO.Int.Input("target_width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("target_height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Combo.Input("padding_color", options=["white", "black"], advanced=True),
-                IO.Combo.Input("interpolation", options=["area", "bicubic", "nearest-exact", "bilinear", "lanczos"], advanced=True),
+                IO.Int.Input(
+                    "target_width",
+                    default=512,
+                    min=1,
+                    max=nodes.MAX_RESOLUTION,
+                    step=1,
+                    tooltip="The target width of the final padded image canvas."
+                ),
+                IO.Int.Input(
+                    "target_height",
+                    default=512,
+                    min=1,
+                    max=nodes.MAX_RESOLUTION,
+                    step=1,
+                    tooltip="The target height of the final padded image canvas."
+                ),
+                IO.Combo.Input(
+                    "padding_color",
+                    options=["white", "black"],
+                    advanced=True,
+                    tooltip="The background color used to fill any empty space when padding the image."
+                ),
+                IO.Combo.Input(
+                    "interpolation",
+                    options=["area", "bicubic", "nearest-exact", "bilinear", "lanczos"],
+                    advanced=True,
+                    tooltip="The interpolation algorithm used for resizing. 'lanczos' or 'bicubic' are recommended for upscaling; 'area' for downscaling."
+                ),
             ],
             outputs=[IO.Image.Output()],
         )
@@ -648,14 +674,25 @@ class ImageScaleToMaxDimension(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ImageScaleToMaxDimension",
+            display_name="Scale Image to Max Dimension",
+            description="Scales an image proportionally so its largest dimension (width or height) matches the specified size, maintaining aspect ratio.",
+            search_aliases=["resize image", "constrain image", "fit dimension", "scale to max"],
             category="image/upscaling",
             inputs=[
                 IO.Image.Input("image"),
                 IO.Combo.Input(
                     "upscale_method",
                     options=["area", "lanczos", "bilinear", "nearest-exact", "bilinear", "bicubic"],
+                    tooltip="The interpolation algorithm used to resize the image. 'lanczos' or 'bicubic' are recommended for high-quality upscaling."
                 ),
-                IO.Int.Input("largest_size", default=512, min=0, max=MAX_RESOLUTION, step=1),
+                IO.Int.Input(
+                    "largest_size",
+                    default=512,
+                    min=0,
+                    max=MAX_RESOLUTION,
+                    step=1,
+                    tooltip="The target size for the larger edge of the image. The smaller edge will be scaled proportionally."
+                ),
             ],
             outputs=[IO.Image.Output()],
         )
