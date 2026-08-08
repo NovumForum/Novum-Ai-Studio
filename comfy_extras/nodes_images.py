@@ -55,12 +55,13 @@ class ImageCropV2(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ImageCropV2",
-            search_aliases=["trim"],
+            search_aliases=["trim", "slice", "cut", "crop image", "region of interest"],
             display_name="Image Crop",
             category="image/transform",
+            description="Crops an image using a specified bounding box region. This helps focus on specific objects or regions of interest.",
             inputs=[
-                IO.Image.Input("image"),
-                IO.BoundingBox.Input("crop_region", component="ImageCrop"),
+                IO.Image.Input("image", tooltip="The source image or batch of images to crop."),
+                IO.BoundingBox.Input("crop_region", component="ImageCrop", tooltip="The bounding box defining the x, y coordinates and width, height of the area to crop."),
             ],
             outputs=[IO.Image.Output()],
         )
@@ -85,13 +86,15 @@ class BoundingBox(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="PrimitiveBoundingBox",
+            search_aliases=["crop region", "bbox", "rectangle", "area selection", "dimensions"],
             display_name="Bounding Box",
             category="utils/primitive",
+            description="Defines a rectangular bounding box with coordinates (x, y) and dimensions (width, height) to specify regions of interest for image operations.",
             inputs=[
-                IO.Int.Input("x", default=0, min=0, max=MAX_RESOLUTION),
-                IO.Int.Input("y", default=0, min=0, max=MAX_RESOLUTION),
-                IO.Int.Input("width", default=512, min=1, max=MAX_RESOLUTION),
-                IO.Int.Input("height", default=512, min=1, max=MAX_RESOLUTION),
+                IO.Int.Input("x", default=0, min=0, max=MAX_RESOLUTION, tooltip="The horizontal (X) starting coordinate of the bounding box."),
+                IO.Int.Input("y", default=0, min=0, max=MAX_RESOLUTION, tooltip="The vertical (Y) starting coordinate of the bounding box."),
+                IO.Int.Input("width", default=512, min=1, max=MAX_RESOLUTION, tooltip="The horizontal width of the bounding box in pixels."),
+                IO.Int.Input("height", default=512, min=1, max=MAX_RESOLUTION, tooltip="The vertical height of the bounding box in pixels."),
             ],
             outputs=[IO.BoundingBox.Output()],
         )
