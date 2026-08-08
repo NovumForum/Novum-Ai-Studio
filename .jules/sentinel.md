@@ -1,0 +1,4 @@
+## 2026-08-08 - Path Traversal & Index Out-of-Bounds in Model Preview
+**Vulnerability:** The experimental model preview route allowed arbitrary path traversal via unconstrained `{filename:.*}` parameters, as well as unhandled `IndexError` crashes via un-validated `path_index` inputs.
+**Learning:** Standard HTTP client-side path normalization blocks simple raw directory traversals, but URL-encoded traversals or direct handler invocations bypass this client-side defense. Jailing the paths on the server side using `os.path.commonpath` containment checks coupled with stripping leading path separators ensures proper jail implementation.
+**Prevention:** Always validate index lookups against collection bounds. Normalize files utilizing `os.path.abspath` and verify parent folder containment using `os.path.commonpath`.

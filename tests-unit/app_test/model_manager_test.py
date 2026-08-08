@@ -60,3 +60,56 @@ async def test_get_model_preview_safetensors(aiohttp_client, app, tmp_path):
 
         # Clean up
         img.close()
+
+from aiohttp.test_utils import make_mocked_request
+
+async def test_get_model_preview_path_traversal_blocking(app, tmp_path):
+    route = next(r for r in app.router.routes() if r.method == "GET" and "/experiment/models/preview/" in r.resource.canonical)
+    handler = route.handler
+
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        # 1. Test directory traversal with ..
+        req_traversal = make_mocked_request(
+            'GET',
+            '/dummy',
+            app=app,
+            match_info={'folder': 'test_folder', 'path_index': '0', 'filename': '../../etc/passwd'}
+        )
+        response = await handler(req_traversal)
+        assert response.status == 403
+
+        # 2. Test absolute path escape (it gets jailed and treated as relative, returning 404 since it doesn't exist)
+        req_absolute = make_mocked_request(
+            'GET',
+            '/dummy',
+            app=app,
+            match_info={'folder': 'test_folder', 'path_index': '0', 'filename': '/etc/passwd'}
+        )
+        response = await handler(req_absolute)
+        assert response.status == 404
+
+async def test_get_model_preview_index_out_of_bounds(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+
+        # Test out of bounds positive index
+        response = await client.get('/experiment/models/preview/test_folder/1/test_model.safetensors')
+        assert response.status == 404
+
+        # Test out of bounds negative index
+        response = await client.get('/experiment/models/preview/test_folder/-1/test_model.safetensors')
+        assert response.status == 404
+
+async def test_get_model_preview_invalid_index(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+
+        # Test non-integer index
+        response = await client.get('/experiment/models/preview/test_folder/abc/test_model.safetensors')
+        assert response.status == 404
