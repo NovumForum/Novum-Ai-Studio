@@ -1,0 +1,3 @@
+## 2026-03-01 - Separable 1D Gaussian Image Blur and Sharpen Optimization
+**Learning:** Standard 2D convolutions with a $K \times K$ kernel can be highly inefficient on CPU/GPU, particularly for larger radii (like $R=31$, $K=63$). Because Gaussian filters are mathematically separable, sequential horizontal and vertical 1D convolutions reduce complexity per pixel from $O(K^2)$ to $O(K)$. Additionally, the original code had redundant inner padding inside `F.conv2d` and subsequent slicing, which introduced immense memory allocation and CPU overhead.
+**Action:** Always refactor 2D Gaussian/kernel operations into separable 1D operations. Avoid redundant or nested padding parameters in PyTorch convolutions that can degrade performance significantly.

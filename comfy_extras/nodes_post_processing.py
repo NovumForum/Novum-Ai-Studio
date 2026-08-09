@@ -72,6 +72,11 @@ def gaussian_kernel(kernel_size: int, sigma: float, device=None):
     g = torch.exp(-(d * d) / (2.0 * sigma * sigma))
     return g / g.sum()
 
+def gaussian_kernel_1d(kernel_size: int, sigma: float, device=None):
+    x = torch.linspace(-1, 1, kernel_size, device=device)
+    g = torch.exp(-(x * x) / (2.0 * sigma * sigma))
+    return g / g.sum()
+
 class Blur(io.ComfyNode):
     @classmethod
     def define_schema(cls):
@@ -91,18 +96,31 @@ class Blur(io.ComfyNode):
 
     @classmethod
     def execute(cls, image: torch.Tensor, blur_radius: int, sigma: float) -> io.NodeOutput:
-        if blur_radius == 0:
+        # If radius is zero or negative, return input image unchanged
+        if blur_radius <= 0:
             return io.NodeOutput(image)
 
         image = image.to(comfy.model_management.get_torch_device())
         batch_size, height, width, channels = image.shape
 
         kernel_size = blur_radius * 2 + 1
-        kernel = gaussian_kernel(kernel_size, sigma, device=image.device).repeat(channels, 1, 1).unsqueeze(1)
+        # Generate 1D Gaussian kernel
+        kernel_1d = gaussian_kernel_1d(kernel_size, sigma, device=image.device).to(dtype=image.dtype)
 
-        image = image.permute(0, 3, 1, 2) # Torch wants (B, C, H, W) we use (B, H, W, C)
-        padded_image = F.pad(image, (blur_radius,blur_radius,blur_radius,blur_radius), 'reflect')
-        blurred = F.conv2d(padded_image, kernel, padding=kernel_size // 2, groups=channels)[:,:,blur_radius:-blur_radius, blur_radius:-blur_radius]
+        # Reshape to separable 1D horizontal and vertical kernels for grouped conv2d
+        kernel_h = kernel_1d.view(1, 1, 1, kernel_size).repeat(channels, 1, 1, 1)
+        kernel_v = kernel_1d.view(1, 1, kernel_size, 1).repeat(channels, 1, 1, 1)
+
+        # Permute input to (B, C, H, W) for PyTorch convolution
+        image = image.permute(0, 3, 1, 2)
+        # Apply reflection padding once
+        padded_image = F.pad(image, (blur_radius, blur_radius, blur_radius, blur_radius), 'reflect')
+
+        # Run separable 1D horizontal then vertical convolutions
+        blurred_h = F.conv2d(padded_image, kernel_h, groups=channels)
+        blurred = F.conv2d(blurred_h, kernel_v, groups=channels)
+
+        # Restore layout to (B, H, W, C)
         blurred = blurred.permute(0, 2, 3, 1)
 
         return io.NodeOutput(blurred.to(comfy.model_management.intermediate_device()))
@@ -192,25 +210,37 @@ class Sharpen(io.ComfyNode):
 
     @classmethod
     def execute(cls, image: torch.Tensor, sharpen_radius: int, sigma:float, alpha: float) -> io.NodeOutput:
-        if sharpen_radius == 0:
+        # If radius is zero or negative, return input image unchanged
+        if sharpen_radius <= 0:
             return io.NodeOutput(image)
 
-        batch_size, height, width, channels = image.shape
         image = image.to(comfy.model_management.get_torch_device())
+        batch_size, height, width, channels = image.shape
 
         kernel_size = sharpen_radius * 2 + 1
-        kernel = gaussian_kernel(kernel_size, sigma, device=image.device) * -(alpha*10)
-        kernel = kernel.to(dtype=image.dtype)
-        center = kernel_size // 2
-        kernel[center, center] = kernel[center, center] - kernel.sum() + 1.0
-        kernel = kernel.repeat(channels, 1, 1).unsqueeze(1)
+        # Generate 1D Gaussian kernel
+        kernel_1d = gaussian_kernel_1d(kernel_size, sigma, device=image.device).to(dtype=image.dtype)
 
-        tensor_image = image.permute(0, 3, 1, 2) # Torch wants (B, C, H, W) we use (B, H, W, C)
-        tensor_image = F.pad(tensor_image, (sharpen_radius,sharpen_radius,sharpen_radius,sharpen_radius), 'reflect')
-        sharpened = F.conv2d(tensor_image, kernel, padding=center, groups=channels)[:,:,sharpen_radius:-sharpen_radius, sharpen_radius:-sharpen_radius]
+        # Reshape to separable 1D horizontal and vertical kernels for grouped conv2d
+        kernel_h = kernel_1d.view(1, 1, 1, kernel_size).repeat(channels, 1, 1, 1)
+        kernel_v = kernel_1d.view(1, 1, kernel_size, 1).repeat(channels, 1, 1, 1)
+
+        # Permute input to (B, C, H, W) for PyTorch convolution
+        tensor_image = image.permute(0, 3, 1, 2)
+        # Apply reflection padding once
+        padded_image = F.pad(tensor_image, (sharpen_radius, sharpen_radius, sharpen_radius, sharpen_radius), 'reflect')
+
+        # Run separable 1D horizontal then vertical convolutions
+        blurred_h = F.conv2d(padded_image, kernel_h, groups=channels)
+        blurred = F.conv2d(blurred_h, kernel_v, groups=channels)
+
+        # K_sharpen * X = -lambda * (K_gaussian * X) + (1 + lambda) * X
+        lambda_val = alpha * 10.0
+        sharpened = -lambda_val * blurred + (1.0 + lambda_val) * tensor_image
+
+        # Restore layout to (B, H, W, C)
         sharpened = sharpened.permute(0, 2, 3, 1)
-
-        result = torch.clamp(sharpened, 0, 1)
+        result = torch.clamp(sharpened, 0.0, 1.0)
 
         return io.NodeOutput(result.to(comfy.model_management.intermediate_device()))
 
