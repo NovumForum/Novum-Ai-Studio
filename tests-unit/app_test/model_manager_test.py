@@ -60,3 +60,43 @@ async def test_get_model_preview_safetensors(aiohttp_client, app, tmp_path):
 
         # Clean up
         img.close()
+
+async def test_get_model_preview_invalid_path_index_format(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+        response = await client.get('/experiment/models/preview/test_folder/abc/test_model.safetensors')
+        assert response.status == 400
+        text = await response.text()
+        assert "Invalid path_index format" in text
+
+async def test_get_model_preview_path_index_out_of_bounds(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+
+        # Test negative index
+        response_neg = await client.get('/experiment/models/preview/test_folder/-1/test_model.safetensors')
+        assert response_neg.status == 400
+        text_neg = await response_neg.text()
+        assert "Invalid path_index" in text_neg
+
+        # Test index too large
+        response_large = await client.get('/experiment/models/preview/test_folder/1/test_model.safetensors')
+        assert response_large.status == 400
+        text_large = await response_large.text()
+        assert "Invalid path_index" in text_large
+
+async def test_get_model_preview_path_traversal(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+
+        # Attempt to traverse using URL-encoded relative segments to bypass client normalization
+        response = await client.get('/experiment/models/preview/test_folder/0/%2E%2E%2Ftest_model.safetensors')
+        assert response.status == 403
+        text = await response.text()
+        assert "Access denied" in text
