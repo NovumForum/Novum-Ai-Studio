@@ -16,11 +16,26 @@ class SwitchNode(io.ComfyNode):
             node_id="ComfySwitchNode",
             display_name="Switch",
             category="logic",
+            description="Route and evaluate one of two inputs depending on a boolean switch value.",
+            search_aliases=["if else", "conditional", "route", "select input", "toggle route", "branch"],
             is_experimental=True,
             inputs=[
-                io.Boolean.Input("switch"),
-                io.MatchType.Input("on_false", template=template, lazy=True),
-                io.MatchType.Input("on_true", template=template, lazy=True),
+                io.Boolean.Input(
+                    "switch",
+                    tooltip="When enabled (True), the 'on_true' input is evaluated and returned. When disabled (False), the 'on_false' input is evaluated and returned."
+                ),
+                io.MatchType.Input(
+                    "on_false",
+                    template=template,
+                    lazy=True,
+                    tooltip="The input value evaluated and returned when the switch is disabled (False)."
+                ),
+                io.MatchType.Input(
+                    "on_true",
+                    template=template,
+                    lazy=True,
+                    tooltip="The input value evaluated and returned when the switch is enabled (True)."
+                ),
             ],
             outputs=[
                 io.MatchType.Output(template=template, display_name="output"),
@@ -102,8 +117,16 @@ class CustomComboNode(io.ComfyNode):
             node_id="CustomCombo",
             display_name="Custom Combo",
             category="utils",
+            description="An experimental node that allows user-defined custom dropdown menu options in the frontend interface.",
+            search_aliases=["custom dropdown", "user options", "custom selection", "manual combo"],
             is_experimental=True,
-            inputs=[io.Combo.Input("choice", options=[])],
+            inputs=[
+                io.Combo.Input(
+                    "choice",
+                    options=[],
+                    tooltip="The selected custom option value. Options can be customized directly in the frontend."
+                )
+            ],
             outputs=[
                 io.String.Output(display_name="STRING"),
                 io.Int.Output(display_name="INDEX"),
