@@ -430,14 +430,22 @@ class LatentOperationSharpen(io.ComfyNode):
             channels = latent.shape[1]
 
             kernel_size = sharpen_radius * 2 + 1
-            kernel = comfy_extras.nodes_post_processing.gaussian_kernel(kernel_size, sigma, device=luminance.device)
-            center = kernel_size // 2
+            kernel_1d = comfy_extras.nodes_post_processing.gaussian_kernel_1d(kernel_size, sigma, device=luminance.device).to(dtype=normalized_latent.dtype)
 
-            kernel *= alpha * -10
-            kernel[center, center] = kernel[center, center] - kernel.sum() + 1.0
+            # Reshape to separable 1D horizontal and vertical kernels for grouped conv2d
+            kernel_h = kernel_1d.view(1, 1, 1, kernel_size).repeat(channels, 1, 1, 1)
+            kernel_v = kernel_1d.view(1, 1, kernel_size, 1).repeat(channels, 1, 1, 1)
 
-            padded_image = torch.nn.functional.pad(normalized_latent, (sharpen_radius,sharpen_radius,sharpen_radius,sharpen_radius), 'reflect')
-            sharpened = torch.nn.functional.conv2d(padded_image, kernel.repeat(channels, 1, 1).unsqueeze(1), padding=kernel_size // 2, groups=channels)[:,:,sharpen_radius:-sharpen_radius, sharpen_radius:-sharpen_radius]
+            # Apply reflection padding once
+            padded_image = torch.nn.functional.pad(normalized_latent, (sharpen_radius, sharpen_radius, sharpen_radius, sharpen_radius), 'reflect')
+
+            # Run separable 1D horizontal then vertical convolutions
+            blurred_h = torch.nn.functional.conv2d(padded_image, kernel_h, groups=channels)
+            blurred = torch.nn.functional.conv2d(blurred_h, kernel_v, groups=channels)
+
+            # K_sharpen * X = -lambda * (K_gaussian * X) + (1 + lambda) * X
+            lambda_val = alpha * 10.0
+            sharpened = -lambda_val * blurred + (1.0 + lambda_val) * normalized_latent
 
             return luminance * sharpened
         return io.NodeOutput(sharpen)
