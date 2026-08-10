@@ -1,0 +1,7 @@
+## 2025-02-18 - Experimental Model Preview Path Traversal & Out-of-Bounds Index Access
+**Vulnerability:** The experimental model preview route (`/experiment/models/preview/{folder}/{path_index}/{filename:.*}`) suffered from path traversal because `filename` was unsanitized and appended via `os.path.join` to the selected folder, allowing attackers to access arbitrary file paths outside the designated directory structure. Additionally, it lacked bounds checking on the user-controlled integer `path_index`, which resulted in unhandled `IndexError` crashes (500 Internal Server Error) and potential stack trace exposure on out-of-bounds requests.
+**Learning:** Experimental endpoints are often overlooked or written with fewer security safeguards compared to production paths, but they remain active and exposed to external requests. Always apply standard security practices—such as path containment validation and input bounds checks—even on "temporary" or "experimental" routes.
+**Prevention:**
+1. Use `os.path.commonpath` to ensure any user-controlled path parameter resolves to a subdirectory of the expected base folder.
+2. Validate user-controlled integer inputs (such as list indexes) immediately after parsing to ensure they fall within the correct bounds before accessing lists or arrays.
+3. Wrap potentially failing operations, like string-to-integer conversion, in robust exception handlers to fail securely.
