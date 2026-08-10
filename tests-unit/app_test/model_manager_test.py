@@ -60,3 +60,37 @@ async def test_get_model_preview_safetensors(aiohttp_client, app, tmp_path):
 
         # Clean up
         img.close()
+
+
+async def test_get_model_preview_out_of_bounds_path_index(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+        # Out of bounds index
+        response = await client.get('/experiment/models/preview/test_folder/5/test_model.safetensors')
+        assert response.status == 404
+
+        # Negative index
+        response2 = await client.get('/experiment/models/preview/test_folder/-1/test_model.safetensors')
+        assert response2.status == 404
+
+        # Non-integer path_index
+        response3 = await client.get('/experiment/models/preview/test_folder/abc/test_model.safetensors')
+        assert response3.status == 404
+
+
+async def test_get_model_preview_path_traversal(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+        # Relative path traversal with encoded slashes to prevent client-side normalization
+        response = await client.get('/experiment/models/preview/test_folder/0/..%2f..%2fetc%2fpasswd')
+        assert response.status == 403
+        assert "Access Denied" in (await response.text())
+
+        # Absolute path traversal (or attempts to access outside of folder)
+        response2 = await client.get('/experiment/models/preview/test_folder/0//etc/passwd')
+        assert response2.status == 403
+        assert "Access Denied" in (await response2.text())
