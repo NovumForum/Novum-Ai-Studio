@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch, MagicMock
 
 # Mock nodes module to prevent CUDA initialization during import
