@@ -821,17 +821,18 @@ def resize_to_batch_size(tensor, batch_size):
     if batch_size <= 1:
         return tensor[:batch_size]
 
-    output = torch.empty([batch_size] + list(tensor.shape)[1:], dtype=tensor.dtype, device=tensor.device)
+    # Performance Optimization: Vectorized index generation avoids iterative Python looping.
+    # Using float64 guarantees exact rounding equivalence with python floats.
     if batch_size < in_batch_size:
         scale = (in_batch_size - 1) / (batch_size - 1)
-        for i in range(batch_size):
-            output[i] = tensor[min(round(i * scale), in_batch_size - 1)]
+        steps = torch.arange(batch_size, dtype=torch.float64, device=tensor.device)
+        indices = torch.clamp(torch.round(steps * scale), 0, in_batch_size - 1).long()
     else:
         scale = in_batch_size / batch_size
-        for i in range(batch_size):
-            output[i] = tensor[min(math.floor((i + 0.5) * scale), in_batch_size - 1)]
+        steps = torch.arange(batch_size, dtype=torch.float64, device=tensor.device)
+        indices = torch.clamp(torch.floor((steps + 0.5) * scale), 0, in_batch_size - 1).long()
 
-    return output
+    return tensor[indices]
 
 def resize_list_to_batch_size(l, batch_size):
     in_batch_size = len(l)
@@ -841,17 +842,13 @@ def resize_list_to_batch_size(l, batch_size):
     if batch_size <= 1:
         return l[:batch_size]
 
-    output = []
+    # Performance Optimization: Refactored using fast, clean list comprehensions.
     if batch_size < in_batch_size:
         scale = (in_batch_size - 1) / (batch_size - 1)
-        for i in range(batch_size):
-            output.append(l[min(round(i * scale), in_batch_size - 1)])
+        return [l[min(round(i * scale), in_batch_size - 1)] for i in range(batch_size)]
     else:
         scale = in_batch_size / batch_size
-        for i in range(batch_size):
-           output.append(l[min(math.floor((i + 0.5) * scale), in_batch_size - 1)])
-
-    return output
+        return [l[min(math.floor((i + 0.5) * scale), in_batch_size - 1)] for i in range(batch_size)]
 
 def convert_sd_to(state_dict, dtype):
     keys = list(state_dict.keys())
