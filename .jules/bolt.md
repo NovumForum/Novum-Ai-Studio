@@ -1,3 +1,0 @@
-## 2026-03-05 - Double-Precision Index Matching for Vectorized Rounding
-**Learning:** Vectorizing floating-point index generation in PyTorch using `torch.float32` can introduce slight rounding discrepancies compared to Python's native double-precision floats (`float64`), causing index-matching mismatches during `round` or `floor` logic. Using `torch.float64` for vectorized index arithmetic guarantees 100% equivalence to original Python float rounding behavior.
-**Action:** Always compute scaling ratios and indices using `torch.float64` when replacing Python float division loops with vectorized PyTorch steps, then cast to integer dtypes.

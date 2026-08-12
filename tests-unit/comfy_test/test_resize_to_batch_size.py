@@ -1,6 +1,5 @@
 import torch
 import math
-import pytest
 from comfy.utils import resize_to_batch_size, resize_list_to_batch_size
 
 def resize_to_batch_size_reference(tensor, batch_size):
