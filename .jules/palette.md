@@ -1,0 +1,3 @@
+## 2026-08-12 - Node Schema Tooltips for Masking and Search Discoverability
+**Learning:** In node-based visual programming environments, masking operations are frequently search-heavy. Standardizing precise parameter tooltips (e.g., clarifying that 0.0 is black/unmasked and 1.0 is white/masked) and expanding search aliases dramatically increases usability and screen reader support for complex inpainting and image compositing workflows.
+**Action:** Always enrich masking and filtering node schemas with descriptive aliases and numeric/range constraints in tooltips to maximize discoverability and accessibility.

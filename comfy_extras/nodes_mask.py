@@ -177,11 +177,35 @@ class SolidMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="SolidMask",
+            display_name="Solid Mask",
+            description="Generates a blank solid mask of a specified size filled with a constant intensity value.",
+            search_aliases=["blank mask", "empty mask", "constant mask", "uniform mask", "fill mask"],
             category="mask",
             inputs=[
-                IO.Float.Input("value", default=1.0, min=0.0, max=1.0, step=0.01),
-                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
+                IO.Float.Input(
+                    "value",
+                    default=1.0,
+                    min=0.0,
+                    max=1.0,
+                    step=0.01,
+                    tooltip="The fill value/intensity of the mask. 0.0 is completely black (unmasked), 1.0 is completely white (masked).",
+                ),
+                IO.Int.Input(
+                    "width",
+                    default=512,
+                    min=1,
+                    max=nodes.MAX_RESOLUTION,
+                    step=1,
+                    tooltip="The width of the generated mask in pixels.",
+                ),
+                IO.Int.Input(
+                    "height",
+                    default=512,
+                    min=1,
+                    max=nodes.MAX_RESOLUTION,
+                    step=1,
+                    tooltip="The height of the generated mask in pixels.",
+                ),
             ],
             outputs=[IO.Mask.Output()],
         )
@@ -199,10 +223,12 @@ class InvertMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="InvertMask",
-            search_aliases=["reverse mask", "flip mask"],
+            display_name="Invert Mask",
+            description="Inverts the mask values, swapping masked (white) areas with unmasked (black) areas.",
+            search_aliases=["reverse mask", "flip mask", "negate mask", "opposite mask"],
             category="mask",
             inputs=[
-                IO.Mask.Input("mask"),
+                IO.Mask.Input("mask", tooltip="The input mask to invert."),
             ],
             outputs=[IO.Mask.Output()],
         )
@@ -380,11 +406,20 @@ class ThresholdMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ThresholdMask",
-            search_aliases=["binary mask"],
+            display_name="Threshold Mask",
+            description="Converts a soft or grayscale mask into a binary (black & white) mask based on a threshold value.",
+            search_aliases=["binary mask", "binarize mask", "hard mask", "cutoff mask"],
             category="mask",
             inputs=[
-                IO.Mask.Input("mask"),
-                IO.Float.Input("value", default=0.5, min=0.0, max=1.0, step=0.01),
+                IO.Mask.Input("mask", tooltip="The grayscale or soft input mask to binarize."),
+                IO.Float.Input(
+                    "value",
+                    default=0.5,
+                    min=0.0,
+                    max=1.0,
+                    step=0.01,
+                    tooltip="The cutoff threshold. Values above this threshold become 1.0 (white/masked), while values below or equal become 0.0 (black/unmasked).",
+                ),
             ],
             outputs=[IO.Mask.Output()],
         )
