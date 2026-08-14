@@ -9,7 +9,6 @@ from typing import TypedDict, Literal
 
 import comfy.utils
 import comfy.model_management
-from comfy_extras.nodes_latent import reshape_latent_to
 import node_helpers
 from comfy_api.latest import ComfyExtension, io
 from nodes import MAX_RESOLUTION
