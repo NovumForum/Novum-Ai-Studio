@@ -60,3 +60,29 @@ async def test_get_model_preview_safetensors(aiohttp_client, app, tmp_path):
 
         # Clean up
         img.close()
+
+async def test_get_model_preview_path_traversal(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+        response = await client.get('/experiment/models/preview/test_folder/0/sub/..%2f..%2fetc/passwd')
+        assert response.status == 403
+
+async def test_get_model_preview_invalid_path_index(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+
+        # Non-integer path_index
+        response = await client.get('/experiment/models/preview/test_folder/abc/test_model.safetensors')
+        assert response.status == 400
+
+        # Out of bounds positive index
+        response = await client.get('/experiment/models/preview/test_folder/10/test_model.safetensors')
+        assert response.status == 404
+
+        # Out of bounds negative index
+        response = await client.get('/experiment/models/preview/test_folder/-1/test_model.safetensors')
+        assert response.status == 404
