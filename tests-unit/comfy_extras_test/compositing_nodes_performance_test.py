@@ -1,5 +1,4 @@
 import torch
-import pytest
 from comfy_extras.nodes_compositing import SplitImageWithAlpha, JoinImageWithAlpha
 
 
