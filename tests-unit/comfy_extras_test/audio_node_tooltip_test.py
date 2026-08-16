@@ -1,4 +1,3 @@
-import pytest
 from comfy_extras.nodes_audio import ConditioningStableAudio
 
 def test_conditioning_stable_audio_schema():
