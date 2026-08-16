@@ -59,6 +59,10 @@ class InternalRoutes:
 
             directory = get_directory_by_type(directory_type)
 
+            # Security check: prevent uncaught TypeError in os.scandir(None) if directory is unconfigured or non-existent
+            if not directory or not os.path.exists(directory):
+                return web.json_response({"error": "Directory not found"}, status=404)
+
             def is_visible_file(entry: os.DirEntry) -> bool:
                 """Filter out hidden files (e.g., .DS_Store on macOS)."""
                 return entry.is_file() and not entry.name.startswith('.')
