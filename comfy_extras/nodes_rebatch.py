@@ -129,13 +129,27 @@ class ImageRebatch(io.ComfyNode):
         batch_size = batch_size[0]
 
         output_list = []
-        all_images = []
-        for img in images:
-            for i in range(img.shape[0]):
-                all_images.append(img[i:i+1])
+        buffer = []
+        buffer_count = 0
 
-        for i in range(0, len(all_images), batch_size):
-            output_list.append(torch.cat(all_images[i:i+batch_size], dim=0))
+        # Stream through image batches, slicing slices of target batch_size directly
+        # to avoid per-single-image tensor creation and redundant list iterations.
+        for img in images:
+            offset = 0
+            img_count = img.shape[0]
+            while offset < img_count:
+                needed = batch_size - buffer_count
+                take = min(needed, img_count - offset)
+                buffer.append(img[offset:offset + take])
+                buffer_count += take
+                offset += take
+                if buffer_count == batch_size:
+                    output_list.append(buffer[0] if len(buffer) == 1 else torch.cat(buffer, dim=0))
+                    buffer = []
+                    buffer_count = 0
+
+        if buffer:
+            output_list.append(buffer[0] if len(buffer) == 1 else torch.cat(buffer, dim=0))
 
         return io.NodeOutput(output_list)
 
