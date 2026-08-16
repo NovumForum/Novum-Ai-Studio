@@ -42,16 +42,19 @@ class ConditioningStableAudio(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ConditioningStableAudio",
+            display_name="Conditioning (Stable Audio)",
+            description="Applies start time and duration conditioning parameters to positive and negative prompts for audio generation models like Stable Audio.",
+            search_aliases=["audio conditioning", "stable audio prompt", "sound timing", "audio prompt timing"],
             category="conditioning",
             inputs=[
-                IO.Conditioning.Input("positive"),
-                IO.Conditioning.Input("negative"),
-                IO.Float.Input("seconds_start", default=0.0, min=0.0, max=1000.0, step=0.1),
-                IO.Float.Input("seconds_total", default=47.0, min=0.0, max=1000.0, step=0.1),
+                IO.Conditioning.Input("positive", tooltip="The positive conditioning prompt to modify with timing parameters."),
+                IO.Conditioning.Input("negative", tooltip="The negative conditioning prompt to modify with timing parameters."),
+                IO.Float.Input("seconds_start", default=0.0, min=0.0, max=1000.0, step=0.1, tooltip="The starting time (offset) in seconds for audio generation."),
+                IO.Float.Input("seconds_total", default=47.0, min=0.0, max=1000.0, step=0.1, tooltip="The total duration in seconds for audio generation."),
             ],
             outputs=[
-                IO.Conditioning.Output(display_name="positive"),
-                IO.Conditioning.Output(display_name="negative"),
+                IO.Conditioning.Output("positive", display_name="positive", tooltip="The positive conditioning modified with audio timing parameters."),
+                IO.Conditioning.Output("negative", display_name="negative", tooltip="The negative conditioning modified with audio timing parameters."),
             ],
         )
 
