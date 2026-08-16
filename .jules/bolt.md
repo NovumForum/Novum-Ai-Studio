@@ -1,0 +1,3 @@
+## 2026-03-06 - Stream Slicing in Batch Operations
+**Learning:** Naively iterating over image batch dimensions in Python (`for img in images: for i in range(img.shape[0]): all_images.append(img[i:i+1])`) creates thousands of single-frame 4D tensor views and forces `torch.cat` across large list boundaries. Slicing larger sub-chunks (`img[offset:offset + take]`) directly into a size-constrained streaming buffer completely eliminates unneeded `torch.cat` operations when chunks fit within a single input tensor view.
+**Action:** Always stream sub-tensor slices directly when re-batching multidimensional tensors to avoid per-element tensor allocations.
