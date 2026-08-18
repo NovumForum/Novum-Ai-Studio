@@ -29,16 +29,19 @@ class FreeU(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="FreeU",
+            display_name="FreeU",
+            description="Applies FreeU model patching to re-balance backbone feature maps and skip connections, boosting image quality.",
+            search_aliases=["freeu", "free u", "unet patch", "quality boost"],
             category="model_patches/unet",
             inputs=[
-                IO.Model.Input("model"),
-                IO.Float.Input("b1", default=1.1, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("b2", default=1.2, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("s1", default=0.9, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("s2", default=0.2, min=0.0, max=10.0, step=0.01, advanced=True),
+                IO.Model.Input("model", tooltip="The UNet model to apply FreeU patching to."),
+                IO.Float.Input("b1", default=1.1, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Backbone scaling factor 1 for main feature amplification."),
+                IO.Float.Input("b2", default=1.2, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Backbone scaling factor 2 for secondary feature amplification."),
+                IO.Float.Input("s1", default=0.9, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Skip connection scaling factor 1 for high-frequency attenuation."),
+                IO.Float.Input("s2", default=0.2, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Skip connection scaling factor 2 for high-frequency attenuation."),
             ],
             outputs=[
-                IO.Model.Output(),
+                IO.Model.Output(id="MODEL", display_name="MODEL", tooltip="The patched model with FreeU feature adjustments applied."),
             ],
         )
 
@@ -76,16 +79,19 @@ class FreeU_V2(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="FreeU_V2",
+            display_name="FreeU V2",
+            description="Applies FreeU V2 model patching with spatial feature normalization to improve generation quality without over-saturation.",
+            search_aliases=["freeu v2", "freeu2", "free u v2", "unet patch v2", "quality boost v2"],
             category="model_patches/unet",
             inputs=[
-                IO.Model.Input("model"),
-                IO.Float.Input("b1", default=1.3, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("b2", default=1.4, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("s1", default=0.9, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("s2", default=0.2, min=0.0, max=10.0, step=0.01, advanced=True),
+                IO.Model.Input("model", tooltip="The UNet model to apply FreeU V2 patching to."),
+                IO.Float.Input("b1", default=1.3, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Backbone scaling factor 1 with spatial normalization scaling."),
+                IO.Float.Input("b2", default=1.4, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Backbone scaling factor 2 with spatial normalization scaling."),
+                IO.Float.Input("s1", default=0.9, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Skip connection scaling factor 1 for high-frequency attenuation."),
+                IO.Float.Input("s2", default=0.2, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Skip connection scaling factor 2 for high-frequency attenuation."),
             ],
             outputs=[
-                IO.Model.Output(),
+                IO.Model.Output(id="MODEL", display_name="MODEL", tooltip="The patched model with FreeU V2 feature adjustments applied."),
             ],
         )
 
