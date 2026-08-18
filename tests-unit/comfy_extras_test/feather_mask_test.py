@@ -78,6 +78,5 @@ def test_feather_mask_performance():
     time_new = t3 - t2
 
     assert torch.allclose(res_old, res_new, atol=1e-6)
-    # Ensure performance gain is achieved
     speedup = time_old / time_new
     assert speedup > 5.0, f"Expected speedup > 5x, got {speedup:.2f}x"
