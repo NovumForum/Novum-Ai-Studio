@@ -180,9 +180,13 @@ class SplitImageWithAlpha(io.ComfyNode):
 
     @classmethod
     def execute(cls, image: torch.Tensor) -> io.NodeOutput:
-        out_images = [i[:,:,:3] for i in image]
-        out_alphas = [i[:,:,3] if i.shape[2] > 3 else torch.ones_like(i[:,:,0]) for i in image]
-        return io.NodeOutput(torch.stack(out_images), 1.0 - torch.stack(out_alphas))
+        # Vectorized split using direct slicing instead of Python loop list allocation
+        out_images = image[..., :3]
+        if image.shape[-1] > 3:
+            out_alphas = image[..., 3]
+        else:
+            out_alphas = torch.ones(image.shape[:3], device=image.device, dtype=image.dtype)
+        return io.NodeOutput(out_images, 1.0 - out_alphas)
 
 
 class JoinImageWithAlpha(io.ComfyNode):
@@ -202,14 +206,15 @@ class JoinImageWithAlpha(io.ComfyNode):
 
     @classmethod
     def execute(cls, image: torch.Tensor, alpha: torch.Tensor) -> io.NodeOutput:
+        # Vectorized join using batched tensor concatenation instead of Python loop and torch.stack
         batch_size = min(len(image), len(alpha))
-        out_images = []
+        image = image[:batch_size]
+        alpha = alpha[:batch_size]
 
         alpha = 1.0 - resize_mask(alpha, image.shape[1:])
-        for i in range(batch_size):
-           out_images.append(torch.cat((image[i][:,:,:3], alpha[i].unsqueeze(2)), dim=2))
+        out_images = torch.cat((image[..., :3], alpha.unsqueeze(-1)), dim=-1)
 
-        return io.NodeOutput(torch.stack(out_images))
+        return io.NodeOutput(out_images)
 
 
 class CompositingExtension(ComfyExtension):
