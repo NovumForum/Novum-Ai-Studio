@@ -1,7 +1,6 @@
 import torch
 import numpy as np
 import scipy.ndimage
-import pytest
 from unittest.mock import patch, MagicMock
 
 mock_nodes = MagicMock()
