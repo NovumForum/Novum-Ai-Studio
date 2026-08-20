@@ -117,4 +117,3 @@ class MorphologyExtension(ComfyExtension):
 
 async def comfy_entrypoint() -> MorphologyExtension:
     return MorphologyExtension()
-
