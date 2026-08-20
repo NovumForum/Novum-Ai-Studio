@@ -287,3 +287,12 @@ async def test_listuserdata_v2_url_encoded_path(aiohttp_client, app, tmp_path):
     assert entry["name"] == "file.txt"
     # Ensure the path is correctly decoded and uses forward slash
     assert entry["path"] == "my dir/file.txt"
+
+
+async def test_getuserdata_directory_returns_error(aiohttp_client, app, tmp_path):
+    os.makedirs(tmp_path / "test_subdir")
+
+    client = await aiohttp_client(app)
+    resp = await client.get("/userdata/test_subdir")
+    assert resp.status == 400
+    assert "directory" in (await resp.text()).lower()
