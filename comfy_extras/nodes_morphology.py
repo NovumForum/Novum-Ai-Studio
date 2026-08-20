@@ -12,19 +12,21 @@ class Morphology(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="Morphology",
-            search_aliases=["erode", "dilate"],
             display_name="ImageMorphology",
+            description="Apply mathematical morphology operations (such as erosion, dilation, opening, closing, or top hat) to process image structures and mask shapes.",
+            search_aliases=["erode", "dilate", "morphology", "opening", "closing", "top hat", "bottom hat", "kernel"],
             category="image/postprocessing",
             inputs=[
-                io.Image.Input("image"),
+                io.Image.Input("image", tooltip="The input image or mask to process with mathematical morphology."),
                 io.Combo.Input(
                     "operation",
                     options=["erode", "dilate", "open", "close", "gradient", "bottom_hat", "top_hat"],
+                    tooltip="Morphological operation: 'erode' shrinks features, 'dilate' expands them, 'open' removes small noise, 'close' fills small gaps, 'gradient' highlights edges, 'top_hat' isolates bright details, 'bottom_hat' isolates dark details.",
                 ),
-                io.Int.Input("kernel_size", default=3, min=3, max=999, step=1),
+                io.Int.Input("kernel_size", default=3, min=3, max=999, step=1, tooltip="Size of the structuring element kernel in pixels (must be an odd integer, e.g. 3, 5, 7)."),
             ],
             outputs=[
-                io.Image.Output(),
+                io.Image.Output(id="IMAGE", display_name="IMAGE", tooltip="The morphologically filtered output image."),
             ],
         )
 
@@ -58,15 +60,17 @@ class ImageRGBToYUV(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="ImageRGBToYUV",
-            search_aliases=["color space conversion"],
+            display_name="RGB to YUV",
+            description="Convert an RGB image into separate Y (Luminance), U (Chrominance-Blue), and V (Chrominance-Red) color channels.",
+            search_aliases=["color space conversion", "rgb to yuv", "yuv split", "luminance", "chrominance"],
             category="image/batch",
             inputs=[
-                io.Image.Input("image"),
+                io.Image.Input("image", tooltip="The input RGB image to convert into YUV color channels."),
             ],
             outputs=[
-                io.Image.Output(display_name="Y"),
-                io.Image.Output(display_name="U"),
-                io.Image.Output(display_name="V"),
+                io.Image.Output(id="Y", display_name="Y", tooltip="Luminance (brightness) channel as a grayscale image."),
+                io.Image.Output(id="U", display_name="U", tooltip="U chrominance (blue-difference) channel as a grayscale image."),
+                io.Image.Output(id="V", display_name="V", tooltip="V chrominance (red-difference) channel as a grayscale image."),
             ],
         )
 
@@ -80,15 +84,17 @@ class ImageYUVToRGB(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="ImageYUVToRGB",
-            search_aliases=["color space conversion"],
+            display_name="YUV to RGB",
+            description="Recombine separate Y (Luminance), U (Chrominance-Blue), and V (Chrominance-Red) color channels into a single RGB image.",
+            search_aliases=["color space conversion", "yuv to rgb", "yuv merge", "luminance", "chrominance"],
             category="image/batch",
             inputs=[
-                io.Image.Input("Y"),
-                io.Image.Input("U"),
-                io.Image.Input("V"),
+                io.Image.Input("Y", tooltip="Luminance (brightness) channel image."),
+                io.Image.Input("U", tooltip="U chrominance (blue-difference) channel image."),
+                io.Image.Input("V", tooltip="V chrominance (red-difference) channel image."),
             ],
             outputs=[
-                io.Image.Output(),
+                io.Image.Output(id="IMAGE", display_name="IMAGE", tooltip="Recombined RGB image."),
             ],
         )
 
