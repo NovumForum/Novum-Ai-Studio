@@ -1,3 +1,5 @@
+import numpy as np
+import scipy.ndimage
 import torch
 import comfy.utils
 import node_helpers
@@ -162,13 +164,9 @@ class ImageColorToMask(IO.ComfyNode):
 
     @classmethod
     def execute(cls, image, color) -> IO.NodeOutput:
-        # Vectorized channel-wise target color comparison avoiding bitwise shifting 4D tensors
-        c_r = (color >> 16) & 0xFF
-        c_g = (color >> 8) & 0xFF
-        c_b = color & 0xFF
-        target = torch.tensor([c_r, c_g, c_b], device=image.device)
-        temp = (torch.clamp(image[:, :, :, :3], 0, 1.0) * 255.0).round()
-        mask = (temp == target).all(dim=-1).float()
+        temp = (torch.clamp(image, 0, 1.0) * 255.0).round().to(torch.int)
+        temp = torch.bitwise_left_shift(temp[:,:,:,0], 16) + torch.bitwise_left_shift(temp[:,:,:,1], 8) + temp[:,:,:,2]
+        mask = torch.where(temp == color, 1.0, 0).float()
         return IO.NodeOutput(mask)
 
     image_to_mask = execute  # TODO: remove
@@ -357,41 +355,22 @@ class GrowMask(IO.ComfyNode):
 
     @classmethod
     def execute(cls, mask, expand, tapered_corners) -> IO.NodeOutput:
-        if expand == 0:
-            return IO.NodeOutput(mask.reshape((-1, mask.shape[-2], mask.shape[-1])))
-
-        mask_p = mask.reshape((-1, 1, mask.shape[-2], mask.shape[-1]))
-        abs_expand = abs(expand)
-
-        # Vectorized PyTorch implementation replacing sequential SciPy CPU grey dilation/erosion loops
-        if tapered_corners:
-            for _ in range(abs_expand):
-                p = torch.nn.functional.pad(mask_p, (1, 1, 1, 1), mode='replicate')
-                if expand > 0:
-                    mask_p = torch.max(
-                        torch.max(p[:, :, 1:-1, 1:-1], p[:, :, :-2, 1:-1]),
-                        torch.max(
-                            torch.max(p[:, :, 2:, 1:-1], p[:, :, 1:-1, :-2]),
-                            p[:, :, 1:-1, 2:]
-                        )
-                    )
+        c = 0 if tapered_corners else 1
+        kernel = np.array([[c, 1, c],
+                           [1, 1, 1],
+                           [c, 1, c]])
+        mask = mask.reshape((-1, mask.shape[-2], mask.shape[-1]))
+        out = []
+        for m in mask:
+            output = m.numpy()
+            for _ in range(abs(expand)):
+                if expand < 0:
+                    output = scipy.ndimage.grey_erosion(output, footprint=kernel)
                 else:
-                    mask_p = -torch.max(
-                        torch.max(-p[:, :, 1:-1, 1:-1], -p[:, :, :-2, 1:-1]),
-                        torch.max(
-                            torch.max(-p[:, :, 2:, 1:-1], -p[:, :, 1:-1, :-2]),
-                            -p[:, :, 1:-1, 2:]
-                        )
-                    )
-        else:
-            for _ in range(abs_expand):
-                p = torch.nn.functional.pad(mask_p, (1, 1, 1, 1), mode='replicate')
-                if expand > 0:
-                    mask_p = torch.nn.functional.max_pool2d(p, kernel_size=3, stride=1, padding=0)
-                else:
-                    mask_p = -torch.nn.functional.max_pool2d(-p, kernel_size=3, stride=1, padding=0)
-
-        return IO.NodeOutput(mask_p.squeeze(1))
+                    output = scipy.ndimage.grey_dilation(output, footprint=kernel)
+            output = torch.from_numpy(output)
+            out.append(output)
+        return IO.NodeOutput(torch.stack(out, dim=0))
 
     expand_mask = execute  # TODO: remove
 

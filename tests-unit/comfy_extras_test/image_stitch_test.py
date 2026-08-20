@@ -1,13 +1,14 @@
 import torch
 from unittest.mock import patch, MagicMock
 
-# Mock nodes and server modules to prevent CUDA initialization during import
+# Mock nodes module to prevent CUDA initialization during import
 mock_nodes = MagicMock()
 mock_nodes.MAX_RESOLUTION = 16384
-mock_server = MagicMock()
-mock_comfy_kitchen = MagicMock()
 
-with patch.dict('sys.modules', {'nodes': mock_nodes, 'server': mock_server, 'comfy_kitchen': mock_comfy_kitchen}):
+# Mock server module for PromptServer
+mock_server = MagicMock()
+
+with patch.dict('sys.modules', {'nodes': mock_nodes, 'server': mock_server}):
     from comfy_extras.nodes_images import ImageStitch
 
 
