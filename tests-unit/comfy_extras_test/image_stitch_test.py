@@ -240,4 +240,3 @@ class TestImageStitch:
         expected_image2_width = int(64 * (32/32))  # Resized to height 64
         expected_total_width = 48 + 8 + expected_image2_width
         assert result[0].shape[2] == expected_total_width
-
