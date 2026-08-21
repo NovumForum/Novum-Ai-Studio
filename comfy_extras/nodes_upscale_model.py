@@ -21,12 +21,18 @@ class UpscaleModelLoader(io.ComfyNode):
         return io.Schema(
             node_id="UpscaleModelLoader",
             display_name="Load Upscale Model",
+            description="Load an upscale model (e.g. RealESRGAN, SwinIR, ESRGAN, DAT, UltraSharp) from the upscale_models directory for image super-resolution.",
             category="loaders",
+            search_aliases=["upscale model", "load upscale model", "esrgan", "swinir", "supersampling"],
             inputs=[
-                io.Combo.Input("model_name", options=folder_paths.get_filename_list("upscale_models")),
+                io.Combo.Input(
+                    "model_name",
+                    options=folder_paths.get_filename_list("upscale_models"),
+                    tooltip="The upscale model file to load from the models/upscale_models folder.",
+                ),
             ],
             outputs=[
-                io.UpscaleModel.Output(),
+                io.UpscaleModel.Output(tooltip="The loaded upscale model descriptor."),
             ],
         )
 
@@ -52,14 +58,15 @@ class ImageUpscaleWithModel(io.ComfyNode):
         return io.Schema(
             node_id="ImageUpscaleWithModel",
             display_name="Upscale Image (using Model)",
+            description="Upscale an image using a neural network upscale model (e.g. RealESRGAN, SwinIR) with automatic memory-aware tiled processing.",
             category="image/upscaling",
-            search_aliases=["upscale", "upscaler", "upsc", "enlarge image", "super resolution", "hires", "superres", "increase resolution"],
+            search_aliases=["upscale", "upscaler", "upsc", "enlarge image", "super resolution", "hires", "superres", "increase resolution", "model upscale", "esrgan", "swinir"],
             inputs=[
-                io.UpscaleModel.Input("upscale_model"),
-                io.Image.Input("image"),
+                io.UpscaleModel.Input("upscale_model", tooltip="The loaded upscale model to process the image."),
+                io.Image.Input("image", tooltip="The image tensor to upscale."),
             ],
             outputs=[
-                io.Image.Output(),
+                io.Image.Output(tooltip="The upscaled output image."),
             ],
         )
 
