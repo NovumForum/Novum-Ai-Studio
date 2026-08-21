@@ -782,15 +782,15 @@ class ImageMergeTileList(IO.ComfyNode):
         weights = torch.zeros((b, h, w, 1), device=device, dtype=dtype)
 
         if ovlp > 0:
-            y_w = torch.sin(math.pi * torch.linspace(0, 1, t_h, device=device, dtype=dtype))
-            x_w = torch.sin(math.pi * torch.linspace(0, 1, t_w, device=device, dtype=dtype))
-            y_w = torch.clamp(y_w, min=1e-5)
-            x_w = torch.clamp(x_w, min=1e-5)
+            y_w = torch.clamp(torch.sin(math.pi * torch.linspace(0, 1, t_h, device=device, dtype=dtype)), min=1e-5)
+            x_w = torch.clamp(torch.sin(math.pi * torch.linspace(0, 1, t_w, device=device, dtype=dtype)), min=1e-5)
 
             sine_mask = (y_w.unsqueeze(1) * x_w.unsqueeze(0)).unsqueeze(0).unsqueeze(-1)
-            flat_mask = torch.ones_like(sine_mask)
-
-            weight_mask = torch.lerp(flat_mask, sine_mask, feather_str)
+            # Avoid allocating a full-sized flat_mask tensor (ones_like) for feather_str == 1.0 (default)
+            if feather_str == 1.0:
+                weight_mask = sine_mask
+            else:
+                weight_mask = torch.lerp(torch.tensor(1.0, device=device, dtype=dtype), sine_mask, feather_str)
         else:
             weight_mask = torch.ones((1, t_h, t_w, 1), device=device, dtype=dtype)
 
