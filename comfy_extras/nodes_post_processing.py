@@ -20,15 +20,17 @@ class Blend(io.ComfyNode):
         return io.Schema(
             node_id="ImageBlend",
             display_name="Image Blend",
+            description="Blend two images together using various blend modes (e.g. normal, multiply, screen, overlay, soft_light, difference) and opacity factor.",
             category="image/postprocessing",
+            search_aliases=["blend", "image blend", "mix images", "composite images", "overlay images", "layer blend", "opacity"],
             inputs=[
-                io.Image.Input("image1"),
-                io.Image.Input("image2"),
-                io.Float.Input("blend_factor", default=0.5, min=0.0, max=1.0, step=0.01),
-                io.Combo.Input("blend_mode", options=["normal", "multiply", "screen", "overlay", "soft_light", "difference"]),
+                io.Image.Input("image1", tooltip="The base background image."),
+                io.Image.Input("image2", tooltip="The foreground image to blend over image1."),
+                io.Float.Input("blend_factor", default=0.5, min=0.0, max=1.0, step=0.01, tooltip="Blending opacity weight, where 0.0 is entirely image1 and 1.0 is entirely image2."),
+                io.Combo.Input("blend_mode", options=["normal", "multiply", "screen", "overlay", "soft_light", "difference"], tooltip="Blending mode function (e.g. normal, multiply, screen, overlay, soft_light, difference)."),
             ],
             outputs=[
-                io.Image.Output(),
+                io.Image.Output(tooltip="The blended output image."),
             ],
         )
 
@@ -78,14 +80,16 @@ class Blur(io.ComfyNode):
         return io.Schema(
             node_id="ImageBlur",
             display_name="Image Blur",
+            description="Apply Gaussian blur filter to smooth or defocus an image.",
             category="image/postprocessing",
+            search_aliases=["blur", "image blur", "gaussian blur", "defocus", "smooth image", "soften"],
             inputs=[
-                io.Image.Input("image"),
-                io.Int.Input("blur_radius", default=1, min=1, max=31, step=1),
-                io.Float.Input("sigma", default=1.0, min=0.1, max=10.0, step=0.1),
+                io.Image.Input("image", tooltip="The input image to blur."),
+                io.Int.Input("blur_radius", default=1, min=1, max=31, step=1, tooltip="Radius of the blur kernel in pixels."),
+                io.Float.Input("sigma", default=1.0, min=0.1, max=10.0, step=0.1, tooltip="Standard deviation of the Gaussian kernel controlling blur softness."),
             ],
             outputs=[
-                io.Image.Output(),
+                io.Image.Output(tooltip="The blurred output image."),
             ],
         )
 
@@ -113,14 +117,17 @@ class Quantize(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="ImageQuantize",
+            display_name="Image Quantize",
+            description="Reduce the color palette size of an image with optional dithering (e.g. Floyd-Steinberg or Bayer matrix).",
             category="image/postprocessing",
+            search_aliases=["quantize", "image quantize", "dither", "color reduction", "palette", "posterize", "pixel art"],
             inputs=[
-                io.Image.Input("image"),
-                io.Int.Input("colors", default=256, min=1, max=256, step=1),
-                io.Combo.Input("dither", options=["none", "floyd-steinberg", "bayer-2", "bayer-4", "bayer-8", "bayer-16"]),
+                io.Image.Input("image", tooltip="The input image to quantize."),
+                io.Int.Input("colors", default=256, min=1, max=256, step=1, tooltip="Maximum number of distinct colors in the output palette (1 to 256)."),
+                io.Combo.Input("dither", options=["none", "floyd-steinberg", "bayer-2", "bayer-4", "bayer-8", "bayer-16"], tooltip="Dithering method to reduce color banding (e.g. Floyd-Steinberg or Bayer matrices)."),
             ],
             outputs=[
-                io.Image.Output(),
+                io.Image.Output(tooltip="The color-quantized output image."),
             ],
         )
 
@@ -178,15 +185,18 @@ class Sharpen(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="ImageSharpen",
+            display_name="Image Sharpen",
+            description="Enhance detail and image sharpness using an unsharp mask filter.",
             category="image/postprocessing",
+            search_aliases=["sharpen", "image sharpen", "unsharp mask", "clarity", "enhance details", "edge enhancement"],
             inputs=[
-                io.Image.Input("image"),
-                io.Int.Input("sharpen_radius", default=1, min=1, max=31, step=1, advanced=True),
-                io.Float.Input("sigma", default=1.0, min=0.1, max=10.0, step=0.01, advanced=True),
-                io.Float.Input("alpha", default=1.0, min=0.0, max=5.0, step=0.01, advanced=True),
+                io.Image.Input("image", tooltip="The input image to sharpen."),
+                io.Int.Input("sharpen_radius", default=1, min=1, max=31, step=1, advanced=True, tooltip="Radius of the sharpening filter kernel."),
+                io.Float.Input("sigma", default=1.0, min=0.1, max=10.0, step=0.01, advanced=True, tooltip="Standard deviation of the Gaussian filter used for sharpening."),
+                io.Float.Input("alpha", default=1.0, min=0.0, max=5.0, step=0.01, advanced=True, tooltip="Strength factor of the sharpening filter effect."),
             ],
             outputs=[
-                io.Image.Output(),
+                io.Image.Output(tooltip="The sharpened output image."),
             ],
         )
 
@@ -222,15 +232,18 @@ class ImageScaleToTotalPixels(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="ImageScaleToTotalPixels",
+            display_name="Scale Image to Total Pixels",
+            description="Scale an image so its total pixel count matches a target megapixel value while maintaining aspect ratio.",
             category="image/upscaling",
+            search_aliases=["scale image", "scale megapixels", "resize megapixels", "total pixels", "upscale megapixels", "downscale megapixels"],
             inputs=[
-                io.Image.Input("image"),
-                io.Combo.Input("upscale_method", options=cls.upscale_methods),
-                io.Float.Input("megapixels", default=1.0, min=0.01, max=16.0, step=0.01),
-                io.Int.Input("resolution_steps", default=1, min=1, max=256, advanced=True),
+                io.Image.Input("image", tooltip="The input image to resize."),
+                io.Combo.Input("upscale_method", options=cls.upscale_methods, tooltip="Interpolation algorithm used for scaling (e.g. bicubic, bilinear, lanczos, area)."),
+                io.Float.Input("megapixels", default=1.0, min=0.01, max=16.0, step=0.01, tooltip="Target total resolution in megapixels (e.g. 1.0 ≈ 1024×1024)."),
+                io.Int.Input("resolution_steps", default=1, min=1, max=256, advanced=True, tooltip="Enforce scaled width and height to be multiples of this step size."),
             ],
             outputs=[
-                io.Image.Output(),
+                io.Image.Output(tooltip="The resized output image."),
             ],
         )
 
