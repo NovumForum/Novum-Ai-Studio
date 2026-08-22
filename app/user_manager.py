@@ -400,6 +400,9 @@ class UserManager():
             if not isinstance(path, str):
                 return path
 
+            if os.path.isdir(path):
+                return web.Response(status=400, text="Requested path is a directory")
+
             os.remove(path)
 
             return web.Response(status=204)
