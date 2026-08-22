@@ -1,6 +1,4 @@
 import torch
-import pytest
-from unittest.mock import patch, MagicMock
 
 import comfy.cli_args
 comfy.cli_args.args.cpu = True
