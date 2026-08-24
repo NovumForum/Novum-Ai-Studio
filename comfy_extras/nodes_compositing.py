@@ -180,13 +180,9 @@ class SplitImageWithAlpha(io.ComfyNode):
 
     @classmethod
     def execute(cls, image: torch.Tensor) -> io.NodeOutput:
-        # Vectorized slicing across batch dimension eliminates Python loop overhead and torch.stack allocations (~7x-9x speedup).
-        out_images = image[:, :, :, :3]
-        if image.shape[-1] > 3:
-            out_alphas = 1.0 - image[:, :, :, 3]
-        else:
-            out_alphas = torch.zeros((image.shape[0], image.shape[1], image.shape[2]), device=image.device, dtype=image.dtype)
-        return io.NodeOutput(out_images, out_alphas)
+        out_images = [i[:,:,:3] for i in image]
+        out_alphas = [i[:,:,3] if i.shape[2] > 3 else torch.ones_like(i[:,:,0]) for i in image]
+        return io.NodeOutput(torch.stack(out_images), 1.0 - torch.stack(out_alphas))
 
 
 class JoinImageWithAlpha(io.ComfyNode):
@@ -206,15 +202,14 @@ class JoinImageWithAlpha(io.ComfyNode):
 
     @classmethod
     def execute(cls, image: torch.Tensor, alpha: torch.Tensor) -> io.NodeOutput:
-        # Vectorized tensor slicing and batched torch.cat across entire batch eliminates Python loop and torch.stack overhead (~1.5x speedup).
         batch_size = min(len(image), len(alpha))
-        img = image[:batch_size]
-        alpha_sliced = alpha[:batch_size]
+        out_images = []
 
-        alpha_resized = 1.0 - resize_mask(alpha_sliced, img.shape[1:])
-        out_images = torch.cat((img[:, :, :, :3], alpha_resized.unsqueeze(-1)), dim=-1)
+        alpha = 1.0 - resize_mask(alpha, image.shape[1:])
+        for i in range(batch_size):
+           out_images.append(torch.cat((image[i][:,:,:3], alpha[i].unsqueeze(2)), dim=2))
 
-        return io.NodeOutput(out_images)
+        return io.NodeOutput(torch.stack(out_images))
 
 
 class CompositingExtension(ComfyExtension):
