@@ -1,0 +1,3 @@
+## 2026-03-31 - PorterDuff Batch Vectorization Cache Thrashing on CPU
+**Learning:** Vectorizing complex multi-step elementwise ops (like Porter-Duff blend modes with ~18 intermediate tensor allocations) across large 4D batches (e.g., 16 x 512 x 512 x 3) on CPU causes severe L3 cache thrashing and memory overhead, making batched execution ~1.6x slower than processing per-slice in L1/L2 cache. Conversely, simple strided slicing and single-cat operations like `SplitImageWithAlpha` and `JoinImageWithAlpha` benefit massively (~1.5x to 9x speedup) from batch vectorization.
+**Action:** Before vectorizing complex multi-step mathematical loops over 4D image batches on CPU, benchmark to verify that intermediate tensor allocations do not exceed L2/L3 cache bounds.
