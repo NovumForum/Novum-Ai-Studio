@@ -336,6 +336,10 @@ class UserManager():
             if not isinstance(path, str):
                 return path
 
+            # Security check: return 400 Bad Request if requested path is a directory
+            if os.path.isdir(path):
+                return web.Response(status=400, text="Requested path is a directory")
+
             return web.FileResponse(path)
 
         @routes.post("/userdata/{file}")
@@ -399,6 +403,10 @@ class UserManager():
             path = get_user_data_path(request, check_exists=True)
             if not isinstance(path, str):
                 return path
+
+            # Security check: return 400 Bad Request if requested path is a directory
+            if os.path.isdir(path):
+                return web.Response(status=400, text="Requested path is a directory")
 
             os.remove(path)
 
