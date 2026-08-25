@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from PIL import Image
+import functools
 import math
 from enum import Enum
 from typing import TypedDict, Literal
@@ -108,6 +109,17 @@ class Blur(io.ComfyNode):
         return io.NodeOutput(blurred.to(comfy.model_management.intermediate_device()))
 
 
+@functools.lru_cache(maxsize=16)
+def normalized_bayer_matrix(n: int) -> np.matrix:
+    """Computes and caches the normalized Bayer matrix of order 2^n."""
+    if n == 0:
+        return np.zeros((1, 1), "float32")
+    else:
+        q = 4 ** n
+        m = q * normalized_bayer_matrix(n - 1)
+        return np.bmat(((m - 1.5, m + 0.5), (m + 1.5, m - 0.5))) / q
+
+
 class Quantize(io.ComfyNode):
     @classmethod
     def define_schema(cls):
@@ -126,17 +138,10 @@ class Quantize(io.ComfyNode):
 
     @staticmethod
     def bayer(im, pal_im, order):
-        def normalized_bayer_matrix(n):
-            if n == 0:
-                return np.zeros((1,1), "float32")
-            else:
-                q = 4 ** n
-                m = q * normalized_bayer_matrix(n - 1)
-                return np.bmat(((m-1.5, m+0.5), (m+1.5, m-0.5))) / q
-
         num_colors = len(pal_im.getpalette()) // 3
         spread = 2 * 256 / num_colors
         bayer_n = int(math.log2(order))
+        # Reuse cached normalized bayer matrix to avoid re-generating numpy bmat structures on every frame/batch
         bayer_matrix = torch.from_numpy(spread * normalized_bayer_matrix(bayer_n) + 0.5)
 
         result = torch.from_numpy(np.array(im).astype(np.float32))
