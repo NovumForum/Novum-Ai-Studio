@@ -1,5 +1,4 @@
 import math
-import functools
 from comfy_extras.nodes_post_processing import normalized_bayer_matrix
 
 
@@ -12,6 +11,6 @@ def test_normalized_bayer_matrix_cache_and_correctness():
 
     # Verify that lru_cache hits increase on repeated calls
     cache_info_before = normalized_bayer_matrix.cache_info()
-    m_repeat = normalized_bayer_matrix(int(math.log2(8)))
+    _ = normalized_bayer_matrix(int(math.log2(8)))
     cache_info_after = normalized_bayer_matrix.cache_info()
     assert cache_info_after.hits > cache_info_before.hits
