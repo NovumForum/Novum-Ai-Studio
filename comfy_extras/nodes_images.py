@@ -788,9 +788,15 @@ class ImageMergeTileList(IO.ComfyNode):
             x_w = torch.clamp(x_w, min=1e-5)
 
             sine_mask = (y_w.unsqueeze(1) * x_w.unsqueeze(0)).unsqueeze(0).unsqueeze(-1)
-            flat_mask = torch.ones_like(sine_mask)
 
-            weight_mask = torch.lerp(flat_mask, sine_mask, feather_str)
+            # Optimization: Fast-path for default feather_str values (1.0 or 0.0)
+            # Avoids unnecessary torch.ones_like allocations and lerp computations.
+            if feather_str == 1.0:
+                weight_mask = sine_mask
+            elif feather_str == 0.0:
+                weight_mask = torch.ones_like(sine_mask)
+            else:
+                weight_mask = torch.lerp(torch.ones_like(sine_mask), sine_mask, feather_str)
         else:
             weight_mask = torch.ones((1, t_h, t_w, 1), device=device, dtype=dtype)
 
