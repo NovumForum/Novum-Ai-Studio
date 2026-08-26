@@ -1,0 +1,3 @@
+## 2026-03-01 - Avoid Redundant Lerp and Full-Tensor Allocation for Constant Feather Strengths
+**Learning:** In tile merging (`ImageMergeTileList.execute`), calculating linear interpolation between a flat ones mask and a sine mask using `torch.lerp(torch.ones_like(sine_mask), sine_mask, feather_str)` allocates a full duplicate tensor and executes a lerp kernel even when `feather_str == 1.0` (default) or `0.0`.
+**Action:** Always check constant interpolation factors (e.g. `feather_str == 1.0` or `0.0`) in tensor blending functions and fast-path direct assignment to eliminate redundant tensor allocations and lerp computations.
