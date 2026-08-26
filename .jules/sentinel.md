@@ -1,0 +1,4 @@
+## 2026-08-26 - Model Preview Path Traversal and Index Validation
+**Vulnerability:** Path traversal via raw or URL-encoded relative path segments in `get_model_preview` route (`/experiment/models/preview/{folder}/{path_index}/{filename:.*}`) and unhandled ValueError / IndexError on `path_index`.
+**Learning:** Route parameters accepting wildcard regex matches (e.g. `{filename:.*}`) allow clients to pass arbitrary directory relative paths (`../`). Furthermore, indexing lists (`folders[0][path_index]`) directly from unparsed user parameters leads to server errors or unexpected behavior if out-of-bounds or non-integer indices are provided.
+**Prevention:** Always validate integer route parameters with safe try/except parsing and strict range checks (`0 <= index < len(container)`). For wildcards used in file path resolution, resolve absolute paths and verify `os.path.commonpath([abs_base_dir, abs_target_file]) == abs_base_dir` before accessing files.
