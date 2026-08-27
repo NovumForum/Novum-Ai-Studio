@@ -11,11 +11,21 @@ class DifferentialDiffusion(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="DifferentialDiffusion",
-            search_aliases=["inpaint gradient", "variable denoise strength"],
             display_name="Differential Diffusion",
+            description="Applies differential diffusion to a model for inpainting, dynamically thresholding denoise masks across timesteps based on noise level.",
+            search_aliases=[
+                "differential diffusion",
+                "inpaint gradient",
+                "variable denoise strength",
+                "mask denoise",
+                "gradient mask",
+            ],
             category="_for_testing",
             inputs=[
-                io.Model.Input("model"),
+                io.Model.Input(
+                    "model",
+                    tooltip="The diffusion model to patch with differential denoise mask handling.",
+                ),
                 io.Float.Input(
                     "strength",
                     default=1.0,
@@ -23,9 +33,14 @@ class DifferentialDiffusion(io.ComfyNode):
                     max=1.0,
                     step=0.01,
                     optional=True,
+                    tooltip="Blending factor between the thresholded binary mask and original denoise mask values (1.0 for full binary thresholding).",
                 ),
             ],
-            outputs=[io.Model.Output()],
+            outputs=[
+                io.Model.Output(
+                    tooltip="The patched model configured for differential diffusion mask sampling.",
+                )
+            ],
             is_experimental=True,
         )
 
