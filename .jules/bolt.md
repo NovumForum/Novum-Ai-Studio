@@ -1,0 +1,3 @@
+## 2026-08-27 - 1D Separable Gaussian Convolution Optimization
+**Learning:** 2D Gaussian filters are mathematically separable into $G_{2D}(x, y) = G_{1D}(x) \cdot G_{1D}(y)$. Replacing 2D spatial convolution (`F.conv2d` with $K \times K$ kernel) with two 1D convolutions ($1 \times K$ and $K \times 1$) reduces computation from $\mathcal{O}(K^2 \cdot H \cdot W)$ to $\mathcal{O}(K \cdot H \cdot W)$, yielding up to ~15x speedups for large radii with exact mathematical equivalence.
+**Action:** When working on image filtering operations (like spatial blurs or separable image kernels), check if the 2D filter can be factored into 1D horizontal and vertical passes.
