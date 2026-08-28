@@ -1,6 +1,5 @@
 import bisect
 import gc
-import itertools
 import psutil
 import time
 import torch
@@ -51,14 +50,22 @@ class Unhashable:
         self.value = float("NaN")
 
 def to_hashable(obj):
-    # So that we don't infinitely recurse since frozenset and tuples
-    # are Sequences.
-    if isinstance(obj, (int, float, str, bool, bytes, type(None))):
+    # Fast-path common Python types to avoid slower isinstance checking and frozenset creation for sequences
+    obj_type = type(obj)
+    if obj_type in (int, float, str, bool, bytes, type(None)):
+        return obj
+    elif obj_type is list or obj_type is tuple:
+        return tuple(to_hashable(i) for i in obj)
+    elif obj_type is dict:
+        return frozenset([(to_hashable(k), to_hashable(v)) for k, v in sorted(obj.items())])
+    elif obj_type is set or obj_type is frozenset:
+        return frozenset(to_hashable(i) for i in obj)
+    elif isinstance(obj, (int, float, str, bool, bytes, type(None))):
         return obj
     elif isinstance(obj, Mapping):
         return frozenset([(to_hashable(k), to_hashable(v)) for k, v in sorted(obj.items())])
     elif isinstance(obj, Sequence):
-        return frozenset(zip(itertools.count(), [to_hashable(i) for i in obj]))
+        return tuple(to_hashable(i) for i in obj)
     else:
         # TODO - Support other objects like tensors?
         return Unhashable()
