@@ -9,17 +9,20 @@ class InstructPixToPixConditioning(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="InstructPixToPixConditioning",
+            display_name="Instruct PixToPix Conditioning",
             category="conditioning/instructpix2pix",
+            description="Prepares conditioning inputs for InstructPixToPix image editing models by combining positive/negative prompts with target image latents.",
+            search_aliases=["instructpix2pix", "ip2p", "image editing", "instruct conditioning", "pix2pix"],
             inputs=[
-                io.Conditioning.Input("positive"),
-                io.Conditioning.Input("negative"),
-                io.Vae.Input("vae"),
-                io.Image.Input("pixels"),
+                io.Conditioning.Input("positive", tooltip="Positive prompt conditioning to guide the edit."),
+                io.Conditioning.Input("negative", tooltip="Negative prompt conditioning to guide what to avoid during the edit."),
+                io.Vae.Input("vae", tooltip="VAE model used to encode the reference image pixels into latent space."),
+                io.Image.Input("pixels", tooltip="Input reference image to be edited by InstructPixToPix."),
             ],
             outputs=[
-                io.Conditioning.Output(display_name="positive"),
-                io.Conditioning.Output(display_name="negative"),
-                io.Latent.Output(display_name="latent"),
+                io.Conditioning.Output(display_name="positive", tooltip="Updated positive conditioning containing concatenated latent image representations."),
+                io.Conditioning.Output(display_name="negative", tooltip="Updated negative conditioning containing concatenated latent image representations."),
+                io.Latent.Output(display_name="latent", tooltip="Empty target latent canvas initialized with matching spatial dimensions."),
             ],
         )
 
