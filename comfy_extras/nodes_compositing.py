@@ -109,19 +109,20 @@ class PorterDuffImageComposite(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="PorterDuffImageComposite",
-            search_aliases=["alpha composite", "blend modes", "layer blend", "transparency blend"],
+            search_aliases=["porter duff", "alpha composite", "blend modes", "layer blend", "transparency blend", "layer mix", "composite images", "matte"],
             display_name="Porter-Duff Image Composite",
+            description="Composites source (foreground) and destination (background) images using Porter-Duff alpha compositing rules.",
             category="mask/compositing",
             inputs=[
-                io.Image.Input("source"),
-                io.Mask.Input("source_alpha"),
-                io.Image.Input("destination"),
-                io.Mask.Input("destination_alpha"),
-                io.Combo.Input("mode", options=[mode.name for mode in PorterDuffMode], default=PorterDuffMode.DST.name),
+                io.Image.Input("source", tooltip="The foreground image layer."),
+                io.Mask.Input("source_alpha", tooltip="Alpha transparency mask for the source image (0.0 is opaque, 1.0 is transparent)."),
+                io.Image.Input("destination", tooltip="The background image layer."),
+                io.Mask.Input("destination_alpha", tooltip="Alpha transparency mask for the destination image (0.0 is opaque, 1.0 is transparent)."),
+                io.Combo.Input("mode", options=[mode.name for mode in PorterDuffMode], default=PorterDuffMode.DST.name, tooltip="The Porter-Duff algebraic compositing operation (e.g. SRC_OVER, DST_OVER, ADD, CLEAR)."),
             ],
             outputs=[
-                io.Image.Output(),
-                io.Mask.Output(),
+                io.Image.Output(display_name="image", tooltip="The composited RGB image result."),
+                io.Mask.Output(display_name="mask", tooltip="The resulting alpha transparency mask."),
             ],
         )
 
@@ -166,15 +167,16 @@ class SplitImageWithAlpha(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="SplitImageWithAlpha",
-            search_aliases=["extract alpha", "separate transparency", "remove alpha"],
+            search_aliases=["extract alpha", "separate transparency", "remove alpha", "split rgba", "channel split", "extract transparency"],
             display_name="Split Image with Alpha",
+            description="Separates an RGBA image tensor into RGB color channels and an alpha transparency mask.",
             category="mask/compositing",
             inputs=[
-                io.Image.Input("image"),
+                io.Image.Input("image", tooltip="Input image tensor containing RGB channels and optional alpha channel."),
             ],
             outputs=[
-                io.Image.Output(),
-                io.Mask.Output(),
+                io.Image.Output(display_name="image", tooltip="The extracted RGB color image tensor."),
+                io.Mask.Output(display_name="mask", tooltip="The extracted alpha transparency mask."),
             ],
         )
 
@@ -190,14 +192,17 @@ class JoinImageWithAlpha(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="JoinImageWithAlpha",
-            search_aliases=["add transparency", "apply alpha", "composite alpha", "RGBA"],
+            search_aliases=["add transparency", "apply alpha", "composite alpha", "RGBA", "combine alpha", "add mask to image", "apply mask"],
             display_name="Join Image with Alpha",
+            description="Combines RGB image channels with a transparency mask to produce a 4-channel RGBA image.",
             category="mask/compositing",
             inputs=[
-                io.Image.Input("image"),
-                io.Mask.Input("alpha"),
+                io.Image.Input("image", tooltip="Input RGB color image tensor."),
+                io.Mask.Input("alpha", tooltip="Alpha transparency mask to combine with the image."),
             ],
-            outputs=[io.Image.Output()],
+            outputs=[
+                io.Image.Output(display_name="image", tooltip="The combined 4-channel RGBA image tensor."),
+            ],
         )
 
     @classmethod
