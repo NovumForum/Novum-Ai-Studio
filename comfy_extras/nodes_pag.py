@@ -15,13 +15,35 @@ class PerturbedAttentionGuidance(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="PerturbedAttentionGuidance",
+            display_name="Perturbed-Attention Guidance (PAG)",
+            description="Applies Perturbed-Attention Guidance (PAG) to a diffusion model to enhance image structure, details, and generation quality without retraining.",
+            search_aliases=[
+                "pag",
+                "perturbed attention guidance",
+                "attention guidance",
+                "quality boost",
+                "structure enhancement",
+            ],
             category="model_patches/unet",
             inputs=[
-                io.Model.Input("model"),
-                io.Float.Input("scale", default=3.0, min=0.0, max=100.0, step=0.01, round=0.01),
+                io.Model.Input(
+                    "model",
+                    tooltip="The diffusion model to patch with Perturbed-Attention Guidance.",
+                ),
+                io.Float.Input(
+                    "scale",
+                    default=3.0,
+                    min=0.0,
+                    max=100.0,
+                    step=0.01,
+                    round=0.01,
+                    tooltip="Guidance scale controlling the intensity of PAG. Higher values increase structural guidance and detail definition.",
+                ),
             ],
             outputs=[
-                io.Model.Output(),
+                io.Model.Output(
+                    tooltip="The patched diffusion model with Perturbed-Attention Guidance applied.",
+                ),
             ],
         )
 
