@@ -1,4 +1,3 @@
-import pytest
 import torch
 import comfy.cli_args
 comfy.cli_args.args.cpu = True
