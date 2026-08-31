@@ -1,5 +1,4 @@
 import torch
-import pytest
 from comfy_extras.nodes_mask import FeatherMask
 
 def feather_legacy(mask, left, top, right, bottom):
