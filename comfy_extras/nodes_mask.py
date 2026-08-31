@@ -177,13 +177,16 @@ class SolidMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="SolidMask",
+            display_name="Solid Mask",
             category="mask",
+            description="Generates a solid uniform mask with specified dimensions and fill value.",
+            search_aliases=["create mask", "blank mask", "uniform mask", "constant mask", "fill mask"],
             inputs=[
-                IO.Float.Input("value", default=1.0, min=0.0, max=1.0, step=0.01),
-                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
+                IO.Float.Input("value", default=1.0, min=0.0, max=1.0, step=0.01, tooltip="Fill value for the mask (0.0 = unmasked/black, 1.0 = fully masked/white)."),
+                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="Width of the generated mask in pixels."),
+                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="Height of the generated mask in pixels."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The generated solid mask tensor.")],
         )
 
     @classmethod
@@ -199,12 +202,14 @@ class InvertMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="InvertMask",
-            search_aliases=["reverse mask", "flip mask"],
+            display_name="Invert Mask",
             category="mask",
+            description="Inverts a mask, swapping unmasked (0.0) and masked (1.0) values.",
+            search_aliases=["reverse mask", "flip mask", "negate mask", "invert mask"],
             inputs=[
-                IO.Mask.Input("mask"),
+                IO.Mask.Input("mask", tooltip="The input mask to invert."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The inverted mask tensor.")],
         )
 
     @classmethod
@@ -380,13 +385,15 @@ class ThresholdMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ThresholdMask",
-            search_aliases=["binary mask"],
+            display_name="Threshold Mask",
             category="mask",
+            description="Converts a mask to binary (0.0 or 1.0) based on a threshold value.",
+            search_aliases=["binary mask", "mask threshold", "binarize mask", "clip mask"],
             inputs=[
-                IO.Mask.Input("mask"),
-                IO.Float.Input("value", default=0.5, min=0.0, max=1.0, step=0.01),
+                IO.Mask.Input("mask", tooltip="The input mask to threshold."),
+                IO.Float.Input("value", default=0.5, min=0.0, max=1.0, step=0.01, tooltip="Cutoff threshold. Values strictly greater than this become 1.0, others 0.0."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The binarized output mask tensor.")],
         )
 
     @classmethod
