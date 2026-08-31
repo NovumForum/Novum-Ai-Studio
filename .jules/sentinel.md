@@ -1,0 +1,4 @@
+## 2026-08-31 - Model Preview Path Traversal and Bounds Check
+**Vulnerability:** The `/experiment/models/preview/{folder}/{path_index}/{filename:.*}` route endpoint in `app/model_manager.py` allowed path traversal via URL-encoded `..` path segments in `{filename:.*}`, and lacked bounds checking on the integer `path_index` parameter.
+**Learning:** Route handlers accepting arbitrary filename parameters with wildcards (`{filename:.*}`) without path canonicalization checks (`os.path.commonpath`) allow attackers to traverse outside designated asset/model directories. Additionally, indexing into folder arrays without boundary checks causes unhandled `IndexError` 500 server errors.
+**Prevention:** Always check `os.path.commonpath([os.path.abspath(base_dir), os.path.abspath(target_file)]) == os.path.abspath(base_dir)` on user-supplied file paths, and validate `0 <= index < len(array)` before indexing array parameters.
