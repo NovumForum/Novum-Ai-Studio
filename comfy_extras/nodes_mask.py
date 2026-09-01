@@ -1,5 +1,3 @@
-import numpy as np
-import scipy.ndimage
 import torch
 import comfy.utils
 import node_helpers

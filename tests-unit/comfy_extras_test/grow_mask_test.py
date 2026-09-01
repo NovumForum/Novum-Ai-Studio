@@ -2,7 +2,6 @@ import comfy.cli_args
 comfy.cli_args.args.cpu = True
 
 import torch
-import torch.nn.functional as F
 import scipy.ndimage
 import numpy as np
 from comfy_extras.nodes_mask import GrowMask
