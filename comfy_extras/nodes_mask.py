@@ -355,22 +355,42 @@ class GrowMask(IO.ComfyNode):
 
     @classmethod
     def execute(cls, mask, expand, tapered_corners) -> IO.NodeOutput:
-        c = 0 if tapered_corners else 1
-        kernel = np.array([[c, 1, c],
-                           [1, 1, 1],
-                           [c, 1, c]])
-        mask = mask.reshape((-1, mask.shape[-2], mask.shape[-1]))
-        out = []
-        for m in mask:
-            output = m.numpy()
+        if expand == 0:
+            return IO.NodeOutput(mask)
+
+        # Vectorized PyTorch implementation replacing Python loops and SciPy grey dilation/erosion
+        out_tensor = mask.reshape((-1, 1, mask.shape[-2], mask.shape[-1]))
+
+        if expand < 0:
+            # Erosion: equivalent to -max_pool2d(-padded) or min over footprint
             for _ in range(abs(expand)):
-                if expand < 0:
-                    output = scipy.ndimage.grey_erosion(output, footprint=kernel)
+                padded = torch.nn.functional.pad(out_tensor, (1, 1, 1, 1), mode="reflect")
+                if not tapered_corners:
+                    out_tensor = -torch.nn.functional.max_pool2d(-padded, kernel_size=3, stride=1, padding=0)
                 else:
-                    output = scipy.ndimage.grey_dilation(output, footprint=kernel)
-            output = torch.from_numpy(output)
-            out.append(output)
-        return IO.NodeOutput(torch.stack(out, dim=0))
+                    out_tensor = torch.min(
+                        torch.min(padded[:, :, 1:-1, 1:-1], padded[:, :, :-2, 1:-1]),
+                        torch.min(
+                            torch.min(padded[:, :, 2:, 1:-1], padded[:, :, 1:-1, :-2]),
+                            padded[:, :, 1:-1, 2:],
+                        ),
+                    )
+        else:
+            # Dilation: equivalent to max_pool2d(padded) or max over footprint
+            for _ in range(expand):
+                padded = torch.nn.functional.pad(out_tensor, (1, 1, 1, 1), mode="reflect")
+                if not tapered_corners:
+                    out_tensor = torch.nn.functional.max_pool2d(padded, kernel_size=3, stride=1, padding=0)
+                else:
+                    out_tensor = torch.max(
+                        torch.max(padded[:, :, 1:-1, 1:-1], padded[:, :, :-2, 1:-1]),
+                        torch.max(
+                            torch.max(padded[:, :, 2:, 1:-1], padded[:, :, 1:-1, :-2]),
+                            padded[:, :, 1:-1, 2:],
+                        ),
+                    )
+
+        return IO.NodeOutput(out_tensor.squeeze(1))
 
     expand_mask = execute  # TODO: remove
 
