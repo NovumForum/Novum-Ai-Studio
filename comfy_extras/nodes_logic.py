@@ -16,14 +16,33 @@ class SwitchNode(io.ComfyNode):
             node_id="ComfySwitchNode",
             display_name="Switch",
             category="logic",
+            description="Conditionally selects between two inputs (on_true or on_false) based on a boolean switch state.",
+            search_aliases=["if", "conditional", "if-else", "branch", "toggle input", "select input"],
             is_experimental=True,
             inputs=[
-                io.Boolean.Input("switch"),
-                io.MatchType.Input("on_false", template=template, lazy=True),
-                io.MatchType.Input("on_true", template=template, lazy=True),
+                io.Boolean.Input(
+                    "switch",
+                    tooltip="If true, outputs the value connected to on_true; if false, outputs the value connected to on_false.",
+                ),
+                io.MatchType.Input(
+                    "on_false",
+                    template=template,
+                    lazy=True,
+                    tooltip="Input value to output when switch is false.",
+                ),
+                io.MatchType.Input(
+                    "on_true",
+                    template=template,
+                    lazy=True,
+                    tooltip="Input value to output when switch is true.",
+                ),
             ],
             outputs=[
-                io.MatchType.Output(template=template, display_name="output"),
+                io.MatchType.Output(
+                    template=template,
+                    display_name="output",
+                    tooltip="The selected input value based on the switch condition.",
+                ),
             ],
         )
 
@@ -47,14 +66,35 @@ class SoftSwitchNode(io.ComfyNode):
             node_id="ComfySoftSwitchNode",
             display_name="Soft Switch",
             category="logic",
+            description="Conditionally selects between two inputs (on_true or on_false), safely falling back to whichever input is connected if one is missing.",
+            search_aliases=["if", "conditional", "soft switch", "fallback switch", "branch", "optional switch"],
             is_experimental=True,
             inputs=[
-                io.Boolean.Input("switch"),
-                io.MatchType.Input("on_false", template=template, lazy=True, optional=True),
-                io.MatchType.Input("on_true", template=template, lazy=True, optional=True),
+                io.Boolean.Input(
+                    "switch",
+                    tooltip="If true, outputs on_true; if false, outputs on_false. If only one input is connected, that input is used regardless of switch state.",
+                ),
+                io.MatchType.Input(
+                    "on_false",
+                    template=template,
+                    lazy=True,
+                    optional=True,
+                    tooltip="Optional input value to output when switch is false (or as fallback).",
+                ),
+                io.MatchType.Input(
+                    "on_true",
+                    template=template,
+                    lazy=True,
+                    optional=True,
+                    tooltip="Optional input value to output when switch is true (or as fallback).",
+                ),
             ],
             outputs=[
-                io.MatchType.Output(template=template, display_name="output"),
+                io.MatchType.Output(
+                    template=template,
+                    display_name="output",
+                    tooltip="The selected or fallback input value based on the switch condition.",
+                ),
             ],
         )
 
