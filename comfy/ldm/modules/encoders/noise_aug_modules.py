@@ -8,7 +8,8 @@ class CLIPEmbeddingNoiseAugmentation(ImageConcatWithNoiseAugmentation):
         if clip_stats_path is None:
             clip_mean, clip_std = torch.zeros(timestep_dim), torch.ones(timestep_dim)
         else:
-            clip_mean, clip_std = torch.load(clip_stats_path, map_location="cpu")
+            # Use weights_only=True to prevent arbitrary code execution during pickle deserialization
+            clip_mean, clip_std = torch.load(clip_stats_path, map_location="cpu", weights_only=True)
         self.register_buffer("data_mean", clip_mean[None, :], persistent=False)
         self.register_buffer("data_std", clip_std[None, :], persistent=False)
         self.time_embed = Timestep(timestep_dim)
