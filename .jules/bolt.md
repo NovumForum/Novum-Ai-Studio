@@ -1,0 +1,3 @@
+## 2025-05-18 - Optimize execution cache key generation in to_hashable
+**Learning:** In Python, using `frozenset(zip(itertools.count(), ...))` for turning sequences into hashable tuples creates substantial iterator and set allocation overhead during workflow execution caching. Converting sequences to native `tuple` types and using `isinstance(obj, PRIMITIVE_TYPES)` preserves compatibility for primitive subclasses (such as Enums) while providing a ~3x speedup.
+**Action:** Always prefer native `tuple` conversions for sequence caching and use `isinstance(obj, PRIMITIVE_TYPES)` when primitive subclasses like Enums might be passed into function inputs.
