@@ -5,7 +5,6 @@ sys.modules["psutil"] = MagicMock()
 sys.modules["torch"] = MagicMock()
 sys.modules["nodes"] = MagicMock()
 
-import pytest
 from comfy_execution.caching import to_hashable, Unhashable
 
 from enum import Enum
