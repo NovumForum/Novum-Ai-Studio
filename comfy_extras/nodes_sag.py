@@ -113,14 +113,22 @@ class SelfAttentionGuidance(io.ComfyNode):
         return io.Schema(
             node_id="SelfAttentionGuidance",
             display_name="Self-Attention Guidance",
-            category="_for_testing",
+            category="model_patches/unet",
+            description="Applies Self-Attention Guidance (SAG) to a model to enhance structural details and clarity by adversarial blurring of self-attention maps.",
+            search_aliases=[
+                "self attention guidance",
+                "sag",
+                "attention guidance",
+                "structure enhancement",
+                "detail boost",
+            ],
             inputs=[
-                io.Model.Input("model"),
-                io.Float.Input("scale", default=0.5, min=-2.0, max=5.0, step=0.01),
-                io.Float.Input("blur_sigma", default=2.0, min=0.0, max=10.0, step=0.1, advanced=True),
+                io.Model.Input("model", tooltip="The diffusion model to apply Self-Attention Guidance to."),
+                io.Float.Input("scale", default=0.5, min=-2.0, max=5.0, step=0.01, tooltip="Guidance scale factor. Higher positive values sharpen details and structural features."),
+                io.Float.Input("blur_sigma", default=2.0, min=0.0, max=10.0, step=0.1, advanced=True, tooltip="Gaussian blur radius (sigma) for degrading self-attention maps."),
             ],
             outputs=[
-                io.Model.Output(),
+                io.Model.Output(tooltip="The patched diffusion model with Self-Attention Guidance enabled."),
             ],
             is_experimental=True,
         )
