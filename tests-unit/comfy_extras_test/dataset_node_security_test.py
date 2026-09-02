@@ -1,9 +1,8 @@
 import os
-import tempfile
 import pickle
 import pytest
 import torch
-from comfy_extras.nodes_dataset import LoadTrainingDataset, SaveTrainingDataset
+from comfy_extras.nodes_dataset import LoadTrainingDataset
 import folder_paths
 
 
@@ -13,7 +12,6 @@ class MaliciousPayload:
 
 
 def test_load_training_dataset_valid(tmp_path):
-    # Set folder_paths output directory to temp path
     output_dir = tmp_path / "output"
     output_dir.mkdir()
     folder_paths.get_output_directory = lambda: str(output_dir)
@@ -56,5 +54,4 @@ def test_load_training_dataset_rejects_malicious_pickle(tmp_path):
     with pytest.raises(Exception) as exc_info:
         LoadTrainingDataset.execute("bad_dataset")
 
-    # PyTorch weights_only=True raises RuntimeError or UnpicklingError on arbitrary objects
     assert "Unsupported class" in str(exc_info.value) or "weights_only" in str(exc_info.value) or "Weights only" in str(exc_info.value) or "pickle" in str(exc_info.value).lower() or isinstance(exc_info.value, (RuntimeError, pickle.UnpicklingError))
