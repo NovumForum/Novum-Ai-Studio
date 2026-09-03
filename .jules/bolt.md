@@ -1,0 +1,3 @@
+## 2026-03-06 - Separable 1D Gaussian Convolutions in Post Processing Nodes
+**Learning:** 2D Gaussian convolutions in `Blur` and `Sharpen` nodes ($O(K^2 \cdot H \cdot W)$) can be decomposed into separable 1D horizontal and vertical convolutions ($O(K \cdot H \cdot W)$), while eliminating redundant `F.conv2d` padding and slicing when `F.pad` reflection padding is already present. Unsharp masking can also be re-formulated as $I + 10\alpha(I - \text{blur}(I))$, achieving up to ~9.9x speedup for blur and ~6.5x speedup for sharpen.
+**Action:** Always check if 2D spatial filtering operations in image processing nodes can be decomposed into separable 1D passes, and avoid double-padding in `F.conv2d` when custom reflection padding is used.

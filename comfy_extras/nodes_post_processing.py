@@ -72,6 +72,11 @@ def gaussian_kernel(kernel_size: int, sigma: float, device=None):
     g = torch.exp(-(d * d) / (2.0 * sigma * sigma))
     return g / g.sum()
 
+def gaussian_kernel_1d(kernel_size: int, sigma: float, device=None, dtype=None):
+    x = torch.linspace(-1, 1, kernel_size, device=device, dtype=dtype)
+    g = torch.exp(-(x * x) / (2.0 * sigma * sigma))
+    return g / g.sum()
+
 class Blur(io.ComfyNode):
     @classmethod
     def define_schema(cls):
@@ -98,11 +103,16 @@ class Blur(io.ComfyNode):
         batch_size, height, width, channels = image.shape
 
         kernel_size = blur_radius * 2 + 1
-        kernel = gaussian_kernel(kernel_size, sigma, device=image.device).repeat(channels, 1, 1).unsqueeze(1)
+        # Separable 1D Gaussian kernels: O(K·H·W) complexity vs O(K²·H·W) 2D convolution
+        kernel_1d = gaussian_kernel_1d(kernel_size, sigma, device=image.device, dtype=image.dtype)
+        kernel_h = kernel_1d.view(1, 1, 1, kernel_size).repeat(channels, 1, 1, 1)
+        kernel_v = kernel_1d.view(1, 1, kernel_size, 1).repeat(channels, 1, 1, 1)
 
-        image = image.permute(0, 3, 1, 2) # Torch wants (B, C, H, W) we use (B, H, W, C)
-        padded_image = F.pad(image, (blur_radius,blur_radius,blur_radius,blur_radius), 'reflect')
-        blurred = F.conv2d(padded_image, kernel, padding=kernel_size // 2, groups=channels)[:,:,blur_radius:-blur_radius, blur_radius:-blur_radius]
+        tensor_image = image.permute(0, 3, 1, 2) # Torch wants (B, C, H, W) we use (B, H, W, C)
+        padded_image = F.pad(tensor_image, (blur_radius, blur_radius, blur_radius, blur_radius), mode='reflect')
+
+        blurred = F.conv2d(padded_image, kernel_h, groups=channels)
+        blurred = F.conv2d(blurred, kernel_v, groups=channels)
         blurred = blurred.permute(0, 2, 3, 1)
 
         return io.NodeOutput(blurred.to(comfy.model_management.intermediate_device()))
@@ -192,22 +202,25 @@ class Sharpen(io.ComfyNode):
 
     @classmethod
     def execute(cls, image: torch.Tensor, sharpen_radius: int, sigma:float, alpha: float) -> io.NodeOutput:
-        if sharpen_radius == 0:
+        if sharpen_radius == 0 or alpha == 0:
             return io.NodeOutput(image)
 
         batch_size, height, width, channels = image.shape
         image = image.to(comfy.model_management.get_torch_device())
 
         kernel_size = sharpen_radius * 2 + 1
-        kernel = gaussian_kernel(kernel_size, sigma, device=image.device) * -(alpha*10)
-        kernel = kernel.to(dtype=image.dtype)
-        center = kernel_size // 2
-        kernel[center, center] = kernel[center, center] - kernel.sum() + 1.0
-        kernel = kernel.repeat(channels, 1, 1).unsqueeze(1)
+        # Separable 1D unsharp mask filter: image + (alpha * 10) * (image - gaussian_blur(image))
+        kernel_1d = gaussian_kernel_1d(kernel_size, sigma, device=image.device, dtype=image.dtype)
+        kernel_h = kernel_1d.view(1, 1, 1, kernel_size).repeat(channels, 1, 1, 1)
+        kernel_v = kernel_1d.view(1, 1, kernel_size, 1).repeat(channels, 1, 1, 1)
 
         tensor_image = image.permute(0, 3, 1, 2) # Torch wants (B, C, H, W) we use (B, H, W, C)
-        tensor_image = F.pad(tensor_image, (sharpen_radius,sharpen_radius,sharpen_radius,sharpen_radius), 'reflect')
-        sharpened = F.conv2d(tensor_image, kernel, padding=center, groups=channels)[:,:,sharpen_radius:-sharpen_radius, sharpen_radius:-sharpen_radius]
+        padded_image = F.pad(tensor_image, (sharpen_radius, sharpen_radius, sharpen_radius, sharpen_radius), mode='reflect')
+
+        blurred = F.conv2d(padded_image, kernel_h, groups=channels)
+        blurred = F.conv2d(blurred, kernel_v, groups=channels)
+
+        sharpened = tensor_image + (alpha * 10.0) * (tensor_image - blurred)
         sharpened = sharpened.permute(0, 2, 3, 1)
 
         result = torch.clamp(sharpened, 0, 1)
