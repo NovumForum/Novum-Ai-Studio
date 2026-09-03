@@ -1,4 +1,3 @@
-import pytest
 import torch
 import torch.nn.functional as F
 import comfy.cli_args
