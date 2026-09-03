@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from aiohttp import web
 from api_server.routes.internal.internal_routes import InternalRoutes
 
 pytestmark = pytest.mark.asyncio
