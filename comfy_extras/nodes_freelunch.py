@@ -29,16 +29,27 @@ class FreeU(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="FreeU",
+            display_name="FreeU",
             category="model_patches/unet",
+            description="Re-balances backbone and skip connection features in UNet blocks to improve generation quality and details without extra training or inference cost.",
+            search_aliases=[
+                "freeu",
+                "freeu_v2",
+                "unet patch",
+                "quality boost",
+                "fourier filter",
+                "backbone scale",
+                "skip scale",
+            ],
             inputs=[
-                IO.Model.Input("model"),
-                IO.Float.Input("b1", default=1.1, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("b2", default=1.2, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("s1", default=0.9, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("s2", default=0.2, min=0.0, max=10.0, step=0.01, advanced=True),
+                IO.Model.Input("model", tooltip="The diffusion model to apply the FreeU patch to."),
+                IO.Float.Input("b1", default=1.1, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Scaling factor for first backbone feature block (b1)."),
+                IO.Float.Input("b2", default=1.2, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Scaling factor for second backbone feature block (b2)."),
+                IO.Float.Input("s1", default=0.9, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Attenuation factor for low-frequency skip connection features (s1)."),
+                IO.Float.Input("s2", default=0.2, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Attenuation factor for high-frequency skip connection features (s2)."),
             ],
             outputs=[
-                IO.Model.Output(),
+                IO.Model.Output(tooltip="The patched diffusion model with FreeU applied."),
             ],
         )
 
@@ -76,16 +87,27 @@ class FreeU_V2(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="FreeU_V2",
+            display_name="FreeU_V2 (FreeU Version 2)",
             category="model_patches/unet",
+            description="Version 2 of FreeU that applies adaptive feature map normalization when re-scaling backbone features, preventing over-saturation.",
+            search_aliases=[
+                "freeu",
+                "freeu_v2",
+                "unet patch",
+                "quality boost",
+                "fourier filter",
+                "backbone scale",
+                "skip scale",
+            ],
             inputs=[
-                IO.Model.Input("model"),
-                IO.Float.Input("b1", default=1.3, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("b2", default=1.4, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("s1", default=0.9, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("s2", default=0.2, min=0.0, max=10.0, step=0.01, advanced=True),
+                IO.Model.Input("model", tooltip="The diffusion model to apply the FreeU_V2 patch to."),
+                IO.Float.Input("b1", default=1.3, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Scaling factor for first backbone feature block (b1)."),
+                IO.Float.Input("b2", default=1.4, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Scaling factor for second backbone feature block (b2)."),
+                IO.Float.Input("s1", default=0.9, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Attenuation factor for low-frequency skip connection features (s1)."),
+                IO.Float.Input("s2", default=0.2, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Attenuation factor for high-frequency skip connection features (s2)."),
             ],
             outputs=[
-                IO.Model.Output(),
+                IO.Model.Output(tooltip="The patched diffusion model with FreeU_V2 applied."),
             ],
         )
 
