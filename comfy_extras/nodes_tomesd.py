@@ -151,12 +151,17 @@ class TomePatchModel(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="TomePatchModel",
+            display_name="Apply ToMe (Token Merging)",
             category="model_patches/unet",
+            description="Applies Token Merging (ToMe) to the UNet attention layers to accelerate inference by merging redundant tokens with minimal loss in image quality.",
+            search_aliases=["tome", "token merging", "tomesd", "speedup", "unet patch", "model patch", "fast inference"],
             inputs=[
-                io.Model.Input("model"),
-                io.Float.Input("ratio", default=0.3, min=0.0, max=1.0, step=0.01),
+                io.Model.Input("model", tooltip="The UNet diffusion model to patch with Token Merging."),
+                io.Float.Input("ratio", default=0.3, min=0.0, max=1.0, step=0.01, tooltip="The ratio of tokens to merge per attention block. Higher values increase generation speed but may slightly reduce detail."),
             ],
-            outputs=[io.Model.Output()],
+            outputs=[
+                io.Model.Output(tooltip="The patched model with Token Merging enabled."),
+            ],
         )
 
     @classmethod
