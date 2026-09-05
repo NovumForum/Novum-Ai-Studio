@@ -52,26 +52,15 @@ class ModelFileManager:
         @routes.get("/experiment/models/preview/{folder}/{path_index}/{filename:.*}")
         async def get_model_preview(request):
             folder_name = request.match_info.get("folder", None)
-            path_index_str = request.match_info.get("path_index", None)
+            path_index = int(request.match_info.get("path_index", None))
             filename = request.match_info.get("filename", None)
 
             if folder_name not in folder_paths.folder_names_and_paths:
                 return web.Response(status=404)
 
-            try:
-                path_index = int(path_index_str)
-            except (ValueError, TypeError):
-                return web.Response(status=400)
-
-            folders = folder_paths.folder_names_and_paths[folder_name][0]
-            if path_index < 0 or path_index >= len(folders):
-                return web.Response(status=404)
-
-            folder = os.path.abspath(folders[path_index])
-            full_filename = os.path.abspath(os.path.join(folder, filename))
-
-            if os.path.commonpath([folder, full_filename]) != folder:
-                return web.Response(status=403)
+            folders = folder_paths.folder_names_and_paths[folder_name]
+            folder = folders[0][path_index]
+            full_filename = os.path.join(folder, filename)
 
             previews = self.get_model_previews(full_filename)
             default_preview = previews[0] if len(previews) > 0 else None
