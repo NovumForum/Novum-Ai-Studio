@@ -1,12 +1,12 @@
 import sys
 from unittest.mock import MagicMock
 
-# Mock non-unit test dependencies when running standalone caching test
-sys.modules.setdefault("psutil", MagicMock())
-sys.modules.setdefault("torch", MagicMock())
-sys.modules.setdefault("nodes", MagicMock())
+# Safely set default mocks before importing modules if they don't exist in environment
+for _mod in ("psutil", "torch", "nodes"):
+    if _mod not in sys.modules:
+        sys.modules[_mod] = MagicMock()
 
-from comfy_execution.caching import to_hashable, Unhashable, PRIMITIVE_TYPES
+from comfy_execution.caching import to_hashable, Unhashable
 
 
 def test_to_hashable_primitives():
