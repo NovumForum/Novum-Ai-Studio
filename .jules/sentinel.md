@@ -1,0 +1,4 @@
+## 2026-03-06 - Path Traversal and Unhandled Exceptions in Experimental API Routes
+**Vulnerability:** Experimental endpoint `/experiment/models/preview/{folder}/{path_index}/{filename:.*}` allowed directory traversal via relative `filename` paths (`../`) and raised unhandled 500 exceptions on non-integer or out-of-bound `path_index` values.
+**Learning:** `filename:.*` routes in aiohttp catch arbitrary relative path segments including `../`. `os.path.join(base_dir, user_filename)` resolves relative traversal components unless strictly validated using `os.path.commonpath([base_dir, target_abs_path]) == base_dir`.
+**Prevention:** Always validate URL path indices with explicit integer conversion try-except blocks, bounds checking against model directory arrays, and `os.path.commonpath` checks for relative file path parameters.
