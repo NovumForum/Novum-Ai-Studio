@@ -340,14 +340,17 @@ class GITSScheduler(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="GITSScheduler",
+            display_name="GITS Scheduler",
+            description="Generates noise schedules based on Generative Image Transformation Steps (GITS) with adjustable scaling coefficient.",
+            search_aliases=["GITS scheduler", "gits", "generative image transformation steps"],
             category="sampling/custom_sampling/schedulers",
             inputs=[
-                io.Float.Input("coeff", default=1.20, min=0.80, max=1.50, step=0.05, advanced=True),
-                io.Int.Input("steps", default=10, min=2, max=1000),
-                io.Float.Input("denoise", default=1.0, min=0.0, max=1.0, step=0.01),
+                io.Float.Input("coeff", default=1.20, min=0.80, max=1.50, step=0.05, advanced=True, tooltip="GITS scaling coefficient controlling noise schedule curvature."),
+                io.Int.Input("steps", default=10, min=2, max=1000, tooltip="Total number of sampling steps to calculate sigmas for."),
+                io.Float.Input("denoise", default=1.0, min=0.0, max=1.0, step=0.01, tooltip="Denoise strength multiplier (1.0 = full sampling, < 1.0 = partial sampling)."),
             ],
             outputs=[
-                io.Sigmas.Output(),
+                io.Sigmas.Output(tooltip="Output sigma tensor defining the noise schedule for custom samplers."),
             ],
         )
 
