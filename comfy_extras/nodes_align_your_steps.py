@@ -28,14 +28,16 @@ class AlignYourStepsScheduler(io.ComfyNode):
     def define_schema(cls) -> io.Schema:
         return io.Schema(
             node_id="AlignYourStepsScheduler",
-            search_aliases=["AYS scheduler"],
+            display_name="Align Your Steps Scheduler",
+            description="Generates optimized sigma noise schedules tailored to specific model families (SD1, SDXL, SVD) using the Align Your Steps approach.",
+            search_aliases=["AYS scheduler", "align your steps", "nvidia scheduler", "optimal sigmas"],
             category="sampling/custom_sampling/schedulers",
             inputs=[
-                io.Combo.Input("model_type", options=["SD1", "SDXL", "SVD"]),
-                io.Int.Input("steps", default=10, min=1, max=10000),
-                io.Float.Input("denoise", default=1.0, min=0.0, max=1.0, step=0.01),
+                io.Combo.Input("model_type", options=["SD1", "SDXL", "SVD"], tooltip="Target model architecture for noise schedule optimization."),
+                io.Int.Input("steps", default=10, min=1, max=10000, tooltip="Total number of sampling steps to calculate sigmas for."),
+                io.Float.Input("denoise", default=1.0, min=0.0, max=1.0, step=0.01, tooltip="Denoise strength multiplier (1.0 = full sampling, < 1.0 = partial sampling)."),
             ],
-            outputs=[io.Sigmas.Output()],
+            outputs=[io.Sigmas.Output(tooltip="Output sigma tensor defining the noise schedule for custom samplers.")],
         )
 
     def get_sigmas(self, model_type, steps, denoise):
