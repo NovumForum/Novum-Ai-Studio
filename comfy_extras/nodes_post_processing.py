@@ -126,27 +126,30 @@ class Quantize(io.ComfyNode):
 
     @staticmethod
     def bayer(im, pal_im, order):
-        def normalized_bayer_matrix(n):
-            if n == 0:
-                return np.zeros((1,1), "float32")
-            else:
-                q = 4 ** n
-                m = q * normalized_bayer_matrix(n - 1)
-                return np.bmat(((m-1.5, m+0.5), (m+1.5, m-0.5))) / q
-
+        # Optimized Bayer matrix generation using PyTorch tensor operations directly
+        # instead of recursive NumPy np.bmat matrix construction.
         num_colors = len(pal_im.getpalette()) // 3
         spread = 2 * 256 / num_colors
         bayer_n = int(math.log2(order))
-        bayer_matrix = torch.from_numpy(spread * normalized_bayer_matrix(bayer_n) + 0.5)
 
-        result = torch.from_numpy(np.array(im).astype(np.float32))
+        m = torch.zeros((1, 1), dtype=torch.float32)
+        for i in range(1, bayer_n + 1):
+            q = 4 ** i
+            mq = m * q
+            top = torch.cat([mq - 1.5, mq + 0.5], dim=1)
+            bottom = torch.cat([mq + 1.5, mq - 0.5], dim=1)
+            m = torch.cat([top, bottom], dim=0) / q
+
+        bayer_matrix = m.mul_(spread).add_(0.5)
+
+        result = torch.from_numpy(np.array(im)).to(torch.float32)
         tw = math.ceil(result.shape[0] / bayer_matrix.shape[0])
         th = math.ceil(result.shape[1] / bayer_matrix.shape[1])
         tiled_matrix = bayer_matrix.tile(tw, th).unsqueeze(-1)
         result.add_(tiled_matrix[:result.shape[0],:result.shape[1]]).clamp_(0, 255)
         result = result.to(dtype=torch.uint8)
 
-        im = Image.fromarray(result.cpu().numpy())
+        im = Image.fromarray(result.numpy())
         im = im.quantize(palette=pal_im, dither=Image.Dither.NONE)
         return im
 
