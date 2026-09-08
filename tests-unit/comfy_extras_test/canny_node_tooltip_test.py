@@ -1,7 +1,6 @@
 import comfy.cli_args
 comfy.cli_args.args.cpu = True
 
-import pytest
 import torch
 from comfy_extras.nodes_canny import Canny
 
