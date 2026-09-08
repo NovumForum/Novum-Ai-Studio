@@ -1,4 +1,5 @@
 import bisect
+import enum
 import gc
 import itertools
 import psutil
@@ -50,15 +51,17 @@ class Unhashable:
     def __init__(self):
         self.value = float("NaN")
 
+PRIMITIVE_TYPES = (int, float, str, bool, bytes, enum.Enum, type(None))
+
 def to_hashable(obj):
-    # So that we don't infinitely recurse since frozenset and tuples
-    # are Sequences.
-    if isinstance(obj, (int, float, str, bool, bytes, type(None))):
+    # Fast path for standard immutable primitive types
+    if isinstance(obj, PRIMITIVE_TYPES):
         return obj
     elif isinstance(obj, Mapping):
         return frozenset([(to_hashable(k), to_hashable(v)) for k, v in sorted(obj.items())])
     elif isinstance(obj, Sequence):
-        return frozenset(zip(itertools.count(), [to_hashable(i) for i in obj]))
+        # Convert sequence types directly to tuple to avoid frozenset(zip(itertools.count(), ...)) overhead
+        return tuple(to_hashable(i) for i in obj)
     else:
         # TODO - Support other objects like tensors?
         return Unhashable()
