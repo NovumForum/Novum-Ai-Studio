@@ -34,6 +34,10 @@ class Blend(io.ComfyNode):
 
     @classmethod
     def execute(cls, image1: torch.Tensor, image2: torch.Tensor, blend_factor: float, blend_mode: str) -> io.NodeOutput:
+        # Fast path when blend_factor is 0.0: return image1 without processing image2
+        if blend_factor == 0.0:
+            return io.NodeOutput(image1)
+
         image1, image2 = node_helpers.image_alpha_fix(image1, image2)
         image2 = image2.to(image1.device)
         if image1.shape != image2.shape:
@@ -42,8 +46,11 @@ class Blend(io.ComfyNode):
             image2 = image2.permute(0, 2, 3, 1)
 
         blended_image = cls.blend_mode(image1, image2, blend_mode)
-        blended_image = image1 * (1 - blend_factor) + blended_image * blend_factor
-        blended_image = torch.clamp(blended_image, 0, 1)
+        # Fast path for blend_factor 1.0 vs linear interpolation using fused torch.lerp to eliminate temp tensor allocations
+        if blend_factor == 1.0:
+            blended_image = torch.clamp(blended_image, 0, 1)
+        else:
+            blended_image = torch.clamp(torch.lerp(image1, blended_image, blend_factor), 0, 1)
         return io.NodeOutput(blended_image)
 
     @classmethod
