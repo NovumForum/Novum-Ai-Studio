@@ -1,0 +1,3 @@
+## 2025-05-18 - Vectorizing Tensor Slicing vs Full 4D Math Operations
+**Learning:** Replacing Python list comprehensions and `torch.stack` with batch slicing in channel-extraction nodes (`SplitImageWithAlpha`, `JoinImageWithAlpha`) yields ~13x speedups by eliminating Python iteration and redundant tensor stack copies. However, full batch vectorization of heavy math on large 4D images can increase CPU memory cache pressure.
+**Action:** Vectorize pure slicing/indexing and concatenation operations directly across batch dimensions, and benchmark CPU memory allocations before batching heavy math loops.
