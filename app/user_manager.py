@@ -400,6 +400,10 @@ class UserManager():
             if not isinstance(path, str):
                 return path
 
+            # Prevent unhandled IsADirectoryError (HTTP 500) and directory deletion attempts via file delete endpoint
+            if os.path.isdir(path):
+                return web.Response(status=400, text="Cannot delete directory")
+
             os.remove(path)
 
             return web.Response(status=204)
