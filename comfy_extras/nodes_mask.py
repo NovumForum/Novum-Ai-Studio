@@ -316,21 +316,26 @@ class FeatherMask(IO.ComfyNode):
         top = min(top, output.shape[-2])
         bottom = min(bottom, output.shape[-2])
 
-        for x in range(left):
-            feather_rate = (x + 1.0) / left
-            output[:, :, x] *= feather_rate
+        # Vectorized edge feathering using 1D ramps instead of sequential Python loops
+        if left > 0:
+            ramp = torch.linspace(1.0 / left, 1.0, left, device=output.device, dtype=output.dtype)
+            output[:, :, :left] *= ramp
 
-        for x in range(right):
-            feather_rate = (x + 1) / right
-            output[:, :, -x] *= feather_rate
+        if right > 0:
+            ramp = torch.linspace(1.0 / right, 1.0, right, device=output.device, dtype=output.dtype)
+            output[:, :, 0] *= ramp[0]
+            if right > 1:
+                output[:, :, 1 - right:] *= ramp[1:].flip(0)
 
-        for y in range(top):
-            feather_rate = (y + 1) / top
-            output[:, y, :] *= feather_rate
+        if top > 0:
+            ramp = torch.linspace(1.0 / top, 1.0, top, device=output.device, dtype=output.dtype).unsqueeze(1)
+            output[:, :top, :] *= ramp
 
-        for y in range(bottom):
-            feather_rate = (y + 1) / bottom
-            output[:, -y, :] *= feather_rate
+        if bottom > 0:
+            ramp = torch.linspace(1.0 / bottom, 1.0, bottom, device=output.device, dtype=output.dtype).unsqueeze(1)
+            output[:, 0, :] *= ramp[0, 0]
+            if bottom > 1:
+                output[:, 1 - bottom:, :] *= ramp[1:].flip(0)
 
         return IO.NodeOutput(output)
 
