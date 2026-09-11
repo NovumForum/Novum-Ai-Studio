@@ -12,19 +12,21 @@ class Morphology(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="Morphology",
-            search_aliases=["erode", "dilate"],
-            display_name="ImageMorphology",
+            display_name="Image Morphology",
+            description="Apply mathematical morphology operations (erosion, dilation, opening, closing, morphological gradient, top-hat, bottom-hat) to an image using a square structuring element.",
+            search_aliases=["morphology", "erode", "dilate", "opening", "closing", "gradient", "top hat", "bottom hat", "structuring element", "mask processing"],
             category="image/postprocessing",
             inputs=[
-                io.Image.Input("image"),
+                io.Image.Input("image", tooltip="The input image to process using morphological operations."),
                 io.Combo.Input(
                     "operation",
                     options=["erode", "dilate", "open", "close", "gradient", "bottom_hat", "top_hat"],
+                    tooltip="The mathematical morphology operation to perform:\n- erode: Shrinks bright regions/expands dark regions.\n- dilate: Expands bright regions/shrinks dark regions.\n- open: Erosion followed by dilation (removes small bright spots).\n- close: Dilation followed by erosion (fills small dark holes).\n- gradient: Difference between dilation and erosion (highlights edges).\n- top_hat: Difference between original image and its opening.\n- bottom_hat: Difference between closing and original image.",
                 ),
-                io.Int.Input("kernel_size", default=3, min=3, max=999, step=1),
+                io.Int.Input("kernel_size", default=3, min=3, max=999, step=1, tooltip="The width and height of the square kernel structuring element (must be an odd integer >= 3)."),
             ],
             outputs=[
-                io.Image.Output(),
+                io.Image.Output(tooltip="The morphologically processed image."),
             ],
         )
 
@@ -58,15 +60,17 @@ class ImageRGBToYUV(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="ImageRGBToYUV",
-            search_aliases=["color space conversion"],
+            display_name="RGB to YUV (YCbCr)",
+            description="Convert an RGB image into separate Y (luma), U (chrominance blue-difference), and V (chrominance red-difference) color space channels.",
+            search_aliases=["color space conversion", "rgb to yuv", "rgb to ycbcr", "luma", "chroma", "separate channels"],
             category="image/batch",
             inputs=[
-                io.Image.Input("image"),
+                io.Image.Input("image", tooltip="The RGB image to convert into YUV / YCbCr channels."),
             ],
             outputs=[
-                io.Image.Output(display_name="Y"),
-                io.Image.Output(display_name="U"),
-                io.Image.Output(display_name="V"),
+                io.Image.Output(display_name="Y", tooltip="Luminance (luma / brightness) channel."),
+                io.Image.Output(display_name="U", tooltip="Chroma blue-difference channel."),
+                io.Image.Output(display_name="V", tooltip="Chroma red-difference channel."),
             ],
         )
 
@@ -80,15 +84,17 @@ class ImageYUVToRGB(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="ImageYUVToRGB",
-            search_aliases=["color space conversion"],
+            display_name="YUV (YCbCr) to RGB",
+            description="Combine separate Y (luma), U (chrominance blue-difference), and V (chrominance red-difference) channels back into a single RGB image.",
+            search_aliases=["color space conversion", "yuv to rgb", "ycbcr to rgb", "recombine channels", "merge channels"],
             category="image/batch",
             inputs=[
-                io.Image.Input("Y"),
-                io.Image.Input("U"),
-                io.Image.Input("V"),
+                io.Image.Input("Y", tooltip="Luminance (luma / brightness) channel image."),
+                io.Image.Input("U", tooltip="Chroma blue-difference channel image."),
+                io.Image.Input("V", tooltip="Chroma red-difference channel image."),
             ],
             outputs=[
-                io.Image.Output(),
+                io.Image.Output(tooltip="The combined RGB image."),
             ],
         )
 
@@ -111,4 +117,3 @@ class MorphologyExtension(ComfyExtension):
 
 async def comfy_entrypoint() -> MorphologyExtension:
     return MorphologyExtension()
-
