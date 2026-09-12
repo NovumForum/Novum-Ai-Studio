@@ -10,14 +10,16 @@ class LatentRebatch(io.ComfyNode):
         return io.Schema(
             node_id="RebatchLatents",
             display_name="Rebatch Latents",
+            description="Rebatches a list of latent dictionaries into new batches of the specified target size.",
+            search_aliases=["rebatch latents", "batch latents", "chunk latents", "split batch", "latent batch"],
             category="latent/batch",
             is_input_list=True,
             inputs=[
-                io.Latent.Input("latents"),
-                io.Int.Input("batch_size", default=1, min=1, max=4096),
+                io.Latent.Input("latents", tooltip="The list of latent objects to rebatch."),
+                io.Int.Input("batch_size", default=1, min=1, max=4096, tooltip="Target batch size for each output latent batch."),
             ],
             outputs=[
-                io.Latent.Output(is_output_list=True),
+                io.Latent.Output(is_output_list=True, tooltip="List of rebatched latent objects."),
             ],
         )
 
@@ -113,14 +115,16 @@ class ImageRebatch(io.ComfyNode):
         return io.Schema(
             node_id="RebatchImages",
             display_name="Rebatch Images",
+            description="Rebatches a list of image tensors into new batches of the specified target size.",
+            search_aliases=["rebatch images", "batch images", "chunk images", "split batch", "image batch"],
             category="image/batch",
             is_input_list=True,
             inputs=[
-                io.Image.Input("images"),
-                io.Int.Input("batch_size", default=1, min=1, max=4096),
+                io.Image.Input("images", tooltip="The list of image tensors to rebatch."),
+                io.Int.Input("batch_size", default=1, min=1, max=4096, tooltip="Target batch size for each output image batch."),
             ],
             outputs=[
-                io.Image.Output(is_output_list=True),
+                io.Image.Output(is_output_list=True, tooltip="List of rebatched image tensors."),
             ],
         )
 
