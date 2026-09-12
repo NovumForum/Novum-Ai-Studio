@@ -1996,6 +1996,7 @@ class ImagePadForOutpaint:
         new_image = torch.ones(
             (d1, d2 + top + bottom, d3 + left + right, d4),
             dtype=torch.float32,
+            device=image.device,
         ) * 0.5
 
         new_image[:, top:top + d2, left:left + d3, :] = image
@@ -2003,31 +2004,31 @@ class ImagePadForOutpaint:
         mask = torch.ones(
             (d2 + top + bottom, d3 + left + right),
             dtype=torch.float32,
+            device=image.device,
         )
 
         t = torch.zeros(
             (d2, d3),
-            dtype=torch.float32
+            dtype=torch.float32,
+            device=image.device,
         )
 
         if feathering > 0 and feathering * 2 < d2 and feathering * 2 < d3:
+            # Vectorized feathering mask computation: replaces per-pixel Python loops with PyTorch tensor ops
+            i_indices = torch.arange(d2, dtype=torch.float32, device=image.device)
+            j_indices = torch.arange(d3, dtype=torch.float32, device=image.device)
 
-            for i in range(d2):
-                for j in range(d3):
-                    dt = i if top != 0 else d2
-                    db = d2 - i if bottom != 0 else d2
+            dt = i_indices if top != 0 else torch.full((d2,), float(d2), device=image.device)
+            db = (d2 - i_indices) if bottom != 0 else torch.full((d2,), float(d2), device=image.device)
+            d_v = torch.minimum(dt, db)
 
-                    dl = j if left != 0 else d3
-                    dr = d3 - j if right != 0 else d3
+            dl = j_indices if left != 0 else torch.full((d3,), float(d3), device=image.device)
+            dr = (d3 - j_indices) if right != 0 else torch.full((d3,), float(d3), device=image.device)
+            d_h = torch.minimum(dl, dr)
 
-                    d = min(dt, db, dl, dr)
-
-                    if d >= feathering:
-                        continue
-
-                    v = (feathering - d) / feathering
-
-                    t[i, j] = v * v
+            d = torch.minimum(d_v.unsqueeze(1), d_h.unsqueeze(0))
+            v = torch.clamp((feathering - d) / feathering, min=0.0)
+            t = v * v
 
         mask[top:top + d2, left:left + d3] = t
 
