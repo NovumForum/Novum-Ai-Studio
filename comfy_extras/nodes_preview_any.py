@@ -8,7 +8,9 @@ class PreviewAny():
     @classmethod
     def INPUT_TYPES(cls):
         return {
-            "required": {"source": (IO.ANY, {})},
+            "required": {
+                "source": (IO.ANY, {"tooltip": "Any value to convert into a text preview (strings, numbers, booleans, lists, or dicts)."}),
+            },
         }
 
     RETURN_TYPES = ()
@@ -16,6 +18,7 @@ class PreviewAny():
     OUTPUT_NODE = True
 
     CATEGORY = "utils"
+    DESCRIPTION = "Displays any input value as text or formatted JSON in the node UI for quick debugging and inspection."
     SEARCH_ALIASES = ["show output", "inspect", "debug", "print value", "show text"]
 
     def main(self, source=None):
