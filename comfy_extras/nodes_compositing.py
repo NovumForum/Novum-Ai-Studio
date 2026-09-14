@@ -112,16 +112,17 @@ class PorterDuffImageComposite(io.ComfyNode):
             search_aliases=["alpha composite", "blend modes", "layer blend", "transparency blend"],
             display_name="Porter-Duff Image Composite",
             category="mask/compositing",
+            description="Composites two images using Porter-Duff alpha blending operations (such as OVER, ATOP, IN, OUT, ADD, MULTIPLY, SCREEN).",
             inputs=[
-                io.Image.Input("source"),
-                io.Mask.Input("source_alpha"),
-                io.Image.Input("destination"),
-                io.Mask.Input("destination_alpha"),
-                io.Combo.Input("mode", options=[mode.name for mode in PorterDuffMode], default=PorterDuffMode.DST.name),
+                io.Image.Input("source", tooltip="The foreground/source image to composite."),
+                io.Mask.Input("source_alpha", tooltip="The alpha mask for the source image."),
+                io.Image.Input("destination", tooltip="The background/destination image to composite onto."),
+                io.Mask.Input("destination_alpha", tooltip="The alpha mask for the destination image."),
+                io.Combo.Input("mode", options=[mode.name for mode in PorterDuffMode], default=PorterDuffMode.DST.name, tooltip="The Porter-Duff compositing operation mode (e.g., SRC_OVER, DST_OVER, MULTIPLY, SCREEN, ADD)."),
             ],
             outputs=[
-                io.Image.Output(),
-                io.Mask.Output(),
+                io.Image.Output(tooltip="The composited RGB image result."),
+                io.Mask.Output(tooltip="The combined alpha mask result of the composite operation."),
             ],
         )
 
