@@ -390,9 +390,69 @@ class TestAsyncNodes:
 
     def test_async_cancellation(self, client: ComfyClient, builder: GraphBuilder):
         """Test cancellation of async operations."""
-        # This would require implementing cancellation in the client
-        # For now, we'll test that long-running async operations can be interrupted
-        pass  # TODO: Implement when cancellation API is available
+        g = builder
+        image = g.node("StubImage", content="BLACK", height=512, width=512, batch_size=1)
+
+        # Long running async node
+        sleep_node = g.node("TestSleep", value=image.out(0), seconds=10.0)
+        output = g.node("SaveImage", images=sleep_node.out(0))
+
+        # Start execution
+        prompt = g.finalize()
+        for node in g.nodes.values():
+            if node.class_type == 'SaveImage':
+                node.inputs['filename_prefix'] = client.test_name
+        prompt_id = client.queue_prompt(prompt)['prompt_id']
+
+        # We need to manually process the websocket to wait until the async node starts
+        from tests.execution.test_execution import RunResult
+        import json
+
+        result = RunResult(prompt_id)
+
+        # Read executing messages until TestSleep is running
+        while True:
+            out = client.ws.recv()
+            if isinstance(out, str):
+                message = json.loads(out)
+                if message['type'] == 'executing':
+                    data = message['data']
+                    if data['prompt_id'] != prompt_id:
+                        continue
+                    if data['node'] is not None:
+                        result.runs[data['node']] = True
+                        if data['node'] == sleep_node.id:
+                            break
+
+        # Now interrupt the execution
+        client.interrupt(prompt_id)
+
+        # Now drain the websocket until execution stops
+        interrupted = False
+        while True:
+            out = client.ws.recv()
+            if isinstance(out, str):
+                message = json.loads(out)
+                if message['type'] == 'executing':
+                    data = message['data']
+                    if data['prompt_id'] != prompt_id:
+                        continue
+                    if data['node'] is None:
+                        break
+                    result.runs[data['node']] = True
+                elif message['type'] == 'execution_interrupted':
+                    if message['data']['prompt_id'] == prompt_id:
+                        interrupted = True
+                elif message['type'] == 'execution_error':
+                    raise Exception(message['data'])
+                elif message['type'] == 'execution_cached':
+                    if message['data']['prompt_id'] == prompt_id:
+                        cached_nodes = message['data'].get('nodes', [])
+                        for node_id in cached_nodes:
+                            result.cached[node_id] = True
+
+        assert interrupted, "Execution should have been interrupted"
+        assert not result.did_run(output), "Should not have executed output node"
 
     def test_mixed_sync_async_execution(self, client: ComfyClient, builder: GraphBuilder):
         """Test workflows with both sync and async nodes."""

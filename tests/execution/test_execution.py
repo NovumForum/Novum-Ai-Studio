@@ -130,6 +130,15 @@ class ComfyClient:
                 return None
             raise
 
+
+    def interrupt(self, prompt_id=None):
+        data = {}
+        if prompt_id is not None:
+            data['prompt_id'] = prompt_id
+        req = urllib.request.Request(f"http://{self.server_address}/interrupt", data=json.dumps(data).encode('utf-8'), method='POST')
+        req.add_header('Content-Type', 'application/json')
+        return urllib.request.urlopen(req).read()
+
     def set_test_name(self, name):
         self.test_name = name
 
