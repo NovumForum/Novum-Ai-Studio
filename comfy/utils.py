@@ -1347,7 +1347,16 @@ def convert_old_quants(state_dict, model_prefix="", metadata={}):
             else:
                 full_precision_matrix_mult = False
 
+            scaled_fp8_dtype_string = "float8_e4m3fn"
+            if scaled_fp8_dtype == torch.float8_e5m2:
+                scaled_fp8_dtype_string = "float8_e5m2"
+            elif hasattr(torch, "float8_e4m3fnuz") and scaled_fp8_dtype == torch.float8_e4m3fnuz:
+                scaled_fp8_dtype_string = "float8_e4m3fnuz"
+            elif hasattr(torch, "float8_e5m2fnuz") and scaled_fp8_dtype == torch.float8_e5m2fnuz:
+                scaled_fp8_dtype_string = "float8_e5m2fnuz"
+
             out_sd = {}
+
             layers = {}
             for k in list(state_dict.keys()):
                 if k == scaled_fp8_key:
@@ -1363,7 +1372,7 @@ def convert_old_quants(state_dict, model_prefix="", metadata={}):
                     k_out = "{}.weight_scale".format(layer)
 
                 if layer is not None:
-                    layer_conf = {"format": "float8_e4m3fn"}  # TODO: check if anyone did some non e4m3fn scaled checkpoints
+                    layer_conf = {"format": scaled_fp8_dtype_string}
                     if full_precision_matrix_mult:
                         layer_conf["full_precision_matrix_mult"] = full_precision_matrix_mult
                     layers[layer] = layer_conf
