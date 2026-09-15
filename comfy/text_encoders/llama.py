@@ -271,7 +271,7 @@ class Qwen25_7BVLI_Config:
     k_norm = None
     rope_scale = None
     final_norm: bool = True
-    lm_head: bool = False
+    lm_head: bool = True
 
 @dataclass
 class Gemma2_2B_Config:
@@ -1010,8 +1010,6 @@ class Qwen25_7BVLI(BaseLlama, BaseGenerate, torch.nn.Module):
         self.visual = qwen_vl.Qwen2VLVisionTransformer(hidden_size=1280, output_hidden_size=config.hidden_size, device=device, dtype=dtype, ops=operations)
         self.dtype = dtype
 
-        # todo: should this be tied or not?
-        #self.lm_head = operations.Linear(config.hidden_size, config.vocab_size, bias=False, device=device, dtype=dtype)
 
     def preprocess_embed(self, embed, device):
         if embed["type"] == "image":
