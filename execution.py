@@ -394,12 +394,10 @@ def get_output_from_returns(return_values, obj):
     else:
         output = []
     ui = dict()
-    # TODO: Think there's an existing bug here
-    # If we're performing a subgraph expansion, we probably shouldn't be returning UI values yet.
-    # They'll get cached without the completed subgraphs. It's an edge case and I'm not aware of
-    # any nodes that use both subgraph expansion and custom UI outputs, but might be a problem in the future.
-    if len(uis) > 0:
+    if not has_subgraph and len(uis) > 0:
         ui = {k: [y for x in uis for y in x[k]] for k in uis[0].keys()}
+    elif has_subgraph:
+        ui = uis
     return output, ui, has_subgraph
 
 def format_value(x):
@@ -446,7 +444,7 @@ async def execute(server, dynprompt, caches, current_item, extra_data, executed,
             del pending_async_nodes[unique_id]
             output_data, output_ui, has_subgraph = get_output_from_returns(results, class_def)
         elif unique_id in pending_subgraph_results:
-            cached_results = pending_subgraph_results[unique_id]
+            cached_results, uis = pending_subgraph_results[unique_id]
             resolved_outputs = []
             for is_subgraph, result in cached_results:
                 if not is_subgraph:
@@ -464,7 +462,9 @@ async def execute(server, dynprompt, caches, current_item, extra_data, executed,
                             resolved_output.append(r)
                     resolved_outputs.append(tuple(resolved_output))
             output_data = merge_result_data(resolved_outputs, class_def)
-            output_ui = []
+            output_ui = dict()
+            if len(uis) > 0:
+                output_ui = {k: [y for x in uis for y in x[k]] for k in uis[0].keys()}
             del pending_subgraph_results[unique_id]
             has_subgraph = False
         else:
@@ -538,7 +538,7 @@ async def execute(server, dynprompt, caches, current_item, extra_data, executed,
                     unblock()
                 asyncio.create_task(await_completion())
                 return (ExecutionResult.PENDING, None, None)
-        if len(output_ui) > 0:
+        if not has_subgraph and len(output_ui) > 0:
             ui_outputs[unique_id] = {
                 "meta": {
                     "node_id": unique_id,
@@ -583,7 +583,7 @@ async def execute(server, dynprompt, caches, current_item, extra_data, executed,
                 execution_list.cache_link(node_id, unique_id)
             for link in new_output_links:
                 execution_list.add_strong_link(link[0], link[1], unique_id)
-            pending_subgraph_results[unique_id] = cached_outputs
+            pending_subgraph_results[unique_id] = (cached_outputs, output_ui)
             return (ExecutionResult.PENDING, None, None)
 
         cache_entry = CacheEntry(ui=ui_outputs.get(unique_id), outputs=output_data)
