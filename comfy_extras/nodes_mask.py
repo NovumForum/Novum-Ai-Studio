@@ -50,17 +50,19 @@ class LatentCompositeMasked(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="LatentCompositeMasked",
-            search_aliases=["overlay latent", "layer latent", "paste latent", "inpaint latent"],
+            display_name="Latent Composite Masked",
+            description="Composites a source latent into a destination latent using an optional mask and offset coordinates.",
+            search_aliases=["overlay latent", "layer latent", "paste latent", "inpaint latent", "composite latent"],
             category="latent",
             inputs=[
-                IO.Latent.Input("destination"),
-                IO.Latent.Input("source"),
-                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=8),
-                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=8),
-                IO.Boolean.Input("resize_source", default=False),
-                IO.Mask.Input("mask", optional=True),
+                IO.Latent.Input("destination", tooltip="The background latent image into which the source latent will be composited."),
+                IO.Latent.Input("source", tooltip="The foreground latent image to composite onto the destination latent."),
+                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=8, tooltip="Horizontal pixel offset (in 8-pixel steps) for positioning the source latent."),
+                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=8, tooltip="Vertical pixel offset (in 8-pixel steps) for positioning the source latent."),
+                IO.Boolean.Input("resize_source", default=False, tooltip="If enabled, resizes the source latent to match the dimensions of the destination latent."),
+                IO.Mask.Input("mask", optional=True, tooltip="Optional mask specifying blending intensity (1.0 = source, 0.0 = destination)."),
             ],
-            outputs=[IO.Latent.Output()],
+            outputs=[IO.Latent.Output(tooltip="The composited latent output.")],
         )
 
     @classmethod
@@ -79,17 +81,19 @@ class ImageCompositeMasked(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ImageCompositeMasked",
-            search_aliases=["paste image", "overlay", "layer"],
+            display_name="Image Composite Masked",
+            description="Composites a source image into a destination image using an optional mask and offset coordinates.",
+            search_aliases=["paste image", "overlay", "layer", "composite image", "blend image"],
             category="image",
             inputs=[
-                IO.Image.Input("destination"),
-                IO.Image.Input("source"),
-                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Boolean.Input("resize_source", default=False),
-                IO.Mask.Input("mask", optional=True),
+                IO.Image.Input("destination", tooltip="The background image into which the source image will be composited."),
+                IO.Image.Input("source", tooltip="The foreground image to composite onto the destination image."),
+                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Horizontal pixel offset for positioning the source image."),
+                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Vertical pixel offset for positioning the source image."),
+                IO.Boolean.Input("resize_source", default=False, tooltip="If enabled, resizes the source image to match the dimensions of the destination image."),
+                IO.Mask.Input("mask", optional=True, tooltip="Optional mask specifying blending intensity (1.0 = source, 0.0 = destination)."),
             ],
-            outputs=[IO.Image.Output()],
+            outputs=[IO.Image.Output(tooltip="The composited image output.")],
         )
 
     @classmethod
@@ -107,13 +111,14 @@ class MaskToImage(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="MaskToImage",
-            search_aliases=["convert mask"],
+            search_aliases=["convert mask", "mask to RGB", "mask to image"],
             display_name="Convert Mask to Image",
+            description="Converts a 2D grayscale mask into an RGB image with identical channel values.",
             category="mask",
             inputs=[
-                IO.Mask.Input("mask"),
+                IO.Mask.Input("mask", tooltip="The input mask to convert into an RGB image."),
             ],
-            outputs=[IO.Image.Output()],
+            outputs=[IO.Image.Output(tooltip="The converted 3-channel RGB image.")],
         )
 
     @classmethod
@@ -129,14 +134,15 @@ class ImageToMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ImageToMask",
-            search_aliases=["extract channel", "channel to mask"],
+            search_aliases=["extract channel", "channel to mask", "image to mask"],
             display_name="Convert Image to Mask",
+            description="Extracts a single color channel (red, green, blue, or alpha) from an image to create a mask.",
             category="mask",
             inputs=[
-                IO.Image.Input("image"),
-                IO.Combo.Input("channel", options=["red", "green", "blue", "alpha"]),
+                IO.Image.Input("image", tooltip="The source image from which to extract a channel."),
+                IO.Combo.Input("channel", options=["red", "green", "blue", "alpha"], tooltip="The specific color or alpha channel to extract as a mask."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The extracted 1-channel mask.")],
         )
 
     @classmethod
@@ -153,13 +159,15 @@ class ImageColorToMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ImageColorToMask",
-            search_aliases=["color keying", "chroma key"],
+            display_name="Image Color to Mask",
+            description="Generates a binary mask isolating pixels that exactly match a specified RGB hex color value.",
+            search_aliases=["color keying", "chroma key", "color mask", "select color"],
             category="mask",
             inputs=[
-                IO.Image.Input("image"),
-                IO.Int.Input("color", default=0, min=0, max=0xFFFFFF, step=1, display_mode=IO.NumberDisplay.number),
+                IO.Image.Input("image", tooltip="The input image to evaluate for matching color pixels."),
+                IO.Int.Input("color", default=0, min=0, max=0xFFFFFF, step=1, display_mode=IO.NumberDisplay.number, tooltip="The target RGB integer color value to mask (e.g. 0 for black, 16777215 for white)."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The resulting binary mask with 1.0 at matching color pixels and 0.0 elsewhere.")],
         )
 
     @classmethod
@@ -177,13 +185,16 @@ class SolidMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="SolidMask",
+            display_name="Solid Mask",
+            description="Creates a uniform, single-value mask of specified width and height.",
+            search_aliases=["solid mask", "constant mask", "blank mask", "fill mask"],
             category="mask",
             inputs=[
-                IO.Float.Input("value", default=1.0, min=0.0, max=1.0, step=0.01),
-                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
+                IO.Float.Input("value", default=1.0, min=0.0, max=1.0, step=0.01, tooltip="The uniform fill value for the mask (0.0 = completely transparent/black, 1.0 = completely opaque/white)."),
+                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="The width of the mask in pixels."),
+                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="The height of the mask in pixels."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The generated solid mask tensor.")],
         )
 
     @classmethod
@@ -199,12 +210,14 @@ class InvertMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="InvertMask",
-            search_aliases=["reverse mask", "flip mask"],
+            display_name="Invert Mask",
+            description="Inverts a mask by subtracting its values from 1.0 (black becomes white, white becomes black).",
+            search_aliases=["reverse mask", "flip mask", "invert mask", "negate mask"],
             category="mask",
             inputs=[
-                IO.Mask.Input("mask"),
+                IO.Mask.Input("mask", tooltip="The input mask to invert."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The inverted mask output.")],
         )
 
     @classmethod
@@ -220,16 +233,18 @@ class CropMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="CropMask",
-            search_aliases=["cut mask", "extract mask region", "mask slice"],
+            display_name="Crop Mask",
+            description="Crops a rectangular sub-region from an input mask specified by offset and dimensions.",
+            search_aliases=["cut mask", "extract mask region", "mask slice", "crop mask"],
             category="mask",
             inputs=[
-                IO.Mask.Input("mask"),
-                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
+                IO.Mask.Input("mask", tooltip="The input mask to crop."),
+                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="The top-left X horizontal pixel coordinate of the crop region."),
+                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="The top-left Y vertical pixel coordinate of the crop region."),
+                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="The width of the cropped region in pixels."),
+                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="The height of the cropped region in pixels."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The cropped mask region.")],
         )
 
     @classmethod
@@ -246,16 +261,18 @@ class MaskComposite(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="MaskComposite",
-            search_aliases=["combine masks", "blend masks", "layer masks"],
+            display_name="Mask Composite",
+            description="Combines two masks using mathematical or logical operations (multiply, add, subtract, and, or, xor).",
+            search_aliases=["combine masks", "blend masks", "layer masks", "mask composite", "merge masks"],
             category="mask",
             inputs=[
-                IO.Mask.Input("destination"),
-                IO.Mask.Input("source"),
-                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Combo.Input("operation", options=["multiply", "add", "subtract", "and", "or", "xor"]),
+                IO.Mask.Input("destination", tooltip="The base destination mask onto which the source mask will be combined."),
+                IO.Mask.Input("source", tooltip="The source mask to combine with the destination mask."),
+                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Horizontal offset for positioning the source mask onto the destination mask."),
+                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Vertical offset for positioning the source mask onto the destination mask."),
+                IO.Combo.Input("operation", options=["multiply", "add", "subtract", "and", "or", "xor"], tooltip="The blending or boolean operation used to combine the source and destination masks."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The combined mask output.")],
         )
 
     @classmethod
@@ -295,16 +312,18 @@ class FeatherMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="FeatherMask",
-            search_aliases=["soft edge mask", "blur mask edges", "gradient mask edge"],
+            display_name="Feather Mask",
+            description="Applies linear gradient softening to the borders of a mask along specified edge distances.",
+            search_aliases=["soft edge mask", "blur mask edges", "gradient mask edge", "feather mask"],
             category="mask",
             inputs=[
-                IO.Mask.Input("mask"),
-                IO.Int.Input("left", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("top", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("right", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("bottom", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
+                IO.Mask.Input("mask", tooltip="The input mask to feather."),
+                IO.Int.Input("left", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Number of pixels to feather inward from the left border."),
+                IO.Int.Input("top", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Number of pixels to feather inward from the top border."),
+                IO.Int.Input("right", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Number of pixels to feather inward from the right border."),
+                IO.Int.Input("bottom", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Number of pixels to feather inward from the bottom border."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The edge-feathered mask output.")],
         )
 
     @classmethod
@@ -342,15 +361,16 @@ class GrowMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="GrowMask",
-            search_aliases=["expand mask", "shrink mask"],
+            search_aliases=["expand mask", "shrink mask", "dilate mask", "erode mask", "grow mask"],
             display_name="Grow Mask",
+            description="Expands (dilates) or shrinks (erodes) mask boundaries by a specified pixel distance.",
             category="mask",
             inputs=[
-                IO.Mask.Input("mask"),
-                IO.Int.Input("expand", default=0, min=-nodes.MAX_RESOLUTION, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Boolean.Input("tapered_corners", default=True, advanced=True),
+                IO.Mask.Input("mask", tooltip="The input mask to expand or shrink."),
+                IO.Int.Input("expand", default=0, min=-nodes.MAX_RESOLUTION, max=nodes.MAX_RESOLUTION, step=1, tooltip="Number of pixels to grow (positive values expand/dilate, negative values shrink/erode)."),
+                IO.Boolean.Input("tapered_corners", default=True, advanced=True, tooltip="If enabled, uses a cross/diamond footprint for rounded corners; if disabled, uses a full 3x3 square kernel."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The expanded or contracted mask output.")],
         )
 
     @classmethod
@@ -380,13 +400,15 @@ class ThresholdMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ThresholdMask",
-            search_aliases=["binary mask"],
+            display_name="Threshold Mask",
+            description="Converts a mask into a binary (0.0 or 1.0) mask based on a cutoff threshold value.",
+            search_aliases=["binary mask", "threshold mask", "binarize mask", "mask cutoff"],
             category="mask",
             inputs=[
-                IO.Mask.Input("mask"),
-                IO.Float.Input("value", default=0.5, min=0.0, max=1.0, step=0.01),
+                IO.Mask.Input("mask", tooltip="The input mask to threshold."),
+                IO.Float.Input("value", default=0.5, min=0.0, max=1.0, step=0.01, tooltip="The threshold cutoff value. Mask pixels strictly greater than this value become 1.0, others become 0.0."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The binary thresholded mask output.")],
         )
 
     @classmethod
@@ -405,12 +427,12 @@ class MaskPreview(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="MaskPreview",
-            search_aliases=["show mask", "view mask", "inspect mask", "debug mask"],
+            search_aliases=["show mask", "view mask", "inspect mask", "debug mask", "preview mask"],
             display_name="Preview Mask",
             category="mask",
-            description="Saves the input images to your ComfyUI output directory.",
+            description="Previews the input mask in the UI and saves it as an image to the ComfyUI output directory.",
             inputs=[
-                IO.Mask.Input("mask"),
+                IO.Mask.Input("mask", tooltip="The mask to preview and save."),
             ],
             hidden=[IO.Hidden.prompt, IO.Hidden.extra_pnginfo],
             is_output_node=True,
