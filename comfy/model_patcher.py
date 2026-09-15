@@ -115,10 +115,9 @@ def string_to_seed(data):
     return comfy.utils.string_to_seed(data)
 
 class LowVramPatch:
-    def __init__(self, key, patches, convert_func=None, set_func=None):
+    def __init__(self, key, patches, set_func=None):
         self.key = key
         self.patches = patches
-        self.convert_func = convert_func # TODO: remove
         self.set_func = set_func
 
     def __call__(self, weight):
@@ -127,7 +126,7 @@ class LowVramPatch:
 LOWVRAM_PATCH_ESTIMATE_MATH_FACTOR = 2
 
 def low_vram_patch_estimate_vram(model, key):
-    weight, set_func, convert_func = get_key_weight(model, key)
+    weight, set_func = get_key_weight(model, key)
     if weight is None:
         return 0
     model_dtype = getattr(model, "manual_cast_dtype", torch.float32)
@@ -138,7 +137,6 @@ def low_vram_patch_estimate_vram(model, key):
 
 def get_key_weight(model, key):
     set_func = None
-    convert_func = None
     op_keys = key.rsplit('.', 1)
     if len(op_keys) < 2:
         weight = comfy.utils.get_attr(model, key)
@@ -149,16 +147,9 @@ def get_key_weight(model, key):
         except AttributeError:
             pass
 
-        try:
-            convert_func = getattr(op, "convert_{}".format(op_keys[1]))
-        except AttributeError:
-            pass
-
         weight = getattr(op, op_keys[1])
-        if convert_func is not None:
-            weight = comfy.utils.get_attr(model, key)
 
-    return weight, set_func, convert_func
+    return weight, set_func
 
 def key_param_name_to_key(key, param):
     if len(key) == 0:
@@ -629,18 +620,16 @@ class ModelPatcher:
                     continue
             bk = self.backup.get(k, None)
             hbk = self.hook_backup.get(k, None)
-            weight, set_func, convert_func = get_key_weight(self.model, k)
+            weight, set_func = get_key_weight(self.model, k)
             if bk is not None:
                 weight = bk.weight
             if hbk is not None:
                 weight = hbk[0]
-            if convert_func is None:
-                convert_func = lambda a, **kwargs: a
 
             if k in self.patches:
-                p[k] = [(weight, convert_func)] + self.patches[k]
+                p[k] = [weight] + self.patches[k]
             else:
-                p[k] = [(weight, convert_func)]
+                p[k] = [weight]
         return p
 
     def model_state_dict(self, filter_prefix=None):
@@ -654,7 +643,7 @@ class ModelPatcher:
             return sd
 
     def patch_weight_to_device(self, key, device_to=None, inplace_update=False, return_weight=False):
-        weight, set_func, convert_func = get_key_weight(self.model, key)
+        weight, set_func = get_key_weight(self.model, key)
         if key not in self.patches:
             return weight
 
@@ -668,8 +657,6 @@ class ModelPatcher:
             temp_weight = comfy.model_management.cast_to_device(weight, device_to, temp_dtype, copy=True)
         else:
             temp_weight = weight.to(temp_dtype, copy=True)
-        if convert_func is not None:
-            temp_weight = convert_func(temp_weight, inplace=True)
 
         out_weight = comfy.lora.calculate_weight(self.patches[key], temp_weight, key)
         if set_func is None:
@@ -684,13 +671,13 @@ class ModelPatcher:
             return set_func(out_weight, inplace_update=inplace_update, seed=comfy.utils.string_to_seed(key), return_weight=return_weight)
 
     def pin_weight_to_device(self, key):
-        weight, set_func, convert_func = get_key_weight(self.model, key)
+        weight, set_func = get_key_weight(self.model, key)
         if comfy.model_management.pin_memory(weight):
             self.pinned.add(key)
 
     def unpin_weight(self, key):
         if key in self.pinned:
-            weight, set_func, convert_func = get_key_weight(self.model, key)
+            weight, set_func = get_key_weight(self.model, key)
             comfy.model_management.unpin_memory(weight)
             self.pinned.remove(key)
 
@@ -718,7 +705,7 @@ class ModelPatcher:
                         if key in self.patches:
                             return low_vram_patch_estimate_vram(self.model, key)
                         model_dtype = getattr(self.model, "manual_cast_dtype", None)
-                        weight, _, _ = get_key_weight(self.model, key)
+                        weight, _ = get_key_weight(self.model, key)
                         if model_dtype is None or weight is None:
                             return 0
                         if (weight.dtype != model_dtype or isinstance(weight, QuantizedTensor)):
@@ -774,15 +761,15 @@ class ModelPatcher:
                         if force_patch_weights:
                             self.patch_weight_to_device(weight_key)
                         else:
-                            _, set_func, convert_func = get_key_weight(self.model, weight_key)
-                            m.weight_function = [LowVramPatch(weight_key, self.patches, convert_func, set_func)]
+                            _, set_func = get_key_weight(self.model, weight_key)
+                            m.weight_function = [LowVramPatch(weight_key, self.patches, set_func)]
                             patch_counter += 1
                     if bias_key in self.patches:
                         if force_patch_weights:
                             self.patch_weight_to_device(bias_key)
                         else:
-                            _, set_func, convert_func = get_key_weight(self.model, bias_key)
-                            m.bias_function = [LowVramPatch(bias_key, self.patches, convert_func, set_func)]
+                            _, set_func = get_key_weight(self.model, bias_key)
+                            m.bias_function = [LowVramPatch(bias_key, self.patches, set_func)]
                             patch_counter += 1
 
                     cast_weight = True
@@ -969,15 +956,15 @@ class ModelPatcher:
                                 if force_patch_weights:
                                     self.patch_weight_to_device(weight_key)
                                 else:
-                                    _, set_func, convert_func = get_key_weight(self.model, weight_key)
-                                    m.weight_function.append(LowVramPatch(weight_key, self.patches, convert_func, set_func))
+                                    _, set_func = get_key_weight(self.model, weight_key)
+                                    m.weight_function.append(LowVramPatch(weight_key, self.patches, set_func))
                                     patch_counter += 1
                             if bias_key in self.patches:
                                 if force_patch_weights:
                                     self.patch_weight_to_device(bias_key)
                                 else:
-                                    _, set_func, convert_func = get_key_weight(self.model, bias_key)
-                                    m.bias_function.append(LowVramPatch(bias_key, self.patches, convert_func, set_func))
+                                    _, set_func = get_key_weight(self.model, bias_key)
+                                    m.bias_function.append(LowVramPatch(bias_key, self.patches, set_func))
                                     patch_counter += 1
                             cast_weight = True
 
@@ -1347,7 +1334,7 @@ class ModelPatcher:
         if key not in combined_patches:
             return
 
-        weight, set_func, convert_func = get_key_weight(self.model, key)
+        weight, set_func = get_key_weight(self.model, key)
         weight: torch.Tensor
         if key not in self.hook_backup:
             target_device = self.offload_device
@@ -1358,8 +1345,6 @@ class ModelPatcher:
             self.hook_backup[key] = (weight.to(device=target_device, copy=True), weight.device)
         # TODO: properly handle LowVramPatch, if it ends up an issue
         temp_weight = comfy.model_management.cast_to_device(weight, weight.device, torch.float32, copy=True)
-        if convert_func is not None:
-            temp_weight = convert_func(temp_weight, inplace=True)
 
         out_weight = comfy.lora.calculate_weight(combined_patches[key],
                                                  temp_weight,
@@ -1532,7 +1517,7 @@ class ModelPatcherDynamic(ModelPatcher):
 
                     weight_function = []
 
-                    weight, _, _ = get_key_weight(self.model, key)
+                    weight, _ = get_key_weight(self.model, key)
                     if weight is None:
                         return (False, 0)
                     if key in self.patches:
@@ -1582,7 +1567,7 @@ class ModelPatcherDynamic(ModelPatcher):
                 else:
                     for param in params:
                         key = key_param_name_to_key(n, param)
-                        weight, _, _ = get_key_weight(self.model, key)
+                        weight, _ = get_key_weight(self.model, key)
                         weight.seed_key = key
                         set_dirty(weight, dirty)
                         geometry = weight
