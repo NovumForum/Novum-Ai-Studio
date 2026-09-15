@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+from comfy_execution.graph_utils import is_link
+import nodes
+
 from aiohttp import web
 
 from typing import TYPE_CHECKING, TypedDict
 if TYPE_CHECKING:
     from comfy_api.latest._io_public import NodeReplace
 
-from comfy_execution.graph_utils import is_link
-import nodes
 
 class NodeStruct(TypedDict):
     inputs: dict[str, str | int | float | bool | tuple[str, int]]

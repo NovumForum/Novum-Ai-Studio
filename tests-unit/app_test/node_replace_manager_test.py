@@ -1,3 +1,5 @@
+from app.node_replace_manager import NodeReplaceManager
+from comfy_api.latest._io_public import NodeReplace
 from unittest.mock import patch, MagicMock
 
 import torch
@@ -8,10 +10,8 @@ torch.cuda.get_device_properties = MagicMock(return_value=MagicMock(total_memory
 torch.cuda.memory_stats = MagicMock(return_value={'reserved_bytes.all.current': 0})
 torch.cuda.mem_get_info = MagicMock(return_value=(1024*1024*1024, 1024*1024*1024))
 
-from app.node_replace_manager import NodeReplaceManager
-from comfy_api.latest._io_public import NodeReplace
-
 def test_node_replace_manager_updates_meta_title():
+
     with patch("app.node_replace_manager.nodes") as mock_nodes:
         # Node must not be in NODE_CLASS_MAPPINGS to be replaced
         mock_nodes.NODE_CLASS_MAPPINGS = {"NewNode": type("NewNode", (), {})}
