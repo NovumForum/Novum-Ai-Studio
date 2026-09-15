@@ -20,7 +20,8 @@ def copy_node_struct(node_struct: NodeStruct, empty_inputs: bool = False) -> Nod
         new_node_struct["inputs"] = {}
     else:
         new_node_struct["inputs"] = node_struct["inputs"].copy()
-    new_node_struct["_meta"] = node_struct["_meta"].copy()
+    if "_meta" in node_struct:
+        new_node_struct["_meta"] = node_struct["_meta"].copy()
     return new_node_struct
 
 
@@ -72,7 +73,14 @@ class NodeReplaceManager:
             # first, replace node id (class_type)
             new_node_struct = copy_node_struct(node_struct, empty_inputs=True)
             new_node_struct["class_type"] = new_node_id
-            # TODO: consider replacing display_name in _meta as well for error reporting purposes; would need to query node schema
+
+            # replace display_name in _meta for error reporting purposes
+            if "_meta" in new_node_struct:
+                # ComfyUI often uses node titles/display names in error reporting.
+                # If we swap a node type, we should also swap the display name so the error points to the right new node type.
+                # Only update if the old node had a _meta dict already formed.
+                new_node_struct["_meta"]["display_name"] = nodes.NODE_DISPLAY_NAME_MAPPINGS.get(new_node_id, new_node_id)
+
             # second, replace inputs
             if replacement.input_mapping is not None:
                 for input_map in replacement.input_mapping:
