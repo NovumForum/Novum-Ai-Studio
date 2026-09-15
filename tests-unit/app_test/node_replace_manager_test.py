@@ -15,7 +15,7 @@ sys.modules['comfy_execution.graph_utils'].is_link = lambda x: isinstance(x, lis
 
 sys.modules['nodes'] = MagicMock()
 
-from app.node_replace_manager import NodeReplaceManager, NodeStruct
+from app.node_replace_manager import NodeReplaceManager
 import nodes
 
 class NodeReplace:
