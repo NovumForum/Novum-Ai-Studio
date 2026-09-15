@@ -145,7 +145,11 @@ def _prepare_sampling(model: ModelPatcher, noise_shape, conds, model_options=Non
     real_model: BaseModel = None
     models, inference_memory = get_additional_models(conds, model.model_dtype())
     models += get_additional_models_from_model_options(model_options)
-    models += model.get_nested_additional_models()  # TODO: does this require inference_memory update?
+    nested_additional_models = model.get_nested_additional_models()
+    for m in nested_additional_models:
+        if hasattr(m, "inference_memory_requirements"):
+            inference_memory += m.inference_memory_requirements(model.model_dtype())
+    models += nested_additional_models
     if force_offload: # In training + offload enabled, we want to force prepare sampling to trigger partial load
         memory_required = 1e20
         minimum_memory_required = None
