@@ -15,17 +15,15 @@ class SwitchNode(io.ComfyNode):
         return io.Schema(
             node_id="ComfySwitchNode",
             display_name="Switch",
-            description="Selects between two inputs based on a boolean condition with lazy evaluation.",
-            search_aliases=["switch", "if", "branch", "toggle", "condition", "multiplexer", "mux"],
             category="logic",
             is_experimental=True,
             inputs=[
-                io.Boolean.Input("switch", tooltip="When True, selects 'on_true'; when False, selects 'on_false'."),
-                io.MatchType.Input("on_false", template=template, lazy=True, tooltip="The value selected when switch is False."),
-                io.MatchType.Input("on_true", template=template, lazy=True, tooltip="The value selected when switch is True."),
+                io.Boolean.Input("switch"),
+                io.MatchType.Input("on_false", template=template, lazy=True),
+                io.MatchType.Input("on_true", template=template, lazy=True),
             ],
             outputs=[
-                io.MatchType.Output(template=template, display_name="output", tooltip="The selected input value."),
+                io.MatchType.Output(template=template, display_name="output"),
             ],
         )
 
@@ -48,17 +46,15 @@ class SoftSwitchNode(io.ComfyNode):
         return io.Schema(
             node_id="ComfySoftSwitchNode",
             display_name="Soft Switch",
-            description="Selects between inputs based on a boolean condition, gracefully falling back if one input is unconnected.",
-            search_aliases=["soft switch", "fallback switch", "conditional switch", "optional switch"],
             category="logic",
             is_experimental=True,
             inputs=[
-                io.Boolean.Input("switch", tooltip="When True, selects 'on_true'; when False, selects 'on_false'. If one input is missing, the connected input is used."),
-                io.MatchType.Input("on_false", template=template, lazy=True, optional=True, tooltip="The value selected when switch is False (optional fallback)."),
-                io.MatchType.Input("on_true", template=template, lazy=True, optional=True, tooltip="The value selected when switch is True (optional fallback)."),
+                io.Boolean.Input("switch"),
+                io.MatchType.Input("on_false", template=template, lazy=True, optional=True),
+                io.MatchType.Input("on_true", template=template, lazy=True, optional=True),
             ],
             outputs=[
-                io.MatchType.Output(template=template, display_name="output", tooltip="The selected or fallback input value."),
+                io.MatchType.Output(template=template, display_name="output"),
             ],
         )
 
@@ -105,14 +101,12 @@ class CustomComboNode(io.ComfyNode):
         return io.Schema(
             node_id="CustomCombo",
             display_name="Custom Combo",
-            description="Allows user-defined custom dropdown combo options and outputs selected string and index.",
-            search_aliases=["custom combo", "custom dropdown", "user combo", "options list", "select"],
             category="utils",
             is_experimental=True,
-            inputs=[io.Combo.Input("choice", options=[], tooltip="The selected custom option value.")],
+            inputs=[io.Combo.Input("choice", options=[])],
             outputs=[
-                io.String.Output(display_name="STRING", tooltip="The selected option string."),
-                io.Int.Output(display_name="INDEX", tooltip="The index of the selected option."),
+                io.String.Output(display_name="STRING"),
+                io.Int.Output(display_name="INDEX"),
             ],
             accept_all_inputs=True,
         )
