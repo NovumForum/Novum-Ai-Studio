@@ -29,16 +29,27 @@ class FreeU(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="FreeU",
+            display_name="FreeU",
+            description="Applies the FreeU patch to the UNet model to improve generation quality by re-balancing backbone and skip connection features without training or fine-tuning.",
+            search_aliases=[
+                "freeu",
+                "free u",
+                "free lunch",
+                "unet patch",
+                "model patch",
+                "quality boost",
+                "backbone scale",
+            ],
             category="model_patches/unet",
             inputs=[
-                IO.Model.Input("model"),
-                IO.Float.Input("b1", default=1.1, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("b2", default=1.2, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("s1", default=0.9, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("s2", default=0.2, min=0.0, max=10.0, step=0.01, advanced=True),
+                IO.Model.Input("model", tooltip="The UNet model to apply the FreeU patch to."),
+                IO.Float.Input("b1", default=1.1, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Backbone factor 1: Scaling factor applied to main backbone features in stage 1."),
+                IO.Float.Input("b2", default=1.2, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Backbone factor 2: Scaling factor applied to main backbone features in stage 2."),
+                IO.Float.Input("s1", default=0.9, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Skip factor 1: Attenuation factor applied to skip connection features in stage 1 via Fourier filtering."),
+                IO.Float.Input("s2", default=0.2, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Skip factor 2: Attenuation factor applied to skip connection features in stage 2 via Fourier filtering."),
             ],
             outputs=[
-                IO.Model.Output(),
+                IO.Model.Output(tooltip="The patched UNet model with FreeU enabled."),
             ],
         )
 
@@ -76,16 +87,28 @@ class FreeU_V2(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="FreeU_V2",
+            display_name="FreeU (v2)",
+            description="Applies version 2 of the FreeU patch to the UNet model, featuring adaptive modulation based on channel feature statistics for improved generation quality.",
+            search_aliases=[
+                "freeu",
+                "free u v2",
+                "freeu v2",
+                "free lunch",
+                "unet patch",
+                "model patch",
+                "quality boost",
+                "backbone scale",
+            ],
             category="model_patches/unet",
             inputs=[
-                IO.Model.Input("model"),
-                IO.Float.Input("b1", default=1.3, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("b2", default=1.4, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("s1", default=0.9, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("s2", default=0.2, min=0.0, max=10.0, step=0.01, advanced=True),
+                IO.Model.Input("model", tooltip="The UNet model to apply the FreeU v2 patch to."),
+                IO.Float.Input("b1", default=1.3, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Backbone factor 1: Scaling factor applied to main backbone features in stage 1 with mean feature modulation."),
+                IO.Float.Input("b2", default=1.4, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Backbone factor 2: Scaling factor applied to main backbone features in stage 2 with mean feature modulation."),
+                IO.Float.Input("s1", default=0.9, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Skip factor 1: Attenuation factor applied to skip connection features in stage 1 via Fourier filtering."),
+                IO.Float.Input("s2", default=0.2, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Skip factor 2: Attenuation factor applied to skip connection features in stage 2 via Fourier filtering."),
             ],
             outputs=[
-                IO.Model.Output(),
+                IO.Model.Output(tooltip="The patched UNet model with FreeU v2 enabled."),
             ],
         )
 
