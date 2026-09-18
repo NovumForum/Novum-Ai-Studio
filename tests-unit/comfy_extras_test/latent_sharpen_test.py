@@ -11,7 +11,6 @@ torch.cuda.memory_stats = lambda dev=None: {'reserved_bytes.all.current': 0}
 import comfy.model_management
 comfy.model_management.cpu_state = comfy.model_management.CPUState.CPU
 
-import pytest
 import torch.nn.functional as F
 from comfy_extras.nodes_post_processing import Blur, Sharpen, gaussian_kernel
 from comfy_extras.nodes_latent import LatentOperationSharpen
