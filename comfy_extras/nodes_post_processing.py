@@ -66,6 +66,31 @@ class Blend(io.ComfyNode):
     def g(cls, x):
         return torch.where(x <= 0.25, ((16 * x - 12) * x + 4) * x, torch.sqrt(x))
 
+def gaussian_kernel_1d(kernel_size: int, sigma: float, device=None) -> torch.Tensor:
+    x = torch.linspace(-1, 1, kernel_size, device=device)
+    g = torch.exp(-(x * x) / (2.0 * sigma * sigma))
+    return g / g.sum()
+
+def gaussian_blur_1d(image: torch.Tensor, blur_radius: int, sigma: float) -> torch.Tensor:
+    """Performs separable 1D Gaussian blur on a (B, C, H, W) tensor, O(2K) complexity per channel."""
+    if blur_radius == 0:
+        return image
+    kernel_size = blur_radius * 2 + 1
+    k1d = gaussian_kernel_1d(kernel_size, sigma, device=image.device).to(dtype=image.dtype)
+    channels = image.shape[1]
+
+    kernel_x = k1d.view(1, 1, 1, kernel_size).repeat(channels, 1, 1, 1)
+    kernel_y = k1d.view(1, 1, kernel_size, 1).repeat(channels, 1, 1, 1)
+
+    # Horizontal pass with reflect padding
+    padded_x = F.pad(image, (blur_radius, blur_radius, 0, 0), 'reflect')
+    blurred_x = F.conv2d(padded_x, kernel_x, groups=channels)
+
+    # Vertical pass with reflect padding
+    padded_y = F.pad(blurred_x, (0, 0, blur_radius, blur_radius), 'reflect')
+    blurred = F.conv2d(padded_y, kernel_y, groups=channels)
+    return blurred
+
 def gaussian_kernel(kernel_size: int, sigma: float, device=None):
     x, y = torch.meshgrid(torch.linspace(-1, 1, kernel_size, device=device), torch.linspace(-1, 1, kernel_size, device=device), indexing="ij")
     d = torch.sqrt(x * x + y * y)
@@ -95,14 +120,8 @@ class Blur(io.ComfyNode):
             return io.NodeOutput(image)
 
         image = image.to(comfy.model_management.get_torch_device())
-        batch_size, height, width, channels = image.shape
-
-        kernel_size = blur_radius * 2 + 1
-        kernel = gaussian_kernel(kernel_size, sigma, device=image.device).repeat(channels, 1, 1).unsqueeze(1)
-
-        image = image.permute(0, 3, 1, 2) # Torch wants (B, C, H, W) we use (B, H, W, C)
-        padded_image = F.pad(image, (blur_radius,blur_radius,blur_radius,blur_radius), 'reflect')
-        blurred = F.conv2d(padded_image, kernel, padding=kernel_size // 2, groups=channels)[:,:,blur_radius:-blur_radius, blur_radius:-blur_radius]
+        tensor_image = image.permute(0, 3, 1, 2) # Torch wants (B, C, H, W) we use (B, H, W, C)
+        blurred = gaussian_blur_1d(tensor_image, blur_radius, sigma)
         blurred = blurred.permute(0, 2, 3, 1)
 
         return io.NodeOutput(blurred.to(comfy.model_management.intermediate_device()))
@@ -191,23 +210,14 @@ class Sharpen(io.ComfyNode):
         )
 
     @classmethod
-    def execute(cls, image: torch.Tensor, sharpen_radius: int, sigma:float, alpha: float) -> io.NodeOutput:
-        if sharpen_radius == 0:
+    def execute(cls, image: torch.Tensor, sharpen_radius: int, sigma: float, alpha: float) -> io.NodeOutput:
+        if sharpen_radius == 0 or alpha == 0.0:
             return io.NodeOutput(image)
 
-        batch_size, height, width, channels = image.shape
         image = image.to(comfy.model_management.get_torch_device())
-
-        kernel_size = sharpen_radius * 2 + 1
-        kernel = gaussian_kernel(kernel_size, sigma, device=image.device) * -(alpha*10)
-        kernel = kernel.to(dtype=image.dtype)
-        center = kernel_size // 2
-        kernel[center, center] = kernel[center, center] - kernel.sum() + 1.0
-        kernel = kernel.repeat(channels, 1, 1).unsqueeze(1)
-
         tensor_image = image.permute(0, 3, 1, 2) # Torch wants (B, C, H, W) we use (B, H, W, C)
-        tensor_image = F.pad(tensor_image, (sharpen_radius,sharpen_radius,sharpen_radius,sharpen_radius), 'reflect')
-        sharpened = F.conv2d(tensor_image, kernel, padding=center, groups=channels)[:,:,sharpen_radius:-sharpen_radius, sharpen_radius:-sharpen_radius]
+        blurred = gaussian_blur_1d(tensor_image, sharpen_radius, sigma)
+        sharpened = tensor_image + (alpha * 10.0) * (tensor_image - blurred)
         sharpened = sharpened.permute(0, 2, 3, 1)
 
         result = torch.clamp(sharpened, 0, 1)
