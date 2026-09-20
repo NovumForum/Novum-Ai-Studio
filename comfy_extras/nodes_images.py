@@ -648,16 +648,27 @@ class ImageScaleToMaxDimension(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ImageScaleToMaxDimension",
+            display_name="Image Scale to Max Dimension",
+            description="Scales an image proportionally so its maximum dimension matches largest_size.",
+            search_aliases=["upscale max", "resize largest dimension", "fit max size"],
             category="image/upscaling",
             inputs=[
-                IO.Image.Input("image"),
+                IO.Image.Input("image", tooltip="The image to scale."),
                 IO.Combo.Input(
                     "upscale_method",
                     options=["area", "lanczos", "bilinear", "nearest-exact", "bilinear", "bicubic"],
+                    tooltip="The resampling algorithm used for scaling the image.",
                 ),
-                IO.Int.Input("largest_size", default=512, min=0, max=MAX_RESOLUTION, step=1),
+                IO.Int.Input(
+                    "largest_size",
+                    default=512,
+                    min=0,
+                    max=MAX_RESOLUTION,
+                    step=1,
+                    tooltip="The target size for the larger dimension of the image.",
+                ),
             ],
-            outputs=[IO.Image.Output()],
+            outputs=[IO.Image.Output(display_name="IMAGE", tooltip="The scaled image.")],
         )
 
     @classmethod
