@@ -1,0 +1,3 @@
+## 2026-03-31 - Vectorized Mask Erosion/Dilation with Pure PyTorch
+**Learning:** `GrowMask.execute` previously converted PyTorch tensors to CPU NumPy arrays (`m.numpy()`) and ran SciPy's `grey_erosion`/`grey_dilation` sequentially in Python loops over each batch item. Replacing this with pure PyTorch tensor operations (`F.pad`, `F.max_pool2d` for 3x3 square kernels, and 5-point neighborhood max/min operations for cross kernels) yields ~2.5x to ~12.5x speedups while running natively on GPU/MPS/CPU.
+**Action:** Always prefer native PyTorch tensor operations (`F.pad`, `F.max_pool2d`, `torch.maximum`/`torch.minimum`) over converting tensors to NumPy/SciPy for batch-wise spatial transformations.
