@@ -14,14 +14,17 @@ class CLIPTextEncodeHunyuanDiT(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="CLIPTextEncodeHunyuanDiT",
+            display_name="CLIP Text Encode (HunyuanDiT)",
+            description="Encodes text prompts specifically for HunyuanDiT models using BERT and mT5XL text encoders.",
             category="advanced/conditioning",
+            search_aliases=["hunyuan text encode", "hunyuan prompt", "bert mt5xl prompt"],
             inputs=[
-                io.Clip.Input("clip"),
-                io.String.Input("bert", multiline=True, dynamic_prompts=True),
-                io.String.Input("mt5xl", multiline=True, dynamic_prompts=True),
+                io.Clip.Input("clip", tooltip="The CLIP model containing the BERT and mT5XL text encoders."),
+                io.String.Input("bert", multiline=True, dynamic_prompts=True, tooltip="Text prompt passed to the BERT text encoder."),
+                io.String.Input("mt5xl", multiline=True, dynamic_prompts=True, tooltip="Text prompt passed to the mT5XL text encoder."),
             ],
             outputs=[
-                io.Conditioning.Output(),
+                io.Conditioning.Output(tooltip="Conditioning containing the combined encoded text representations."),
             ],
         )
 
@@ -41,15 +44,17 @@ class EmptyHunyuanLatentVideo(io.ComfyNode):
         return io.Schema(
             node_id="EmptyHunyuanLatentVideo",
             display_name="Empty HunyuanVideo 1.0 Latent",
+            description="Generates an empty latent tensor configured for HunyuanVideo 1.0 video generation workflows.",
             category="latent/video",
+            search_aliases=["empty latent video", "hunyuan video latent", "hunyuan 1.0 latent"],
             inputs=[
-                io.Int.Input("width", default=848, min=16, max=nodes.MAX_RESOLUTION, step=16),
-                io.Int.Input("height", default=480, min=16, max=nodes.MAX_RESOLUTION, step=16),
-                io.Int.Input("length", default=25, min=1, max=nodes.MAX_RESOLUTION, step=4),
-                io.Int.Input("batch_size", default=1, min=1, max=4096),
+                io.Int.Input("width", default=848, min=16, max=nodes.MAX_RESOLUTION, step=16, tooltip="Width of the target video in pixels."),
+                io.Int.Input("height", default=480, min=16, max=nodes.MAX_RESOLUTION, step=16, tooltip="Height of the target video in pixels."),
+                io.Int.Input("length", default=25, min=1, max=nodes.MAX_RESOLUTION, step=4, tooltip="Number of frames for the video generation."),
+                io.Int.Input("batch_size", default=1, min=1, max=4096, tooltip="Number of video latent samples in the batch."),
             ],
             outputs=[
-                io.Latent.Output(),
+                io.Latent.Output(tooltip="Empty HunyuanVideo 1.0 video latent tensor."),
             ],
         )
 
@@ -67,6 +72,11 @@ class EmptyHunyuanVideo15Latent(EmptyHunyuanLatentVideo):
         schema = super().define_schema()
         schema.node_id = "EmptyHunyuanVideo15Latent"
         schema.display_name = "Empty HunyuanVideo 1.5 Latent"
+        schema.description = "Generates an empty latent tensor configured for HunyuanVideo 1.5 video generation workflows with spatial downscale ratio of 16."
+        schema.search_aliases = ["empty latent video", "hunyuan video 1.5 latent", "hunyuan 15 latent"]
+        schema.outputs = [
+            io.Latent.Output(tooltip="Empty HunyuanVideo 1.5 video latent tensor."),
+        ]
         return schema
 
     @classmethod
@@ -81,22 +91,25 @@ class HunyuanVideo15ImageToVideo(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="HunyuanVideo15ImageToVideo",
+            display_name="HunyuanVideo 1.5 Image to Video",
+            description="Prepares positive/negative conditioning and empty video latents for HunyuanVideo 1.5 image-to-video generation.",
             category="conditioning/video_models",
+            search_aliases=["hunyuan i2v", "hunyuan video 1.5 i2v", "image to video 1.5"],
             inputs=[
-                io.Conditioning.Input("positive"),
-                io.Conditioning.Input("negative"),
-                io.Vae.Input("vae"),
-                io.Int.Input("width", default=848, min=16, max=nodes.MAX_RESOLUTION, step=16),
-                io.Int.Input("height", default=480, min=16, max=nodes.MAX_RESOLUTION, step=16),
-                io.Int.Input("length", default=33, min=1, max=nodes.MAX_RESOLUTION, step=4),
-                io.Int.Input("batch_size", default=1, min=1, max=4096),
-                io.Image.Input("start_image", optional=True),
-                io.ClipVisionOutput.Input("clip_vision_output", optional=True),
+                io.Conditioning.Input("positive", tooltip="Positive text conditioning."),
+                io.Conditioning.Input("negative", tooltip="Negative text conditioning."),
+                io.Vae.Input("vae", tooltip="VAE model used to encode the initial start image."),
+                io.Int.Input("width", default=848, min=16, max=nodes.MAX_RESOLUTION, step=16, tooltip="Width of the video in pixels."),
+                io.Int.Input("height", default=480, min=16, max=nodes.MAX_RESOLUTION, step=16, tooltip="Height of the video in pixels."),
+                io.Int.Input("length", default=33, min=1, max=nodes.MAX_RESOLUTION, step=4, tooltip="Number of frames in the output video."),
+                io.Int.Input("batch_size", default=1, min=1, max=4096, tooltip="Number of video samples to generate."),
+                io.Image.Input("start_image", optional=True, tooltip="Optional initial image to drive the start of the video sequence."),
+                io.ClipVisionOutput.Input("clip_vision_output", optional=True, tooltip="Optional CLIP vision encoded features of the reference image."),
             ],
             outputs=[
-                io.Conditioning.Output(display_name="positive"),
-                io.Conditioning.Output(display_name="negative"),
-                io.Latent.Output(display_name="latent"),
+                io.Conditioning.Output(display_name="positive", tooltip="Updated positive conditioning with concatenated start image features and masks."),
+                io.Conditioning.Output(display_name="negative", tooltip="Updated negative conditioning with concatenated start image features and masks."),
+                io.Latent.Output(display_name="latent", tooltip="Empty HunyuanVideo 1.5 latent tensor ready for sampling."),
             ],
         )
 
@@ -131,20 +144,23 @@ class HunyuanVideo15SuperResolution(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="HunyuanVideo15SuperResolution",
+            display_name="HunyuanVideo 1.5 Super Resolution",
+            description="Prepares conditioning for HunyuanVideo 1.5 super resolution and upscale sampling.",
+            category="conditioning/video_models",
+            search_aliases=["hunyuan sr", "hunyuan video super resolution", "hunyuan upscale conditioning"],
             inputs=[
-                io.Conditioning.Input("positive"),
-                io.Conditioning.Input("negative"),
-                io.Vae.Input("vae", optional=True),
-                io.Image.Input("start_image", optional=True),
-                io.ClipVisionOutput.Input("clip_vision_output", optional=True),
-                io.Latent.Input("latent"),
-                io.Float.Input("noise_augmentation", default=0.70, min=0.0, max=1.0, step=0.01, advanced=True),
-
+                io.Conditioning.Input("positive", tooltip="Positive text conditioning."),
+                io.Conditioning.Input("negative", tooltip="Negative text conditioning."),
+                io.Vae.Input("vae", optional=True, tooltip="Optional VAE model used to encode start image."),
+                io.Image.Input("start_image", optional=True, tooltip="Optional start image reference for super resolution."),
+                io.ClipVisionOutput.Input("clip_vision_output", optional=True, tooltip="Optional CLIP vision features."),
+                io.Latent.Input("latent", tooltip="Input video latent tensor to upscale."),
+                io.Float.Input("noise_augmentation", default=0.70, min=0.0, max=1.0, step=0.01, advanced=True, tooltip="Noise level added to conditioning latent during super-resolution generation."),
             ],
             outputs=[
-                io.Conditioning.Output(display_name="positive"),
-                io.Conditioning.Output(display_name="negative"),
-                io.Latent.Output(display_name="latent"),
+                io.Conditioning.Output(display_name="positive", tooltip="Updated positive conditioning for super resolution sampling."),
+                io.Conditioning.Output(display_name="negative", tooltip="Updated negative conditioning for super resolution sampling."),
+                io.Latent.Output(display_name="latent", tooltip="The input video latent passed through for sampling."),
             ],
         )
 
@@ -176,12 +192,14 @@ class LatentUpscaleModelLoader(io.ComfyNode):
         return io.Schema(
             node_id="LatentUpscaleModelLoader",
             display_name="Load Latent Upscale Model",
+            description="Loads a latent upscale model (e.g. HunyuanVideo 1.5 SR or Lightricks Latent Upsampler) from the latent_upscale_models directory.",
             category="loaders",
+            search_aliases=["load latent upscale", "hunyuan upscale model", "latent upsampler loader"],
             inputs=[
-                io.Combo.Input("model_name", options=folder_paths.get_filename_list("latent_upscale_models")),
+                io.Combo.Input("model_name", options=folder_paths.get_filename_list("latent_upscale_models"), tooltip="The latent upscale model file to load."),
             ],
             outputs=[
-                io.LatentUpscaleModel.Output(),
+                io.LatentUpscaleModel.Output(tooltip="The loaded latent upscale model."),
             ],
         )
 
@@ -225,17 +243,19 @@ class HunyuanVideo15LatentUpscaleWithModel(io.ComfyNode):
         return io.Schema(
             node_id="HunyuanVideo15LatentUpscaleWithModel",
             display_name="Hunyuan Video 15 Latent Upscale With Model",
+            description="Upscales video latent samples using a dedicated latent upscale model and spatial resampling method.",
             category="latent",
+            search_aliases=["hunyuan latent upscale", "upscale latent with model", "hunyuan video 1.5 upscale"],
             inputs=[
-                io.LatentUpscaleModel.Input("model"),
-                io.Latent.Input("samples"),
-                io.Combo.Input("upscale_method", options=["nearest-exact", "bilinear", "area", "bicubic", "bislerp"], default="bilinear"),
-                io.Int.Input("width", default=1280, min=0, max=16384, step=8),
-                io.Int.Input("height", default=720, min=0, max=16384, step=8),
-                io.Combo.Input("crop", options=["disabled", "center"]),
+                io.LatentUpscaleModel.Input("model", tooltip="The loaded latent upscale model."),
+                io.Latent.Input("samples", tooltip="The input video latent tensor."),
+                io.Combo.Input("upscale_method", options=["nearest-exact", "bilinear", "area", "bicubic", "bislerp"], default="bilinear", tooltip="Interpolation algorithm for spatial resizing before latent model resampling."),
+                io.Int.Input("width", default=1280, min=0, max=16384, step=8, tooltip="Target width in pixels (set to 0 for automatic aspect ratio calculation based on height)."),
+                io.Int.Input("height", default=720, min=0, max=16384, step=8, tooltip="Target height in pixels (set to 0 for automatic aspect ratio calculation based on width)."),
+                io.Combo.Input("crop", options=["disabled", "center"], tooltip="Cropping option when resizing."),
             ],
             outputs=[
-                io.Latent.Output(),
+                io.Latent.Output(tooltip="The spatially upscaled video latent tensor."),
             ],
         )
 
@@ -274,11 +294,14 @@ class TextEncodeHunyuanVideo_ImageToVideo(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="TextEncodeHunyuanVideo_ImageToVideo",
+            display_name="Text Encode HunyuanVideo Image to Video",
+            description="Encodes text prompt with LLaMA template and CLIP Vision embeddings for HunyuanVideo image-to-video conditioning.",
             category="advanced/conditioning",
+            search_aliases=["hunyuan i2v text encode", "hunyuan video prompt i2v", "llama image to video prompt"],
             inputs=[
-                io.Clip.Input("clip"),
-                io.ClipVisionOutput.Input("clip_vision_output"),
-                io.String.Input("prompt", multiline=True, dynamic_prompts=True),
+                io.Clip.Input("clip", tooltip="The CLIP/LLaMA model used for text encoding."),
+                io.ClipVisionOutput.Input("clip_vision_output", tooltip="Encoded image features from CLIP Vision."),
+                io.String.Input("prompt", multiline=True, dynamic_prompts=True, tooltip="Text description of the desired video motion and content."),
                 io.Int.Input(
                     "image_interleave",
                     default=2,
@@ -289,7 +312,7 @@ class TextEncodeHunyuanVideo_ImageToVideo(io.ComfyNode):
                 ),
             ],
             outputs=[
-                io.Conditioning.Output(),
+                io.Conditioning.Output(tooltip="Conditioning containing encoded text and image features."),
             ],
         )
 
@@ -306,20 +329,23 @@ class HunyuanImageToVideo(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="HunyuanImageToVideo",
+            display_name="Hunyuan Image to Video",
+            description="Prepares positive conditioning and latent structure for Hunyuan Image-to-Video models.",
             category="conditioning/video_models",
+            search_aliases=["hunyuan i2v", "hunyuan image to video", "image to video conditioning"],
             inputs=[
-                io.Conditioning.Input("positive"),
-                io.Vae.Input("vae"),
-                io.Int.Input("width", default=848, min=16, max=nodes.MAX_RESOLUTION, step=16),
-                io.Int.Input("height", default=480, min=16, max=nodes.MAX_RESOLUTION, step=16),
-                io.Int.Input("length", default=53, min=1, max=nodes.MAX_RESOLUTION, step=4),
-                io.Int.Input("batch_size", default=1, min=1, max=4096),
-                io.Combo.Input("guidance_type", options=["v1 (concat)", "v2 (replace)", "custom"], advanced=True),
-                io.Image.Input("start_image", optional=True),
+                io.Conditioning.Input("positive", tooltip="Positive text conditioning."),
+                io.Vae.Input("vae", tooltip="VAE model used to encode the reference start image."),
+                io.Int.Input("width", default=848, min=16, max=nodes.MAX_RESOLUTION, step=16, tooltip="Width of the target video in pixels."),
+                io.Int.Input("height", default=480, min=16, max=nodes.MAX_RESOLUTION, step=16, tooltip="Height of the target video in pixels."),
+                io.Int.Input("length", default=53, min=1, max=nodes.MAX_RESOLUTION, step=4, tooltip="Number of frames for the video sequence."),
+                io.Int.Input("batch_size", default=1, min=1, max=4096, tooltip="Number of video samples to generate."),
+                io.Combo.Input("guidance_type", options=["v1 (concat)", "v2 (replace)", "custom"], advanced=True, tooltip="Guidance strategy for injecting reference image latents into conditioning or noise mask."),
+                io.Image.Input("start_image", optional=True, tooltip="Optional initial image to guide the video generation."),
             ],
             outputs=[
-                io.Conditioning.Output(display_name="positive"),
-                io.Latent.Output(display_name="latent"),
+                io.Conditioning.Output(display_name="positive", tooltip="Updated positive conditioning with reference image latents."),
+                io.Latent.Output(display_name="latent", tooltip="Generated video latent samples with noise masks if applicable."),
             ],
         )
 
@@ -357,14 +383,17 @@ class EmptyHunyuanImageLatent(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="EmptyHunyuanImageLatent",
+            display_name="Empty Hunyuan Image Latent",
+            description="Generates an empty latent tensor configured for Hunyuan 2D image models.",
             category="latent",
+            search_aliases=["empty hunyuan image latent", "hunyuan image latent"],
             inputs=[
-                io.Int.Input("width", default=2048, min=64, max=nodes.MAX_RESOLUTION, step=32),
-                io.Int.Input("height", default=2048, min=64, max=nodes.MAX_RESOLUTION, step=32),
-                io.Int.Input("batch_size", default=1, min=1, max=4096),
+                io.Int.Input("width", default=2048, min=64, max=nodes.MAX_RESOLUTION, step=32, tooltip="Width of the target image in pixels."),
+                io.Int.Input("height", default=2048, min=64, max=nodes.MAX_RESOLUTION, step=32, tooltip="Height of the target image in pixels."),
+                io.Int.Input("batch_size", default=1, min=1, max=4096, tooltip="Number of image latents in the batch."),
             ],
             outputs=[
-                io.Latent.Output(),
+                io.Latent.Output(tooltip="Empty Hunyuan image latent tensor."),
             ],
         )
 
@@ -381,17 +410,20 @@ class HunyuanRefinerLatent(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="HunyuanRefinerLatent",
+            display_name="Hunyuan Refiner Latent",
+            description="Prepares positive and negative conditioning with noise augmentation for the Hunyuan refiner pass.",
+            category="conditioning/video_models",
+            search_aliases=["hunyuan refiner", "hunyuan refiner latent", "hunyuan img2img refiner"],
             inputs=[
-                io.Conditioning.Input("positive"),
-                io.Conditioning.Input("negative"),
-                io.Latent.Input("latent"),
-                io.Float.Input("noise_augmentation", default=0.10, min=0.0, max=1.0, step=0.01, advanced=True),
-
+                io.Conditioning.Input("positive", tooltip="Positive text conditioning."),
+                io.Conditioning.Input("negative", tooltip="Negative text conditioning."),
+                io.Latent.Input("latent", tooltip="Input base image/video latent tensor."),
+                io.Float.Input("noise_augmentation", default=0.10, min=0.0, max=1.0, step=0.01, advanced=True, tooltip="Noise level added to the concatenated latent image conditioning."),
             ],
             outputs=[
-                io.Conditioning.Output(display_name="positive"),
-                io.Conditioning.Output(display_name="negative"),
-                io.Latent.Output(display_name="latent"),
+                io.Conditioning.Output(display_name="positive", tooltip="Updated positive conditioning with concatenated base latents and noise augmentation."),
+                io.Conditioning.Output(display_name="negative", tooltip="Updated negative conditioning with concatenated base latents and noise augmentation."),
+                io.Latent.Output(display_name="latent", tooltip="Empty output latent tensor configured for the refiner model channels."),
             ],
         )
 
