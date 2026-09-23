@@ -316,21 +316,26 @@ class FeatherMask(IO.ComfyNode):
         top = min(top, output.shape[-2])
         bottom = min(bottom, output.shape[-2])
 
-        for x in range(left):
-            feather_rate = (x + 1.0) / left
-            output[:, :, x] *= feather_rate
+        # Vectorized feathering using linear ramps to eliminate sequential Python loops
+        if left > 0:
+            ramp_left = torch.arange(1, left + 1, device=output.device, dtype=output.dtype) / left
+            output[:, :, :left] *= ramp_left
 
-        for x in range(right):
-            feather_rate = (x + 1) / right
-            output[:, :, -x] *= feather_rate
+        if right > 0:
+            ramp_right = torch.arange(1, right + 1, device=output.device, dtype=output.dtype) / right
+            output[:, :, 0] *= ramp_right[0]
+            if right > 1:
+                output[:, :, -(right - 1):] *= ramp_right[1:].flip(0)
 
-        for y in range(top):
-            feather_rate = (y + 1) / top
-            output[:, y, :] *= feather_rate
+        if top > 0:
+            ramp_top = (torch.arange(1, top + 1, device=output.device, dtype=output.dtype) / top).unsqueeze(1)
+            output[:, :top, :] *= ramp_top
 
-        for y in range(bottom):
-            feather_rate = (y + 1) / bottom
-            output[:, -y, :] *= feather_rate
+        if bottom > 0:
+            ramp_bottom = torch.arange(1, bottom + 1, device=output.device, dtype=output.dtype) / bottom
+            output[:, 0, :] *= ramp_bottom[0]
+            if bottom > 1:
+                output[:, -(bottom - 1):, :] *= ramp_bottom[1:].flip(0).unsqueeze(1)
 
         return IO.NodeOutput(output)
 
