@@ -846,11 +846,19 @@ class PromptServer():
         async def get_history(request):
             max_items = request.rel_url.query.get("max_items", None)
             if max_items is not None:
-                max_items = int(max_items)
+                try:
+                    max_items = int(max_items)
+                    if max_items < 0:
+                        return web.json_response({"error": "max_items must be a non-negative integer"}, status=400)
+                except (ValueError, TypeError):
+                    return web.json_response({"error": "max_items must be an integer"}, status=400)
 
             offset = request.rel_url.query.get("offset", None)
             if offset is not None:
-                offset = int(offset)
+                try:
+                    offset = int(offset)
+                except (ValueError, TypeError):
+                    return web.json_response({"error": "offset must be an integer"}, status=400)
             else:
                 offset = -1
 
