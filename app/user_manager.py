@@ -127,13 +127,10 @@ class UserManager():
             if args.multi_user:
                 return web.json_response({"storage": "server", "users": self.users})
             else:
-                try:
-                    user_dir = self.get_request_user_filepath(request, None, create_dir=False)
-                except KeyError:
-                    return web.Response(status=403, text="Invalid user")
+                user_dir = self.get_request_user_filepath(request, None, create_dir=False)
                 return web.json_response({
                     "storage": "server",
-                    "migrated": user_dir is not None and os.path.exists(user_dir)
+                    "migrated": os.path.exists(user_dir)
                 })
 
         @routes.post("/users")
@@ -178,10 +175,7 @@ class UserManager():
             if not directory:
                 return web.Response(status=400, text="Directory not provided")
 
-            try:
-                path = self.get_request_user_filepath(request, directory)
-            except KeyError:
-                return web.Response(status=403, text="Invalid user or directory")
+            path = self.get_request_user_filepath(request, directory)
             if not path:
                 return web.Response(status=403, text="Invalid directory")
 
@@ -327,11 +321,7 @@ class UserManager():
             if not file:
                 return web.Response(status=400)
 
-            try:
-                path = self.get_request_user_filepath(request, file)
-            except KeyError:
-                return web.Response(status=403, text="Invalid user")
-
+            path = self.get_request_user_filepath(request, file)
             if not path:
                 return web.Response(status=403)
 
@@ -396,13 +386,7 @@ class UserManager():
                     reason="Invalid filename. Please avoid special characters like :\\/*?\"<>|"
                 )
 
-            try:
-                user_path = self.get_request_user_filepath(request, None)
-            except KeyError:
-                return web.Response(status=403, text="Invalid user")
-            if not user_path:
-                return web.Response(status=403)
-
+            user_path = self.get_request_user_filepath(request, None)
             if full_info:
                 resp = get_file_info(path, user_path)
             else:
@@ -463,13 +447,7 @@ class UserManager():
             logging.info(f"moving '{source}' -> '{dest}'")
             shutil.move(source, dest)
 
-            try:
-                user_path = self.get_request_user_filepath(request, None)
-            except KeyError:
-                return web.Response(status=403, text="Invalid user")
-            if not user_path:
-                return web.Response(status=403)
-
+            user_path = self.get_request_user_filepath(request, None)
             if full_info:
                 resp = get_file_info(dest, user_path)
             else:
