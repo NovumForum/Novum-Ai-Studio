@@ -1,0 +1,5 @@
+## 2026-03-31 - CPU Cache Locality vs 4D Tensor Batching in Image Compositing
+
+**Learning:** Vectorizing elementwise image composite operations (like `PorterDuffImageComposite`) into single 4D batch tensor operations on CPU actually degraded performance by ~30% (0.7x speedup). Large 4D tensors (e.g., [32, 512, 512, 3] = ~100MB) exceed CPU L2/L3 cache sizes, causing RAM memory bandwidth bottlenecks and cache thrashing across multi-pass operations. In contrast, operating on smaller 3D item tensors keeps intermediate working buffers inside CPU L2/L3 cache. However, zero-copy slicing operations (like `SplitImageWithAlpha` `image[..., :3]`) and single-pass batch concatenations (`JoinImageWithAlpha`) achieve ~1.5x to ~11x speedups by eliminating Python loops and tensor allocation overhead without adding multi-pass CPU memory bandwidth pressure.
+
+**Action:** Always measure elementwise multi-pass tensor vectorizations on CPU vs per-item processing before assuming 4D batching is faster. Use 4D batching primarily for slicing/views and single-pass concatenation.
