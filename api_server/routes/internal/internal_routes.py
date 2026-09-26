@@ -33,9 +33,23 @@ class InternalRoutes:
 
         @self.routes.patch('/logs/subscribe')
         async def subscribe_logs(request):
-            json_data = await request.json()
-            client_id = json_data["clientId"]
-            enabled = json_data["enabled"]
+            try:
+                json_data = await request.json()
+            except Exception:
+                return web.json_response({"error": "Invalid JSON"}, status=400)
+
+            if not isinstance(json_data, dict):
+                return web.json_response({"error": "Request body must be a JSON object"}, status=400)
+
+            client_id = json_data.get("clientId")
+            enabled = json_data.get("enabled")
+
+            if not isinstance(client_id, str) or not client_id:
+                return web.json_response({"error": "clientId must be a non-empty string"}, status=400)
+
+            if not isinstance(enabled, bool):
+                return web.json_response({"error": "enabled must be a boolean"}, status=400)
+
             if enabled:
                 self.terminal_service.subscribe(client_id)
             else:
@@ -58,6 +72,8 @@ class InternalRoutes:
                 return web.json_response({"error": "Invalid directory type"}, status=400)
 
             directory = get_directory_by_type(directory_type)
+            if not directory or not os.path.exists(directory):
+                return web.json_response([], status=200)
 
             def is_visible_file(entry: os.DirEntry) -> bool:
                 """Filter out hidden files (e.g., .DS_Store on macOS)."""
