@@ -425,19 +425,15 @@ class LatentOperationSharpen(io.ComfyNode):
     @classmethod
     def execute(cls, sharpen_radius, sigma, alpha) -> io.NodeOutput:
         def sharpen(latent, **kwargs):
+            if sharpen_radius == 0:
+                return latent
             luminance = (torch.linalg.vector_norm(latent, dim=(1)) + 1e-6)[:,None]
             normalized_latent = latent / luminance
-            channels = latent.shape[1]
 
             kernel_size = sharpen_radius * 2 + 1
-            kernel = comfy_extras.nodes_post_processing.gaussian_kernel(kernel_size, sigma, device=luminance.device)
-            center = kernel_size // 2
-
-            kernel *= alpha * -10
-            kernel[center, center] = kernel[center, center] - kernel.sum() + 1.0
-
-            padded_image = torch.nn.functional.pad(normalized_latent, (sharpen_radius,sharpen_radius,sharpen_radius,sharpen_radius), 'reflect')
-            sharpened = torch.nn.functional.conv2d(padded_image, kernel.repeat(channels, 1, 1).unsqueeze(1), padding=kernel_size // 2, groups=channels)[:,:,sharpen_radius:-sharpen_radius, sharpen_radius:-sharpen_radius]
+            # Optimization: Use 1D separable Gaussian blur for unsharp masking (O(2K) instead of O(K^2))
+            blurred = comfy_extras.nodes_post_processing.gaussian_blur_1d(normalized_latent, kernel_size, sigma)
+            sharpened = normalized_latent + (alpha * 10.0) * (normalized_latent - blurred)
 
             return luminance * sharpened
         return io.NodeOutput(sharpen)
