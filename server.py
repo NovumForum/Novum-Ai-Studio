@@ -329,6 +329,8 @@ class PromptServer():
         @routes.get("/models/{folder}")
         async def get_models(request):
             folder = request.match_info.get("folder", None)
+            if not folder or "/" in folder or "\\" in folder or ".." in folder or os.path.basename(folder) != folder:
+                return web.Response(status=404)
             if folder not in folder_paths.folder_names_and_paths:
                 return web.Response(status=404)
             files = folder_paths.get_filename_list(folder)
