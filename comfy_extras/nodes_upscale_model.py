@@ -21,12 +21,20 @@ class UpscaleModelLoader(io.ComfyNode):
         return io.Schema(
             node_id="UpscaleModelLoader",
             display_name="Load Upscale Model",
+            description="Loads a model architecture for image upscaling and super-resolution (e.g., ESRGAN, RealESRGAN, SwinIR).",
             category="loaders",
+            search_aliases=["upscale model", "load upscaler", "super resolution model", "esrgan", "realesrgan", "swinir"],
             inputs=[
-                io.Combo.Input("model_name", options=folder_paths.get_filename_list("upscale_models")),
+                io.Combo.Input(
+                    "model_name",
+                    options=folder_paths.get_filename_list("upscale_models"),
+                    tooltip="The upscale model checkpoint file to load.",
+                ),
             ],
             outputs=[
-                io.UpscaleModel.Output(),
+                io.UpscaleModel.Output(
+                    tooltip="The loaded upscale model ready to be used with ImageUpscaleWithModel."
+                ),
             ],
         )
 
