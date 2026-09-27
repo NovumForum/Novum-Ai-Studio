@@ -94,7 +94,12 @@ class ImageYUVToRGB(io.ComfyNode):
 
     @classmethod
     def execute(cls, Y, U, V) -> io.NodeOutput:
-        image = torch.cat([torch.mean(Y, dim=-1, keepdim=True), torch.mean(U, dim=-1, keepdim=True), torch.mean(V, dim=-1, keepdim=True)], dim=-1)
+        # Performance optimization: avoids redundant torch.mean floating-point reductions and allocations
+        # when Y, U, V tensors are already single-channel [B, H, W, 1] (as produced by ImageRGBToYUV).
+        y_chan = Y if Y.shape[-1] == 1 else torch.mean(Y, dim=-1, keepdim=True)
+        u_chan = U if U.shape[-1] == 1 else torch.mean(U, dim=-1, keepdim=True)
+        v_chan = V if V.shape[-1] == 1 else torch.mean(V, dim=-1, keepdim=True)
+        image = torch.cat([y_chan, u_chan, v_chan], dim=-1)
         out = kornia.color.ycbcr_to_rgb(image.movedim(-1, 1)).movedim(1, -1)
         return io.NodeOutput(out)
 

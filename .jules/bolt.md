@@ -1,0 +1,3 @@
+## 2025-09-27 - Avoid Redundant Reductions on Single-Channel Tensors
+**Learning:** In PyTorch processing pipelines, nodes that receive single-channel image/mask outputs (e.g. `[B, H, W, 1]`) often perform unconditional reduction operations like `torch.mean(..., dim=-1, keepdim=True)` to guard against multi-channel inputs. When shape checking (`tensor.shape[-1] == 1`) is used to skip reductions, redundant tensor allocations and reduction kernel executions are eliminated.
+**Action:** Always check tensor channel dimensions (`shape[-1] == 1`) before applying reduction operations like `torch.mean` or `torch.max` across channels.
