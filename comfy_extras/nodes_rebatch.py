@@ -107,6 +107,7 @@ class LatentRebatch(io.ComfyNode):
 
         return io.NodeOutput(output_list)
 
+
 class ImageRebatch(io.ComfyNode):
     @classmethod
     def define_schema(cls):
@@ -128,14 +129,46 @@ class ImageRebatch(io.ComfyNode):
     def execute(cls, images, batch_size):
         batch_size = batch_size[0]
 
-        output_list = []
-        all_images = []
-        for img in images:
-            for i in range(img.shape[0]):
-                all_images.append(img[i:i+1])
+        # Optimization: Avoid unrolling 1-frame tensor slices (img[i:i+1]) and unnecessary
+        # torch.cat copies. Use direct contiguous chunk slicing (zero-copy views) wherever
+        # possible and only concatenate when an output batch spans across multiple input tensors.
+        if not images:
+            return io.NodeOutput([])
 
-        for i in range(0, len(all_images), batch_size):
-            output_list.append(torch.cat(all_images[i:i+batch_size], dim=0))
+        if len(images) == 1:
+            img = images[0]
+            if img.shape[0] <= batch_size:
+                return io.NodeOutput([img])
+            return io.NodeOutput([img[i:i + batch_size] for i in range(0, img.shape[0], batch_size)])
+
+        output_list = []
+        current_chunks = []
+        current_count = 0
+
+        for img in images:
+            img_len = img.shape[0]
+            offset = 0
+            while offset < img_len:
+                needed = batch_size - current_count
+                take = min(needed, img_len - offset)
+                chunk = img[offset:offset + take]
+                current_chunks.append(chunk)
+                current_count += take
+                offset += take
+
+                if current_count == batch_size:
+                    if len(current_chunks) == 1:
+                        output_list.append(current_chunks[0])
+                    else:
+                        output_list.append(torch.cat(current_chunks, dim=0))
+                    current_chunks = []
+                    current_count = 0
+
+        if current_chunks:
+            if len(current_chunks) == 1:
+                output_list.append(current_chunks[0])
+            else:
+                output_list.append(torch.cat(current_chunks, dim=0))
 
         return io.NodeOutput(output_list)
 
