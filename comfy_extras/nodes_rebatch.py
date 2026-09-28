@@ -107,6 +107,7 @@ class LatentRebatch(io.ComfyNode):
 
         return io.NodeOutput(output_list)
 
+
 class ImageRebatch(io.ComfyNode):
     @classmethod
     def define_schema(cls):
