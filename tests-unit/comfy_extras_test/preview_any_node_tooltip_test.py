@@ -1,8 +1,9 @@
 import ast
 import json
 
+
 def parse_preview_any_module():
-    with open("comfy_extras/nodes_preview_any.py") as f:
+    with open("comfy_extras/nodes_preview_any.py", encoding="utf-8") as f:
         tree = ast.parse(f.read())
 
     class_def = None
@@ -56,32 +57,25 @@ def test_preview_any_schema_metadata():
 
 
 def test_preview_any_execution_logic():
-    # Verify main method execution logic via isolated python execution / ast simulation or function definition check
-    with open("comfy_extras/nodes_preview_any.py") as f:
-        code = f.read()
+    with open("comfy_extras/nodes_preview_any.py", encoding="utf-8") as f:
+        tree = ast.parse(f.read())
 
-    # Create dummy IO class/module to satisfy import
-    import sys
-    import types
-    comfy_module = types.ModuleType("comfy")
-    comfy_types_module = types.ModuleType("comfy.comfy_types")
-    node_typing_module = types.ModuleType("comfy.comfy_types.node_typing")
+    # Locate PreviewAny class node
+    class_def = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "PreviewAny")
+    main_fn = next(node for node in class_def.body if isinstance(node, ast.FunctionDef) and node.name == "main")
 
-    class FakeIO:
-        ANY = "*"
+    # Compile and evaluate function body dynamically in minimal scope
+    fn_code = compile(ast.Module(body=[main_fn], type_ignores=[]), filename="<ast>", mode="exec")
+    scope = {"json": json, "isinstance": isinstance, "str": str, "int": int, "float": float, "bool": bool, "Exception": Exception}
+    exec(fn_code, scope)  # pylint: disable=exec-used # noqa: S102
+    main_func = scope["main"]
 
-    node_typing_module.IO = FakeIO
-    sys.modules["comfy"] = comfy_module
-    sys.modules["comfy.comfy_types"] = comfy_types_module
-    sys.modules["comfy.comfy_types.node_typing"] = node_typing_module
+    class DummySelf:
+        pass
 
-    namespace = {}
-    exec(code, namespace)
+    self_obj = DummySelf()
 
-    PreviewAny = namespace["PreviewAny"]
-    preview = PreviewAny()
-
-    assert preview.main("Hello World") == {"ui": {"text": ("Hello World",)}}
-    assert preview.main(123) == {"ui": {"text": ("123",)}}
-    assert preview.main({"key": "value"}) == {"ui": {"text": (json.dumps({"key": "value"}, indent=4),)}}
-    assert preview.main(None) == {"ui": {"text": ("None",)}}
+    assert main_func(self_obj, "Hello World") == {"ui": {"text": ("Hello World",)}}
+    assert main_func(self_obj, 123) == {"ui": {"text": ("123",)}}
+    assert main_func(self_obj, {"key": "value"}) == {"ui": {"text": (json.dumps({"key": "value"}, indent=4),)}}
+    assert main_func(self_obj, None) == {"ui": {"text": ("None",)}}
