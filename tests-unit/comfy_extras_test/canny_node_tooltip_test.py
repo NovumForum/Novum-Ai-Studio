@@ -53,21 +53,45 @@ def test_canny_node_schema_metadata():
     input_tooltips = {}
     for inp in kwargs["inputs"].elts:
         if isinstance(inp, ast.Call):
-            name_arg = inp.args[0].value if inp.args and isinstance(inp.args[0], ast.Constant) else None
-            tooltip_kw = next((kw.value.value for kw in inp.keywords if kw.arg == "tooltip" and isinstance(kw.value, ast.Constant)), None)
+            name_arg = (
+                inp.args[0].value
+                if inp.args and isinstance(inp.args[0], ast.Constant)
+                else None
+            )
+            tooltip_kw = next(
+                (
+                    kw.value.value
+                    for kw in inp.keywords
+                    if kw.arg == "tooltip" and isinstance(kw.value, ast.Constant)
+                ),
+                None,
+            )
             if name_arg:
                 input_tooltips[name_arg] = tooltip_kw
 
     assert "image" in input_tooltips and input_tooltips["image"] is not None
-    assert "low_threshold" in input_tooltips and input_tooltips["low_threshold"] is not None
-    assert "high_threshold" in input_tooltips and input_tooltips["high_threshold"] is not None
+    assert (
+        "low_threshold" in input_tooltips
+        and input_tooltips["low_threshold"] is not None
+    )
+    assert (
+        "high_threshold" in input_tooltips
+        and input_tooltips["high_threshold"] is not None
+    )
 
     # Verify output tooltips
     assert "outputs" in kwargs and isinstance(kwargs["outputs"], ast.List)
     output_tooltips = []
     for out in kwargs["outputs"].elts:
         if isinstance(out, ast.Call):
-            tooltip_kw = next((kw.value.value for kw in out.keywords if kw.arg == "tooltip" and isinstance(kw.value, ast.Constant)), None)
+            tooltip_kw = next(
+                (
+                    kw.value.value
+                    for kw in out.keywords
+                    if kw.arg == "tooltip" and isinstance(kw.value, ast.Constant)
+                ),
+                None,
+            )
             if tooltip_kw:
                 output_tooltips.append(tooltip_kw)
 
