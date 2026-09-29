@@ -10,16 +10,17 @@ class Canny(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="Canny",
-            display_name="Canny",
+            display_name="Canny Edge Detection",
+            description="Detects edges in an image using the Canny edge detection algorithm, producing a black and white contour image.",
             search_aliases=["edge detection", "outline", "contour detection", "line art"],
             category="image/preprocessors",
             essentials_category="Image Tools",
             inputs=[
-                io.Image.Input("image"),
-                io.Float.Input("low_threshold", default=0.4, min=0.01, max=0.99, step=0.01),
-                io.Float.Input("high_threshold", default=0.8, min=0.01, max=0.99, step=0.01),
+                io.Image.Input("image", tooltip="The input image to extract edges from."),
+                io.Float.Input("low_threshold", default=0.4, min=0.01, max=0.99, step=0.01, tooltip="Lower intensity gradient threshold for edge linking. Pixels below this threshold are discarded."),
+                io.Float.Input("high_threshold", default=0.8, min=0.01, max=0.99, step=0.01, tooltip="Upper intensity gradient threshold for edge detection. Pixels above this threshold are recognized as strong edges."),
             ],
-            outputs=[io.Image.Output()],
+            outputs=[io.Image.Output(display_name="image", tooltip="Output black and white edge map image where edges are rendered in white.")],
         )
 
     @classmethod
