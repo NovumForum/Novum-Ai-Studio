@@ -38,6 +38,16 @@ class ResolutionSelector(io.ComfyNode):
             display_name="Resolution Selector",
             category="utils",
             description="Calculate width and height from aspect ratio and megapixel target. Useful for setting up Empty Latent Image dimensions.",
+            search_aliases=[
+                "aspect ratio",
+                "megapixels",
+                "image size",
+                "canvas size",
+                "width height",
+                "dimensions",
+                "latent size",
+                "resolution",
+            ],
             inputs=[
                 io.Combo.Input(
                     "aspect_ratio",
