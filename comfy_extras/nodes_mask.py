@@ -295,16 +295,18 @@ class FeatherMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="FeatherMask",
+            display_name="Feather Mask",
+            description="Feather/soften the outer edges of a mask tensor by applying a smooth linear gradient along specified pixel borders.",
             search_aliases=["soft edge mask", "blur mask edges", "gradient mask edge"],
             category="mask",
             inputs=[
-                IO.Mask.Input("mask"),
-                IO.Int.Input("left", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("top", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("right", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("bottom", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
+                IO.Mask.Input("mask", tooltip="The input mask to apply border feathering to."),
+                IO.Int.Input("left", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Number of pixels to feather along the left edge."),
+                IO.Int.Input("top", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Number of pixels to feather along the top edge."),
+                IO.Int.Input("right", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Number of pixels to feather along the right edge."),
+                IO.Int.Input("bottom", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Number of pixels to feather along the bottom edge."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(display_name="feathered_mask", tooltip="The output mask with feathered edges.")],
         )
 
     @classmethod
