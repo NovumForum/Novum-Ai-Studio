@@ -83,11 +83,16 @@ class CLIPTextEncode(ComfyNodeABC):
 class ConditioningCombine:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": {"conditioning_1": ("CONDITIONING", ), "conditioning_2": ("CONDITIONING", )}}
+        return {"required": {
+            "conditioning_1": ("CONDITIONING", {"tooltip": "First conditioning object to combine."}),
+            "conditioning_2": ("CONDITIONING", {"tooltip": "Second conditioning object to combine."})
+        }}
     RETURN_TYPES = ("CONDITIONING",)
+    OUTPUT_TOOLTIPS = ("The combined conditioning containing both input conditionings.",)
     FUNCTION = "combine"
 
     CATEGORY = "conditioning"
+    DESCRIPTION = "Combines two conditioning objects into a single conditioning, allowing both prompts to guide sampling simultaneously."
     SEARCH_ALIASES = ["combine", "merge conditioning", "combine prompts", "merge prompts", "mix prompts", "add prompt"]
 
     def combine(self, conditioning_1, conditioning_2):
@@ -98,13 +103,17 @@ class ConditioningAverage :
 
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": {"conditioning_to": ("CONDITIONING", ), "conditioning_from": ("CONDITIONING", ),
-                              "conditioning_to_strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01})
-                             }}
+        return {"required": {
+            "conditioning_to": ("CONDITIONING", {"tooltip": "Target conditioning object to blend towards."}),
+            "conditioning_from": ("CONDITIONING", {"tooltip": "Source conditioning object to blend from."}),
+            "conditioning_to_strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01, "tooltip": "Weight for conditioning_to. 1.0 uses only conditioning_to, 0.0 uses only conditioning_from."})
+        }}
     RETURN_TYPES = ("CONDITIONING",)
+    OUTPUT_TOOLTIPS = ("The linearly interpolated conditioning result.",)
     FUNCTION = "addWeighted"
 
     CATEGORY = "conditioning"
+    DESCRIPTION = "Linearly blends (averages) two conditioning objects based on a strength weighting parameter."
 
     def addWeighted(self, conditioning_to, conditioning_from, conditioning_to_strength):
         out = []
@@ -137,13 +146,16 @@ class ConditioningConcat:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
-            "conditioning_to": ("CONDITIONING",),
-            "conditioning_from": ("CONDITIONING",),
+            "conditioning_to": ("CONDITIONING", {"tooltip": "Base conditioning object to append tokens to."}),
+            "conditioning_from": ("CONDITIONING", {"tooltip": "Conditioning object whose tokens will be concatenated."}),
             }}
     RETURN_TYPES = ("CONDITIONING",)
+    OUTPUT_TOOLTIPS = ("The concatenated conditioning containing sequence tokens from both conditionings.",)
     FUNCTION = "concat"
 
     CATEGORY = "conditioning"
+    DESCRIPTION = "Concatenates token embeddings from two conditionings along the sequence dimension."
+    SEARCH_ALIASES = ["concat conditioning", "append conditioning", "concatenate prompts", "join prompts"]
 
     def concat(self, conditioning_to, conditioning_from):
         out = []
@@ -185,19 +197,23 @@ class ConditioningSetArea:
         return (c, )
 
 class ConditioningSetAreaPercentage:
+    SEARCH_ALIASES = ["regional prompt percentage", "area prompt percent", "spatial conditioning percent", "localized prompt percentage"]
+
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": {"conditioning": ("CONDITIONING", ),
-                              "width": ("FLOAT", {"default": 1.0, "min": 0, "max": 1.0, "step": 0.01}),
-                              "height": ("FLOAT", {"default": 1.0, "min": 0, "max": 1.0, "step": 0.01}),
-                              "x": ("FLOAT", {"default": 0, "min": 0, "max": 1.0, "step": 0.01}),
-                              "y": ("FLOAT", {"default": 0, "min": 0, "max": 1.0, "step": 0.01}),
-                              "strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.01}),
+        return {"required": {"conditioning": ("CONDITIONING", {"tooltip": "The conditioning to restrict to a normalized spatial area."}),
+                              "width": ("FLOAT", {"default": 1.0, "min": 0, "max": 1.0, "step": 0.01, "tooltip": "Width of the target area as a fraction of image width (0.0 to 1.0)."}),
+                              "height": ("FLOAT", {"default": 1.0, "min": 0, "max": 1.0, "step": 0.01, "tooltip": "Height of the target area as a fraction of image height (0.0 to 1.0)."}),
+                              "x": ("FLOAT", {"default": 0, "min": 0, "max": 1.0, "step": 0.01, "tooltip": "Horizontal top-left offset as a fraction of image width (0.0 to 1.0)."}),
+                              "y": ("FLOAT", {"default": 0, "min": 0, "max": 1.0, "step": 0.01, "tooltip": "Vertical top-left offset as a fraction of image height (0.0 to 1.0)."}),
+                              "strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.01, "tooltip": "Strength factor for applying conditioning within this spatial area."}),
                              }}
     RETURN_TYPES = ("CONDITIONING",)
+    OUTPUT_TOOLTIPS = ("The conditioning restricted to the specified percentage-based spatial area.",)
     FUNCTION = "append"
 
     CATEGORY = "conditioning"
+    DESCRIPTION = "Restricts conditioning to a specific rectangular region defined by normalized percentage coordinates (0.0 to 1.0)."
 
     def append(self, conditioning, width, height, x, y, strength):
         c = node_helpers.conditioning_set_values(conditioning, {"area": ("percentage", height, width, y, x),
@@ -206,15 +222,19 @@ class ConditioningSetAreaPercentage:
         return (c, )
 
 class ConditioningSetAreaStrength:
+    SEARCH_ALIASES = ["area strength", "regional prompt strength", "conditioning strength"]
+
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": {"conditioning": ("CONDITIONING", ),
-                              "strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.01}),
+        return {"required": {"conditioning": ("CONDITIONING", {"tooltip": "The conditioning object whose area strength multiplier will be modified."}),
+                              "strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.01, "tooltip": "Strength factor to scale the conditioning impact in bounded spatial areas."}),
                              }}
     RETURN_TYPES = ("CONDITIONING",)
+    OUTPUT_TOOLTIPS = ("The conditioning updated with the specified area strength multiplier.",)
     FUNCTION = "append"
 
     CATEGORY = "conditioning"
+    DESCRIPTION = "Sets or modifies the strength multiplier for area-bounded conditioning."
 
     def append(self, conditioning, strength):
         c = node_helpers.conditioning_set_values(conditioning, {"strength": strength})
