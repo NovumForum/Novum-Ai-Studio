@@ -1,9 +1,4 @@
 import pytest
-import base64
-import json
-import struct
-from io import BytesIO
-from PIL import Image
 from aiohttp import web
 from unittest.mock import patch, MagicMock
 from app.model_manager import ModelFileManager
