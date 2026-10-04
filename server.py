@@ -414,7 +414,9 @@ class PromptServer():
 
                 if not image_is_duplicate:
                     if image_save_function is not None:
-                        image_save_function(image, post, filepath)
+                        res = image_save_function(image, post, filepath)
+                        if isinstance(res, web.StreamResponse):
+                            return res
                     else:
                         with open(filepath, "wb") as f:
                             f.write(image.file.read())
@@ -434,7 +436,17 @@ class PromptServer():
             post = await request.post()
 
             def image_save_function(image, post, filepath):
-                original_ref = json.loads(post.get("original_ref"))
+                raw_ref = post.get("original_ref")
+                if not raw_ref:
+                    return web.Response(status=400)
+                try:
+                    original_ref = json.loads(raw_ref)
+                except (json.JSONDecodeError, TypeError):
+                    return web.Response(status=400)
+
+                if not isinstance(original_ref, dict) or "filename" not in original_ref or not isinstance(original_ref["filename"], str):
+                    return web.Response(status=400)
+
                 filename, output_dir = folder_paths.annotated_filepath(original_ref['filename'])
 
                 if not filename:
