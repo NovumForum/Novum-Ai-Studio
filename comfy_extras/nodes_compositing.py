@@ -6,7 +6,12 @@ from comfy_api.latest import ComfyExtension, io
 
 
 def resize_mask(mask, shape):
-    return torch.nn.functional.interpolate(mask.reshape((-1, 1, mask.shape[-2], mask.shape[-1])), size=(shape[0], shape[1]), mode="bilinear").squeeze(1)
+    return torch.nn.functional.interpolate(
+        mask.reshape((-1, 1, mask.shape[-2], mask.shape[-1])),
+        size=(shape[0], shape[1]),
+        mode="bilinear",
+    ).squeeze(1)
+
 
 class PorterDuffMode(Enum):
     ADD = 0
@@ -29,7 +34,13 @@ class PorterDuffMode(Enum):
     XOR = 17
 
 
-def porter_duff_composite(src_image: torch.Tensor, src_alpha: torch.Tensor, dst_image: torch.Tensor, dst_alpha: torch.Tensor, mode: PorterDuffMode):
+def porter_duff_composite(
+    src_image: torch.Tensor,
+    src_alpha: torch.Tensor,
+    dst_image: torch.Tensor,
+    dst_alpha: torch.Tensor,
+    mode: PorterDuffMode,
+):
     # convert mask to alpha
     src_alpha = 1 - src_alpha
     dst_alpha = 1 - dst_alpha
@@ -46,7 +57,11 @@ def porter_duff_composite(src_image: torch.Tensor, src_alpha: torch.Tensor, dst_
         out_image = torch.zeros_like(dst_image)
     elif mode == PorterDuffMode.DARKEN:
         out_alpha = src_alpha + dst_alpha - src_alpha * dst_alpha
-        out_image = (1 - dst_alpha) * src_image + (1 - src_alpha) * dst_image + torch.min(src_image, dst_image)
+        out_image = (
+            (1 - dst_alpha) * src_image
+            + (1 - src_alpha) * dst_image
+            + torch.min(src_image, dst_image)
+        )
     elif mode == PorterDuffMode.DST:
         out_alpha = dst_alpha
         out_image = dst_image
@@ -64,14 +79,22 @@ def porter_duff_composite(src_image: torch.Tensor, src_alpha: torch.Tensor, dst_
         out_image = dst_image + (1 - dst_alpha) * src_image
     elif mode == PorterDuffMode.LIGHTEN:
         out_alpha = src_alpha + dst_alpha - src_alpha * dst_alpha
-        out_image = (1 - dst_alpha) * src_image + (1 - src_alpha) * dst_image + torch.max(src_image, dst_image)
+        out_image = (
+            (1 - dst_alpha) * src_image
+            + (1 - src_alpha) * dst_image
+            + torch.max(src_image, dst_image)
+        )
     elif mode == PorterDuffMode.MULTIPLY:
         out_alpha = src_alpha * dst_alpha
         out_image = src_image * dst_image
     elif mode == PorterDuffMode.OVERLAY:
         out_alpha = src_alpha + dst_alpha - src_alpha * dst_alpha
-        out_image = torch.where(2 * dst_image < dst_alpha, 2 * src_image * dst_image,
-            src_alpha * dst_alpha - 2 * (dst_alpha - src_image) * (src_alpha - dst_image))
+        out_image = torch.where(
+            2 * dst_image < dst_alpha,
+            2 * src_image * dst_image,
+            src_alpha * dst_alpha
+            - 2 * (dst_alpha - src_image) * (src_alpha - dst_image),
+        )
     elif mode == PorterDuffMode.SCREEN:
         out_alpha = src_alpha + dst_alpha - src_alpha * dst_alpha
         out_image = src_image + dst_image - src_image * dst_image
@@ -97,7 +120,9 @@ def porter_duff_composite(src_image: torch.Tensor, src_alpha: torch.Tensor, dst_
         return None, None
 
     # back to non-premultiplied alpha
-    out_image = torch.where(out_alpha > 1e-5, out_image / out_alpha, torch.zeros_like(out_image))
+    out_image = torch.where(
+        out_alpha > 1e-5, out_image / out_alpha, torch.zeros_like(out_image)
+    )
     out_image = torch.clamp(out_image, 0, 1)
     # convert alpha to mask
     out_alpha = 1 - out_alpha
@@ -109,25 +134,56 @@ class PorterDuffImageComposite(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="PorterDuffImageComposite",
-            search_aliases=["alpha composite", "blend modes", "layer blend", "transparency blend"],
+            search_aliases=[
+                "alpha composite",
+                "blend modes",
+                "layer blend",
+                "transparency blend",
+            ],
             display_name="Porter-Duff Image Composite",
             category="mask/compositing",
+            description="Composites two images with alpha channels using Porter-Duff blending operations.",
             inputs=[
-                io.Image.Input("source"),
-                io.Mask.Input("source_alpha"),
-                io.Image.Input("destination"),
-                io.Mask.Input("destination_alpha"),
-                io.Combo.Input("mode", options=[mode.name for mode in PorterDuffMode], default=PorterDuffMode.DST.name),
+                io.Image.Input(
+                    "source", tooltip="Source foreground image to composite."
+                ),
+                io.Mask.Input(
+                    "source_alpha",
+                    tooltip="Alpha transparency mask for the source image.",
+                ),
+                io.Image.Input(
+                    "destination",
+                    tooltip="Destination background image to composite onto.",
+                ),
+                io.Mask.Input(
+                    "destination_alpha",
+                    tooltip="Alpha transparency mask for the destination image.",
+                ),
+                io.Combo.Input(
+                    "mode",
+                    options=[mode.name for mode in PorterDuffMode],
+                    default=PorterDuffMode.DST.name,
+                    tooltip="Porter-Duff compositing operator mode (e.g. DST_OVER, SRC_OVER).",
+                ),
             ],
             outputs=[
-                io.Image.Output(),
-                io.Mask.Output(),
+                io.Image.Output(tooltip="Composited result image."),
+                io.Mask.Output(tooltip="Combined alpha mask result."),
             ],
         )
 
     @classmethod
-    def execute(cls, source: torch.Tensor, source_alpha: torch.Tensor, destination: torch.Tensor, destination_alpha: torch.Tensor, mode) -> io.NodeOutput:
-        batch_size = min(len(source), len(source_alpha), len(destination), len(destination_alpha))
+    def execute(
+        cls,
+        source: torch.Tensor,
+        source_alpha: torch.Tensor,
+        destination: torch.Tensor,
+        destination_alpha: torch.Tensor,
+        mode,
+    ) -> io.NodeOutput:
+        batch_size = min(
+            len(source), len(source_alpha), len(destination), len(destination_alpha)
+        )
         out_images = []
         out_alphas = []
 
@@ -135,25 +191,47 @@ class PorterDuffImageComposite(io.ComfyNode):
             src_image = source[i]
             dst_image = destination[i]
 
-            assert src_image.shape[2] == dst_image.shape[2] # inputs need to have same number of channels
+            assert (
+                src_image.shape[2] == dst_image.shape[2]
+            )  # inputs need to have same number of channels
 
             src_alpha = source_alpha[i].unsqueeze(2)
             dst_alpha = destination_alpha[i].unsqueeze(2)
 
             if dst_alpha.shape[:2] != dst_image.shape[:2]:
                 upscale_input = dst_alpha.unsqueeze(0).permute(0, 3, 1, 2)
-                upscale_output = comfy.utils.common_upscale(upscale_input, dst_image.shape[1], dst_image.shape[0], upscale_method='bicubic', crop='center')
+                upscale_output = comfy.utils.common_upscale(
+                    upscale_input,
+                    dst_image.shape[1],
+                    dst_image.shape[0],
+                    upscale_method="bicubic",
+                    crop="center",
+                )
                 dst_alpha = upscale_output.permute(0, 2, 3, 1).squeeze(0)
             if src_image.shape != dst_image.shape:
                 upscale_input = src_image.unsqueeze(0).permute(0, 3, 1, 2)
-                upscale_output = comfy.utils.common_upscale(upscale_input, dst_image.shape[1], dst_image.shape[0], upscale_method='bicubic', crop='center')
+                upscale_output = comfy.utils.common_upscale(
+                    upscale_input,
+                    dst_image.shape[1],
+                    dst_image.shape[0],
+                    upscale_method="bicubic",
+                    crop="center",
+                )
                 src_image = upscale_output.permute(0, 2, 3, 1).squeeze(0)
             if src_alpha.shape != dst_alpha.shape:
                 upscale_input = src_alpha.unsqueeze(0).permute(0, 3, 1, 2)
-                upscale_output = comfy.utils.common_upscale(upscale_input, dst_alpha.shape[1], dst_alpha.shape[0], upscale_method='bicubic', crop='center')
+                upscale_output = comfy.utils.common_upscale(
+                    upscale_input,
+                    dst_alpha.shape[1],
+                    dst_alpha.shape[0],
+                    upscale_method="bicubic",
+                    crop="center",
+                )
                 src_alpha = upscale_output.permute(0, 2, 3, 1).squeeze(0)
 
-            out_image, out_alpha = porter_duff_composite(src_image, src_alpha, dst_image, dst_alpha, PorterDuffMode[mode])
+            out_image, out_alpha = porter_duff_composite(
+                src_image, src_alpha, dst_image, dst_alpha, PorterDuffMode[mode]
+            )
 
             out_images.append(out_image)
             out_alphas.append(out_alpha.squeeze(2))
@@ -166,22 +244,33 @@ class SplitImageWithAlpha(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="SplitImageWithAlpha",
-            search_aliases=["extract alpha", "separate transparency", "remove alpha"],
+            search_aliases=[
+                "extract alpha",
+                "separate transparency",
+                "remove alpha",
+                "split rgba",
+            ],
             display_name="Split Image with Alpha",
             category="mask/compositing",
+            description="Splits an RGBA image into an RGB image tensor and an inverted alpha mask tensor.",
             inputs=[
-                io.Image.Input("image"),
+                io.Image.Input(
+                    "image",
+                    tooltip="Input image tensor containing RGB or RGBA channels.",
+                ),
             ],
             outputs=[
-                io.Image.Output(),
-                io.Mask.Output(),
+                io.Image.Output(tooltip="RGB image without alpha channel."),
+                io.Mask.Output(tooltip="Extracted alpha mask (inverted)."),
             ],
         )
 
     @classmethod
     def execute(cls, image: torch.Tensor) -> io.NodeOutput:
-        out_images = [i[:,:,:3] for i in image]
-        out_alphas = [i[:,:,3] if i.shape[2] > 3 else torch.ones_like(i[:,:,0]) for i in image]
+        out_images = [i[:, :, :3] for i in image]
+        out_alphas = [
+            i[:, :, 3] if i.shape[2] > 3 else torch.ones_like(i[:, :, 0]) for i in image
+        ]
         return io.NodeOutput(torch.stack(out_images), 1.0 - torch.stack(out_alphas))
 
 
@@ -190,14 +279,26 @@ class JoinImageWithAlpha(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="JoinImageWithAlpha",
-            search_aliases=["add transparency", "apply alpha", "composite alpha", "RGBA"],
+            search_aliases=[
+                "add transparency",
+                "apply alpha",
+                "composite alpha",
+                "RGBA",
+                "combine alpha",
+            ],
             display_name="Join Image with Alpha",
             category="mask/compositing",
+            description="Combines an RGB image tensor with a mask tensor into a single RGBA image with transparency.",
             inputs=[
-                io.Image.Input("image"),
-                io.Mask.Input("alpha"),
+                io.Image.Input(
+                    "image", tooltip="RGB image tensor to attach transparency to."
+                ),
+                io.Mask.Input(
+                    "alpha",
+                    tooltip="Mask tensor to use as the alpha transparency channel.",
+                ),
             ],
-            outputs=[io.Image.Output()],
+            outputs=[io.Image.Output(tooltip="Combined RGBA image with transparency.")],
         )
 
     @classmethod
@@ -207,7 +308,9 @@ class JoinImageWithAlpha(io.ComfyNode):
 
         alpha = 1.0 - resize_mask(alpha, image.shape[1:])
         for i in range(batch_size):
-           out_images.append(torch.cat((image[i][:,:,:3], alpha[i].unsqueeze(2)), dim=2))
+            out_images.append(
+                torch.cat((image[i][:, :, :3], alpha[i].unsqueeze(2)), dim=2)
+            )
 
         return io.NodeOutput(torch.stack(out_images))
 
