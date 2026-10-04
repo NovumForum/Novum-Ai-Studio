@@ -18,12 +18,22 @@ class TestCompositingNodeTooltips(unittest.TestCase):
         self.assertIsNotNone(class_node)
         source = ast.unparse(class_node)
 
-        self.assertIn("description='Composites two images with alpha channels using Porter-Duff blending operations.'", source)
+        self.assertIn(
+            "description='Composites two images with alpha channels using Porter-Duff blending operations.'",
+            source,
+        )
         self.assertIn("tooltip='Source foreground image to composite.'", source)
         self.assertIn("tooltip='Alpha transparency mask for the source image.'", source)
-        self.assertIn("tooltip='Destination background image to composite onto.'", source)
-        self.assertIn("tooltip='Alpha transparency mask for the destination image.'", source)
-        self.assertIn("tooltip='Porter-Duff compositing operator mode (e.g. DST_OVER, SRC_OVER).'", source)
+        self.assertIn(
+            "tooltip='Destination background image to composite onto.'", source
+        )
+        self.assertIn(
+            "tooltip='Alpha transparency mask for the destination image.'", source
+        )
+        self.assertIn(
+            "tooltip='Porter-Duff compositing operator mode (e.g. DST_OVER, SRC_OVER).'",
+            source,
+        )
         self.assertIn("tooltip='Composited result image.'", source)
         self.assertIn("tooltip='Combined alpha mask result.'", source)
 
@@ -32,8 +42,13 @@ class TestCompositingNodeTooltips(unittest.TestCase):
         self.assertIsNotNone(class_node)
         source = ast.unparse(class_node)
 
-        self.assertIn("description='Splits an RGBA image into an RGB image tensor and an inverted alpha mask tensor.'", source)
-        self.assertIn("tooltip='Input image tensor containing RGB or RGBA channels.'", source)
+        self.assertIn(
+            "description='Splits an RGBA image into an RGB image tensor and an inverted alpha mask tensor.'",
+            source,
+        )
+        self.assertIn(
+            "tooltip='Input image tensor containing RGB or RGBA channels.'", source
+        )
         self.assertIn("tooltip='RGB image without alpha channel.'", source)
         self.assertIn("tooltip='Extracted alpha mask (inverted).'", source)
         self.assertIn("'split rgba'", source)
@@ -43,9 +58,14 @@ class TestCompositingNodeTooltips(unittest.TestCase):
         self.assertIsNotNone(class_node)
         source = ast.unparse(class_node)
 
-        self.assertIn("description='Combines an RGB image tensor with a mask tensor into a single RGBA image with transparency.'", source)
+        self.assertIn(
+            "description='Combines an RGB image tensor with a mask tensor into a single RGBA image with transparency.'",
+            source,
+        )
         self.assertIn("tooltip='RGB image tensor to attach transparency to.'", source)
-        self.assertIn("tooltip='Mask tensor to use as the alpha transparency channel.'", source)
+        self.assertIn(
+            "tooltip='Mask tensor to use as the alpha transparency channel.'", source
+        )
         self.assertIn("tooltip='Combined RGBA image with transparency.'", source)
         self.assertIn("'combine alpha'", source)
 
