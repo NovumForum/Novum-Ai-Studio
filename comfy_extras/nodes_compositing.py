@@ -112,16 +112,17 @@ class PorterDuffImageComposite(io.ComfyNode):
             search_aliases=["alpha composite", "blend modes", "layer blend", "transparency blend"],
             display_name="Porter-Duff Image Composite",
             category="mask/compositing",
+            description="Composites two images with alpha channels using Porter-Duff blending operations.",
             inputs=[
-                io.Image.Input("source"),
-                io.Mask.Input("source_alpha"),
-                io.Image.Input("destination"),
-                io.Mask.Input("destination_alpha"),
-                io.Combo.Input("mode", options=[mode.name for mode in PorterDuffMode], default=PorterDuffMode.DST.name),
+                io.Image.Input("source", tooltip="Source foreground image to composite."),
+                io.Mask.Input("source_alpha", tooltip="Alpha transparency mask for the source image."),
+                io.Image.Input("destination", tooltip="Destination background image to composite onto."),
+                io.Mask.Input("destination_alpha", tooltip="Alpha transparency mask for the destination image."),
+                io.Combo.Input("mode", options=[mode.name for mode in PorterDuffMode], default=PorterDuffMode.DST.name, tooltip="Porter-Duff compositing operator mode (e.g. DST_OVER, SRC_OVER)."),
             ],
             outputs=[
-                io.Image.Output(),
-                io.Mask.Output(),
+                io.Image.Output(tooltip="Composited result image."),
+                io.Mask.Output(tooltip="Combined alpha mask result."),
             ],
         )
 
@@ -166,15 +167,16 @@ class SplitImageWithAlpha(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="SplitImageWithAlpha",
-            search_aliases=["extract alpha", "separate transparency", "remove alpha"],
+            search_aliases=["extract alpha", "separate transparency", "remove alpha", "split rgba"],
             display_name="Split Image with Alpha",
             category="mask/compositing",
+            description="Splits an RGBA image into an RGB image tensor and an inverted alpha mask tensor.",
             inputs=[
-                io.Image.Input("image"),
+                io.Image.Input("image", tooltip="Input image tensor containing RGB or RGBA channels."),
             ],
             outputs=[
-                io.Image.Output(),
-                io.Mask.Output(),
+                io.Image.Output(tooltip="RGB image without alpha channel."),
+                io.Mask.Output(tooltip="Extracted alpha mask (inverted)."),
             ],
         )
 
@@ -190,14 +192,15 @@ class JoinImageWithAlpha(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="JoinImageWithAlpha",
-            search_aliases=["add transparency", "apply alpha", "composite alpha", "RGBA"],
+            search_aliases=["add transparency", "apply alpha", "composite alpha", "RGBA", "combine alpha"],
             display_name="Join Image with Alpha",
             category="mask/compositing",
+            description="Combines an RGB image tensor with a mask tensor into a single RGBA image with transparency.",
             inputs=[
-                io.Image.Input("image"),
-                io.Mask.Input("alpha"),
+                io.Image.Input("image", tooltip="RGB image tensor to attach transparency to."),
+                io.Mask.Input("alpha", tooltip="Mask tensor to use as the alpha transparency channel."),
             ],
-            outputs=[io.Image.Output()],
+            outputs=[io.Image.Output(tooltip="Combined RGBA image with transparency.")],
         )
 
     @classmethod
