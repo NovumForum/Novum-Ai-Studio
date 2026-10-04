@@ -4,9 +4,9 @@ import pytest
 import comfy.cli_args
 comfy.cli_args.args.cpu = True
 
-import app.frontend_management
+# Import app.frontend_management for side-effect path registration if needed
+import app.frontend_management  # noqa: F401
 import aiohttp
-from aiohttp import web
 from PIL import Image
 from io import BytesIO
 
