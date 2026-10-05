@@ -160,3 +160,31 @@ def test_base_path_change_clears_old(set_base_dir):
 
     for name in ["controlnet", "diffusion_models", "text_encoders"]:
         assert len(folder_paths.get_folder_paths(name)) == 2
+
+
+def test_get_full_path_path_traversal_prevention(temp_dir, clear_folder_paths):
+    checkpoints_dir = os.path.join(temp_dir, "checkpoints")
+    secret_dir = os.path.join(temp_dir, "secret")
+    os.makedirs(checkpoints_dir)
+    os.makedirs(secret_dir)
+
+    valid_model = os.path.join(checkpoints_dir, "valid.safetensors")
+    secret_file = os.path.join(secret_dir, "secret.safetensors")
+    open(valid_model, "w").close()
+    open(secret_file, "w").close()
+
+    sub_dir = os.path.join(checkpoints_dir, "sub")
+    os.makedirs(sub_dir)
+    nested_model = os.path.join(sub_dir, "nested.safetensors")
+    open(nested_model, "w").close()
+
+    folder_paths.add_model_folder_path("checkpoints", checkpoints_dir, is_default=True)
+
+    # Valid accesses
+    assert folder_paths.get_full_path("checkpoints", "valid.safetensors") == valid_model
+    assert folder_paths.get_full_path("checkpoints", "sub/nested.safetensors") == nested_model
+
+    # Path traversal attempts
+    assert folder_paths.get_full_path("checkpoints", "../secret/secret.safetensors") is None
+    assert folder_paths.get_full_path("checkpoints", "../../secret/secret.safetensors") is None
+    assert folder_paths.get_full_path("checkpoints", "/../secret/secret.safetensors") is None
