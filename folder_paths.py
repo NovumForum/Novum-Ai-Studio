@@ -355,9 +355,14 @@ def get_full_path(folder_name: str, filename: str) -> str | None:
     if folder_name not in folder_names_and_paths:
         return None
     folders = folder_names_and_paths[folder_name]
-    filename = os.path.relpath(os.path.join("/", filename), "/")
+    # Security check: prevent path traversal (e.g., ../) in filename
+    rel_filename = os.path.relpath(os.path.join("/", filename), "/")
     for x in folders[0]:
-        full_path = os.path.join(x, filename)
+        abs_folder = os.path.abspath(x)
+        full_path = os.path.abspath(os.path.join(abs_folder, rel_filename))
+        # Ensure the resolved path stays strictly within the target folder
+        if os.path.commonpath((full_path, abs_folder)) != abs_folder:
+            continue
         if os.path.isfile(full_path):
             return full_path
         elif os.path.islink(full_path):
