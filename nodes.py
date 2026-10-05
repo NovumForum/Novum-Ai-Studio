@@ -353,11 +353,18 @@ class VAEDecodeTiled:
 class VAEEncode:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": { "pixels": ("IMAGE", ), "vae": ("VAE", )}}
+        return {
+            "required": {
+                "pixels": ("IMAGE", {"tooltip": "The image to be encoded into latent space."}),
+                "vae": ("VAE", {"tooltip": "The VAE model used for encoding the image."})
+            }
+        }
     RETURN_TYPES = ("LATENT",)
+    OUTPUT_TOOLTIPS = ("The encoded latent representation.",)
     FUNCTION = "encode"
 
     CATEGORY = "latent"
+    DESCRIPTION = "Encodes pixel space images into latent space representation using a VAE model."
     SEARCH_ALIASES = ["encode", "encode image", "image to latent"]
 
     def encode(self, vae, pixels):
@@ -385,11 +392,21 @@ class VAEEncodeTiled:
 class VAEEncodeForInpaint:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": { "pixels": ("IMAGE", ), "vae": ("VAE", ), "mask": ("MASK", ), "grow_mask_by": ("INT", {"default": 6, "min": 0, "max": 64, "step": 1}),}}
+        return {
+            "required": {
+                "pixels": ("IMAGE", {"tooltip": "The image to be encoded for inpainting."}),
+                "vae": ("VAE", {"tooltip": "The VAE model used for encoding."}),
+                "mask": ("MASK", {"tooltip": "The mask indicating areas to be inpainted."}),
+                "grow_mask_by": ("INT", {"default": 6, "min": 0, "max": 64, "step": 1, "tooltip": "Amount to expand the mask in pixels to ensure seamless boundaries in latent space."}),
+            }
+        }
     RETURN_TYPES = ("LATENT",)
+    OUTPUT_TOOLTIPS = ("The encoded latent representation with mask information for inpainting.",)
     FUNCTION = "encode"
 
     CATEGORY = "latent/inpaint"
+    DESCRIPTION = "Encodes pixel space images and a mask into latent space representation for inpainting workflows."
+    SEARCH_ALIASES = ["inpaint encode", "encode inpaint", "vae encode inpaint", "mask encode"]
 
     def encode(self, vae, pixels, mask, grow_mask_by=6):
         downscale_ratio = vae.spacial_compression_encode()
