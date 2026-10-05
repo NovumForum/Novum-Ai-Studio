@@ -779,7 +779,9 @@ class ImageMergeTileList(IO.ComfyNode):
         coords = SplitImageToTileList.get_grid_coords(w, h, t_w, t_h, ovlp)
 
         canvas = torch.zeros((b, h, w, c), device=device, dtype=dtype)
-        weights = torch.zeros((b, h, w, 1), device=device, dtype=dtype)
+        # Optimize memory and compute: weight accumulator is spatially invariant across batch dimension b,
+        # so keeping it as (1, h, w, 1) avoids b-fold memory allocation and computation during tile accumulation.
+        weights = torch.zeros((1, h, w, 1), device=device, dtype=dtype)
 
         if ovlp > 0:
             y_w = torch.sin(math.pi * torch.linspace(0, 1, t_h, device=device, dtype=dtype))
@@ -788,9 +790,8 @@ class ImageMergeTileList(IO.ComfyNode):
             x_w = torch.clamp(x_w, min=1e-5)
 
             sine_mask = (y_w.unsqueeze(1) * x_w.unsqueeze(0)).unsqueeze(0).unsqueeze(-1)
-            flat_mask = torch.ones_like(sine_mask)
-
-            weight_mask = torch.lerp(flat_mask, sine_mask, feather_str)
+            # Skip allocating flat_mask and calling torch.lerp when feather_str == 1.0
+            weight_mask = sine_mask if feather_str == 1.0 else torch.lerp(torch.ones_like(sine_mask), sine_mask, feather_str)
         else:
             weight_mask = torch.ones((1, t_h, t_w, 1), device=device, dtype=dtype)
 
