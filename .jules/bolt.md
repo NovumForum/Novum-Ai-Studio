@@ -1,0 +1,3 @@
+## 2025-05-18 - Vectorized Mask Expansion with PyTorch max_pool2d
+**Learning:** Replacing SciPy `grey_dilation` and `grey_erosion` loops on converted NumPy arrays with PyTorch `F.max_pool2d` and `F.pad(..., mode="reflect")` processes 4D mask tensors in batch on their native device (GPU/CPU) without host-device copy overhead. Tapered corner footprints are achieved via elementwise maximum of (3, 1) and (1, 3) 2D max pools, and erosion is achieved via negated max-pooling (`min(x) = -max(-x)`).
+**Action:** Use native PyTorch 2D pooling/conv operations instead of NumPy/SciPy operations whenever processing image or mask tensors in ComfyUI nodes.
