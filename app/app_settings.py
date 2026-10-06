@@ -17,6 +17,8 @@ class AppSettings():
         except KeyError as e:
             logging.error("User settings not found.")
             raise web.HTTPUnauthorized() from e
+        if file is None:
+            raise web.HTTPForbidden()
         if os.path.isfile(file):
             try:
                 with open(file) as f:
@@ -28,8 +30,14 @@ class AppSettings():
             return {}
 
     def save_settings(self, request, settings):
-        file = self.user_manager.get_request_user_filepath(
-            request, "comfy.settings.json")
+        try:
+            file = self.user_manager.get_request_user_filepath(
+                request, "comfy.settings.json")
+        except KeyError as e:
+            logging.error("User settings not found.")
+            raise web.HTTPUnauthorized() from e
+        if file is None:
+            raise web.HTTPForbidden()
         with open(file, "w") as f:
             f.write(json.dumps(settings, indent=4))
 
