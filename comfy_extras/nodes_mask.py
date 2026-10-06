@@ -355,34 +355,22 @@ class GrowMask(IO.ComfyNode):
 
     @classmethod
     def execute(cls, mask, expand, tapered_corners) -> IO.NodeOutput:
-        if expand == 0:
-            return IO.NodeOutput(mask.reshape((-1, mask.shape[-2], mask.shape[-1])))
-
-        # Vectorized implementation using PyTorch max_pool2d on full 4D mask tensor
-        # Replaces scipy.ndimage grey_dilation/grey_erosion NumPy loops
-        h, w = mask.shape[-2], mask.shape[-1]
-        out_mask = mask.reshape((-1, 1, h, w))
-
-        # Perform erosion as negated max pooling (min-pooling): min(x) = -max(-x)
-        if expand < 0:
-            out_mask = -out_mask
-
-        iterations = abs(expand)
-        for _ in range(iterations):
-            padded = torch.nn.functional.pad(out_mask, (1, 1, 1, 1), mode="reflect")
-            if tapered_corners:
-                # 3x1 and 1x3 cross footprint (plus shape)
-                m1 = torch.nn.functional.max_pool2d(padded, kernel_size=(3, 1), stride=1)
-                m2 = torch.nn.functional.max_pool2d(padded, kernel_size=(1, 3), stride=1)
-                out_mask = torch.maximum(m1, m2)
-            else:
-                # 3x3 square footprint
-                out_mask = torch.nn.functional.max_pool2d(padded, kernel_size=3, stride=1)
-
-        if expand < 0:
-            out_mask = -out_mask
-
-        return IO.NodeOutput(out_mask.squeeze(1))
+        c = 0 if tapered_corners else 1
+        kernel = np.array([[c, 1, c],
+                           [1, 1, 1],
+                           [c, 1, c]])
+        mask = mask.reshape((-1, mask.shape[-2], mask.shape[-1]))
+        out = []
+        for m in mask:
+            output = m.numpy()
+            for _ in range(abs(expand)):
+                if expand < 0:
+                    output = scipy.ndimage.grey_erosion(output, footprint=kernel)
+                else:
+                    output = scipy.ndimage.grey_dilation(output, footprint=kernel)
+            output = torch.from_numpy(output)
+            out.append(output)
+        return IO.NodeOutput(torch.stack(out, dim=0))
 
     expand_mask = execute  # TODO: remove
 
