@@ -287,3 +287,35 @@ async def test_listuserdata_v2_url_encoded_path(aiohttp_client, app, tmp_path):
     assert entry["name"] == "file.txt"
     # Ensure the path is correctly decoded and uses forward slash
     assert entry["path"] == "my dir/file.txt"
+
+
+async def test_userdata_unknown_user_returns_403(aiohttp_client, app, user_manager):
+    user_manager.get_request_user_filepath = lambda req, file, **kwargs: (_ for _ in ()).throw(KeyError("Unknown user"))
+    client = await aiohttp_client(app)
+
+    resp1 = await client.get("/userdata?dir=test_dir")
+    assert resp1.status == 403
+
+    resp2 = await client.get("/userdata/file.txt")
+    assert resp2.status == 403
+
+
+async def test_getuserdata_directory_returns_400(aiohttp_client, app, tmp_path):
+    os.makedirs(tmp_path / "my_folder")
+    client = await aiohttp_client(app)
+
+    resp = await client.get("/userdata/my_folder")
+    assert resp.status == 400
+    assert "directory" in (await resp.text()).lower()
+
+
+async def test_delete_userdata_directory(aiohttp_client, app, tmp_path):
+    subfolder = tmp_path / "my_folder"
+    os.makedirs(subfolder)
+    (subfolder / "file.txt").write_text("content")
+
+    client = await aiohttp_client(app)
+    resp = await client.delete("/userdata/my_folder")
+
+    assert resp.status == 204
+    assert not os.path.exists(subfolder)
