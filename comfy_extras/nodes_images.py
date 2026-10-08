@@ -154,10 +154,12 @@ class ImageAddNoise(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ImageAddNoise",
-            search_aliases=["film grain"],
+            display_name="Add Noise",
+            description="Adds random noise or film grain to an image for extra detail or aesthetic texture.",
+            search_aliases=["film grain", "add noise", "noise", "grain", "texture", "iso noise"],
             category="image",
             inputs=[
-                IO.Image.Input("image"),
+                IO.Image.Input("image", tooltip="The input image to which noise or grain will be added."),
                 IO.Int.Input(
                     "seed",
                     default=0,
@@ -166,9 +168,9 @@ class ImageAddNoise(IO.ComfyNode):
                     control_after_generate=True,
                     tooltip="The random seed used for creating the noise.",
                 ),
-                IO.Float.Input("strength", default=0.5, min=0.0, max=1.0, step=0.01),
+                IO.Float.Input("strength", default=0.5, min=0.0, max=1.0, step=0.01, tooltip="The strength or intensity of the added noise."),
             ],
-            outputs=[IO.Image.Output()],
+            outputs=[IO.Image.Output(tooltip="The image with added noise/grain.")],
         )
 
     @classmethod
