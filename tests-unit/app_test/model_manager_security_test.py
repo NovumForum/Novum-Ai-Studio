@@ -1,5 +1,4 @@
 import pytest
-import os
 import base64
 import json
 import struct
