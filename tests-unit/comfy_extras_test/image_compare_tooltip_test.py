@@ -55,4 +55,3 @@ def test_image_compare_schema_metadata():
 
 if __name__ == "__main__":
     test_image_compare_schema_metadata()
-    print("All image compare tooltip tests passed!")
