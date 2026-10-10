@@ -3,7 +3,6 @@ from unittest.mock import MagicMock
 sys.modules["comfy_kitchen"] = MagicMock()
 
 import torch
-import pytest
 from comfy_extras.nodes_compositing import JoinImageWithAlpha, resize_mask
 
 
