@@ -175,9 +175,14 @@ def download_release_asset_zip(release: Release, destination_path: str) -> None:
         # Go back to the beginning of the temporary file
         tmp_file.seek(0)
 
-        # Extract the zip file content to the destination path
+        # Extract the zip file content to the destination path securely to prevent path traversal (Zip Slip)
+        dest_abs = os.path.abspath(destination_path)
         with zipfile.ZipFile(tmp_file, "r") as zip_ref:
-            zip_ref.extractall(destination_path)
+            for member in zip_ref.infolist():
+                member_path = os.path.abspath(os.path.join(dest_abs, member.filename))
+                if os.path.commonpath([dest_abs, member_path]) != dest_abs:
+                    raise ValueError(f"Path traversal detected in zip archive entry: {member.filename}")
+                zip_ref.extract(member, dest_abs)
 
 
 class FrontendManager:
