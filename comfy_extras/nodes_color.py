@@ -9,12 +9,13 @@ class ColorToRGBInt(io.ComfyNode):
             node_id="ColorToRGBInt",
             display_name="Color to RGB Int",
             category="utils",
-            description="Convert a color to a RGB integer value.",
+            description="Convert a hex color string (#RRGGBB) to a single RGB integer value.",
+            search_aliases=["hex to int", "color picker", "color to integer", "hex color", "rgb integer"],
             inputs=[
-                io.Color.Input("color"),
+                io.Color.Input("color", tooltip="Hex color code in #RRGGBB format."),
             ],
             outputs=[
-                io.Int.Output(display_name="rgb_int"),
+                io.Int.Output(display_name="rgb_int", tooltip="Integer representation of the RGB color value."),
             ],
         )
 
