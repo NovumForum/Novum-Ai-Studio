@@ -1,0 +1,4 @@
+## 2026-10-11 - Path Traversal in Model Preview Endpoint
+**Vulnerability:** The `/experiment/models/preview/{folder}/{path_index}/{filename:.*}` endpoint accepted arbitrary path strings in `filename` without path bounds validation, allowing relative path traversal outside the model folder.
+**Learning:** `os.path.join(base_dir, user_filename)` does not prevent directory traversal if `user_filename` contains relative parent directory sequences (`..`). Additionally, parsing `path_index` without `try...except` and bounds checking caused unhandled 500 errors (`ValueError`, `IndexError`).
+**Prevention:** Always normalize target paths with `os.path.abspath` and verify containment within `base_dir` using `os.path.commonpath`. Always validate numeric parameters with explicit type casting exception handling and array bounds checks.
