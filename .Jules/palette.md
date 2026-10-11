@@ -1,0 +1,3 @@
+## 2025-05-18 - [Audio Node Schema Tooltips and Search Aliases]
+**Learning:** Audio nodes in `comfy_extras/nodes_audio.py` using `ComfyExtension` / `IO.Schema` schema definitions benefit significantly from explicit `description`, `search_aliases`, and input parameter `tooltip` definitions for discoverability and contextual UI help. AST-based unit tests ensure all node schema definitions retain these accessibility and usability attributes without requiring full audio library dependencies.
+**Action:** When working on extension nodes using `IO.Schema`, always define `description`, `search_aliases`, and parameter `tooltip` attributes in `define_schema`, and verify them via AST parsing in unit tests.

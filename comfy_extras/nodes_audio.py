@@ -17,12 +17,14 @@ class EmptyLatentAudio(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="EmptyLatentAudio",
+            search_aliases=["new audio latent", "blank audio latent", "empty audio tensor"],
             display_name="Empty Latent Audio",
+            description="Create an empty audio latent tensor of specified duration and batch size for audio generation models.",
             category="latent/audio",
             inputs=[
-                IO.Float.Input("seconds", default=47.6, min=1.0, max=1000.0, step=0.1),
+                IO.Float.Input("seconds", default=47.6, min=1.0, max=1000.0, step=0.1, tooltip="Duration of the latent audio in seconds."),
                 IO.Int.Input(
-                    "batch_size", default=1, min=1, max=4096, tooltip="The number of latent images in the batch.",
+                    "batch_size", default=1, min=1, max=4096, tooltip="The number of latent audio samples in the batch.",
                 ),
             ],
             outputs=[IO.Latent.Output()],
@@ -42,12 +44,15 @@ class ConditioningStableAudio(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ConditioningStableAudio",
+            search_aliases=["audio timing conditioning", "stable audio prompt", "time range prompt"],
+            display_name="Conditioning (Stable Audio)",
+            description="Applies start time and total duration parameters to positive and negative conditioning for Stable Audio models.",
             category="conditioning",
             inputs=[
-                IO.Conditioning.Input("positive"),
-                IO.Conditioning.Input("negative"),
-                IO.Float.Input("seconds_start", default=0.0, min=0.0, max=1000.0, step=0.1),
-                IO.Float.Input("seconds_total", default=47.0, min=0.0, max=1000.0, step=0.1),
+                IO.Conditioning.Input("positive", tooltip="The positive conditioning to attach timing metadata to."),
+                IO.Conditioning.Input("negative", tooltip="The negative conditioning to attach timing metadata to."),
+                IO.Float.Input("seconds_start", default=0.0, min=0.0, max=1000.0, step=0.1, tooltip="The start offset in seconds for audio conditioning."),
+                IO.Float.Input("seconds_total", default=47.0, min=0.0, max=1000.0, step=0.1, tooltip="The target total duration in seconds for audio conditioning."),
             ],
             outputs=[
                 IO.Conditioning.Output(display_name="positive"),
@@ -69,12 +74,13 @@ class VAEEncodeAudio(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="VAEEncodeAudio",
-            search_aliases=["audio to latent"],
+            search_aliases=["audio to latent", "encode audio vae"],
             display_name="VAE Encode Audio",
+            description="Encodes raw audio waveforms into latent representations using an audio VAE model.",
             category="latent/audio",
             inputs=[
-                IO.Audio.Input("audio"),
-                IO.Vae.Input("vae"),
+                IO.Audio.Input("audio", tooltip="The input audio waveform to encode into latent space."),
+                IO.Vae.Input("vae", tooltip="The audio VAE model used for encoding."),
             ],
             outputs=[IO.Latent.Output()],
         )
@@ -112,12 +118,13 @@ class VAEDecodeAudio(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="VAEDecodeAudio",
-            search_aliases=["latent to audio"],
+            search_aliases=["latent to audio", "decode audio vae"],
             display_name="VAE Decode Audio",
+            description="Decodes latent representations back into raw playable audio waveforms using an audio VAE model.",
             category="latent/audio",
             inputs=[
-                IO.Latent.Input("samples"),
-                IO.Vae.Input("vae"),
+                IO.Latent.Input("samples", tooltip="The audio latent samples to decode into waveform audio."),
+                IO.Vae.Input("vae", tooltip="The audio VAE model used for decoding."),
             ],
             outputs=[IO.Audio.Output()],
         )
@@ -134,14 +141,15 @@ class VAEDecodeAudioTiled(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="VAEDecodeAudioTiled",
-            search_aliases=["latent to audio"],
+            search_aliases=["latent to audio", "tiled audio decode", "decode audio chunked"],
             display_name="VAE Decode Audio (Tiled)",
+            description="Decodes large audio latent samples in tiled chunks to conserve VRAM.",
             category="latent/audio",
             inputs=[
-                IO.Latent.Input("samples"),
-                IO.Vae.Input("vae"),
-                IO.Int.Input("tile_size", default=512, min=32, max=8192, step=8),
-                IO.Int.Input("overlap", default=64, min=0, max=1024, step=8),
+                IO.Latent.Input("samples", tooltip="The audio latent samples to decode."),
+                IO.Vae.Input("vae", tooltip="The audio VAE model used for decoding."),
+                IO.Int.Input("tile_size", default=512, min=32, max=8192, step=8, tooltip="Size of each decoding tile chunk."),
+                IO.Int.Input("overlap", default=64, min=0, max=1024, step=8, tooltip="Overlap size between adjacent tiles to prevent seams."),
             ],
             outputs=[IO.Audio.Output()],
         )
@@ -156,13 +164,14 @@ class SaveAudio(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="SaveAudio",
-            search_aliases=["export flac"],
+            search_aliases=["export flac", "save flac", "write audio"],
             display_name="Save Audio (FLAC)",
+            description="Saves input audio to disk as a high-quality FLAC audio file.",
             category="audio",
             essentials_category="Audio",
             inputs=[
-                IO.Audio.Input("audio"),
-                IO.String.Input("filename_prefix", default="audio/ComfyUI"),
+                IO.Audio.Input("audio", tooltip="The audio waveform to save to disk."),
+                IO.String.Input("filename_prefix", default="audio/ComfyUI", tooltip="File path prefix and name pattern for saved FLAC audio files."),
             ],
             hidden=[IO.Hidden.prompt, IO.Hidden.extra_pnginfo],
             is_output_node=True,
@@ -182,13 +191,14 @@ class SaveAudioMP3(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="SaveAudioMP3",
-            search_aliases=["export mp3"],
+            search_aliases=["export mp3", "save mp3", "write mp3"],
             display_name="Save Audio (MP3)",
+            description="Saves input audio to disk as an MP3 file with selectable bitrate/quality.",
             category="audio",
             inputs=[
-                IO.Audio.Input("audio"),
-                IO.String.Input("filename_prefix", default="audio/ComfyUI"),
-                IO.Combo.Input("quality", options=["V0", "128k", "320k"], default="V0"),
+                IO.Audio.Input("audio", tooltip="The audio waveform to save to disk."),
+                IO.String.Input("filename_prefix", default="audio/ComfyUI", tooltip="File path prefix and name pattern for saved MP3 audio files."),
+                IO.Combo.Input("quality", options=["V0", "128k", "320k"], default="V0", tooltip="Quality preset or constant bitrate for MP3 encoding."),
             ],
             hidden=[IO.Hidden.prompt, IO.Hidden.extra_pnginfo],
             is_output_node=True,
@@ -210,13 +220,14 @@ class SaveAudioOpus(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="SaveAudioOpus",
-            search_aliases=["export opus"],
+            search_aliases=["export opus", "save opus", "write opus"],
             display_name="Save Audio (Opus)",
+            description="Saves input audio to disk in the Opus format with customizable target bitrate.",
             category="audio",
             inputs=[
-                IO.Audio.Input("audio"),
-                IO.String.Input("filename_prefix", default="audio/ComfyUI"),
-                IO.Combo.Input("quality", options=["64k", "96k", "128k", "192k", "320k"], default="128k"),
+                IO.Audio.Input("audio", tooltip="The audio waveform to save to disk."),
+                IO.String.Input("filename_prefix", default="audio/ComfyUI", tooltip="File path prefix and name pattern for saved Opus audio files."),
+                IO.Combo.Input("quality", options=["64k", "96k", "128k", "192k", "320k"], default="128k", tooltip="Target encoding bitrate for Opus audio."),
             ],
             hidden=[IO.Hidden.prompt, IO.Hidden.extra_pnginfo],
             is_output_node=True,
@@ -238,11 +249,12 @@ class PreviewAudio(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="PreviewAudio",
-            search_aliases=["play audio"],
+            search_aliases=["play audio", "audio player", "listen audio"],
             display_name="Preview Audio",
+            description="Provides an interactive in-node audio player UI to listen to generated audio.",
             category="audio",
             inputs=[
-                IO.Audio.Input("audio"),
+                IO.Audio.Input("audio", tooltip="The audio waveform to preview in the interface."),
             ],
             hidden=[IO.Hidden.prompt, IO.Hidden.extra_pnginfo],
             is_output_node=True,
@@ -298,12 +310,13 @@ class LoadAudio(IO.ComfyNode):
         files = folder_paths.filter_files_content_types(os.listdir(input_dir), ["audio", "video"])
         return IO.Schema(
             node_id="LoadAudio",
-            search_aliases=["import audio", "open audio", "audio file"],
+            search_aliases=["import audio", "open audio", "audio file", "read audio"],
             display_name="Load Audio",
+            description="Loads an audio or video file from the input directory into an audio tensor.",
             category="audio",
             essentials_category="Audio",
             inputs=[
-                IO.Combo.Input("audio", upload=IO.UploadType.audio, options=sorted(files)),
+                IO.Combo.Input("audio", upload=IO.UploadType.audio, options=sorted(files), tooltip="Select an audio/video file from the input folder or upload a new file."),
             ],
             outputs=[IO.Audio.Output()],
         )
@@ -337,11 +350,12 @@ class RecordAudio(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="RecordAudio",
-            search_aliases=["microphone input", "audio capture", "voice input"],
+            search_aliases=["microphone input", "audio capture", "voice input", "mic record"],
             display_name="Record Audio",
+            description="Captures live audio directly from microphone input in the browser.",
             category="audio",
             inputs=[
-                IO.Custom("AUDIO_RECORD").Input("audio"),
+                IO.Custom("AUDIO_RECORD").Input("audio", tooltip="Recorded audio data from the browser microphone control."),
             ],
             outputs=[IO.Audio.Output()],
         )
@@ -362,12 +376,12 @@ class TrimAudioDuration(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="TrimAudioDuration",
-            search_aliases=["cut audio", "audio clip", "shorten audio"],
+            search_aliases=["cut audio", "audio clip", "shorten audio", "crop audio"],
             display_name="Trim Audio Duration",
             description="Trim audio tensor into chosen time range.",
             category="audio",
             inputs=[
-                IO.Audio.Input("audio"),
+                IO.Audio.Input("audio", tooltip="The audio clip to trim."),
                 IO.Float.Input(
                     "start_index",
                     default=0.0,
@@ -415,12 +429,12 @@ class SplitAudioChannels(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="SplitAudioChannels",
-            search_aliases=["stereo to mono"],
+            search_aliases=["stereo to mono", "extract channels", "left right split"],
             display_name="Split Audio Channels",
             description="Separates the audio into left and right channels.",
             category="audio",
             inputs=[
-                IO.Audio.Input("audio"),
+                IO.Audio.Input("audio", tooltip="The stereo audio waveform to split into mono channels."),
             ],
             outputs=[
                 IO.Audio.Output(display_name="left"),
@@ -448,12 +462,13 @@ class JoinAudioChannels(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="JoinAudioChannels",
+            search_aliases=["combine channels", "mono to stereo", "left right join"],
             display_name="Join Audio Channels",
             description="Joins left and right mono audio channels into a stereo audio.",
             category="audio",
             inputs=[
-                IO.Audio.Input("audio_left"),
-                IO.Audio.Input("audio_right"),
+                IO.Audio.Input("audio_left", tooltip="Mono audio waveform for the left channel."),
+                IO.Audio.Input("audio_right", tooltip="Mono audio waveform for the right channel."),
             ],
             outputs=[
                 IO.Audio.Output(display_name="audio"),
@@ -521,8 +536,8 @@ class AudioConcat(IO.ComfyNode):
             description="Concatenates the audio1 to audio2 in the specified direction.",
             category="audio",
             inputs=[
-                IO.Audio.Input("audio1"),
-                IO.Audio.Input("audio2"),
+                IO.Audio.Input("audio1", tooltip="The primary audio clip."),
+                IO.Audio.Input("audio2", tooltip="The secondary audio clip to concatenate."),
                 IO.Combo.Input(
                     "direction",
                     options=['after', 'before'],
@@ -569,8 +584,8 @@ class AudioMerge(IO.ComfyNode):
             description="Combine two audio tracks by overlaying their waveforms.",
             category="audio",
             inputs=[
-                IO.Audio.Input("audio1"),
-                IO.Audio.Input("audio2"),
+                IO.Audio.Input("audio1", tooltip="First audio track."),
+                IO.Audio.Input("audio2", tooltip="Second audio track."),
                 IO.Combo.Input(
                     "merge_method",
                     options=["add", "mean", "subtract", "multiply"],
@@ -625,11 +640,12 @@ class AudioAdjustVolume(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="AudioAdjustVolume",
-            search_aliases=["audio gain", "loudness", "audio level"],
+            search_aliases=["audio gain", "loudness", "audio level", "volume boost"],
             display_name="Audio Adjust Volume",
+            description="Adjusts audio volume in decibels (dB), allowing amplification or attenuation.",
             category="audio",
             inputs=[
-                IO.Audio.Input("audio"),
+                IO.Audio.Input("audio", tooltip="The audio clip whose volume will be adjusted."),
                 IO.Int.Input(
                     "volume",
                     default=1,
@@ -661,8 +677,9 @@ class EmptyAudio(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="EmptyAudio",
-            search_aliases=["blank audio"],
+            search_aliases=["blank audio", "silent audio", "generate silence"],
             display_name="Empty Audio",
+            description="Generates a silent audio waveform clip with chosen duration, sample rate, and channel count.",
             category="audio",
             inputs=[
                 IO.Float.Input(
@@ -707,12 +724,13 @@ class AudioEqualizer3Band(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="AudioEqualizer3Band",
-            search_aliases=["eq", "bass boost", "treble boost", "equalizer"],
+            search_aliases=["eq", "bass boost", "treble boost", "equalizer", "3 band eq"],
             display_name="Audio Equalizer (3-Band)",
+            description="Applies a 3-band parametric equalizer (Low, Mid, High) to modify frequency response.",
             category="audio",
             is_experimental=True,
             inputs=[
-                IO.Audio.Input("audio"),
+                IO.Audio.Input("audio", tooltip="The input audio clip to equalize."),
                 IO.Float.Input("low_gain_dB", default=0.0, min=-24.0, max=24.0, step=0.1, tooltip="Gain for Low frequencies (Bass)"),
                 IO.Int.Input("low_freq", default=100, min=20, max=500, tooltip="Cutoff frequency for Low shelf"),
                 IO.Float.Input("mid_gain_dB", default=0.0, min=-24.0, max=24.0, step=0.1, tooltip="Gain for Mid frequencies"),
