@@ -1,4 +1,3 @@
-import os
 import pytest
 from unittest.mock import MagicMock
 from api_server.routes.internal.internal_routes import InternalRoutes
