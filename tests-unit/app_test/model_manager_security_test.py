@@ -1,5 +1,4 @@
 import pytest
-import os
 from aiohttp import web
 from unittest.mock import patch
 from app.model_manager import ModelFileManager
