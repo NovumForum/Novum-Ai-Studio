@@ -17,13 +17,15 @@ class SwitchNode(io.ComfyNode):
             display_name="Switch",
             category="logic",
             is_experimental=True,
+            description="Routes between two inputs (on_true or on_false) based on a boolean switch condition.",
+            search_aliases=["if", "branch", "select", "condition", "toggle", "chooser"],
             inputs=[
-                io.Boolean.Input("switch"),
-                io.MatchType.Input("on_false", template=template, lazy=True),
-                io.MatchType.Input("on_true", template=template, lazy=True),
+                io.Boolean.Input("switch", tooltip="Boolean flag: if True, passes on_true; if False, passes on_false."),
+                io.MatchType.Input("on_false", template=template, lazy=True, tooltip="Input value returned when switch is False."),
+                io.MatchType.Input("on_true", template=template, lazy=True, tooltip="Input value returned when switch is True."),
             ],
             outputs=[
-                io.MatchType.Output(template=template, display_name="output"),
+                io.MatchType.Output(template=template, display_name="output", tooltip="The selected input value based on switch condition."),
             ],
         )
 
@@ -48,13 +50,15 @@ class SoftSwitchNode(io.ComfyNode):
             display_name="Soft Switch",
             category="logic",
             is_experimental=True,
+            description="Routes between two inputs based on a boolean condition, gracefully falling back if one input is missing.",
+            search_aliases=["if", "fallback", "soft select", "condition", "toggle"],
             inputs=[
-                io.Boolean.Input("switch"),
-                io.MatchType.Input("on_false", template=template, lazy=True, optional=True),
-                io.MatchType.Input("on_true", template=template, lazy=True, optional=True),
+                io.Boolean.Input("switch", tooltip="Boolean flag: if True, returns on_true (or on_false if missing); if False, returns on_false (or on_true if missing)."),
+                io.MatchType.Input("on_false", template=template, lazy=True, optional=True, tooltip="Optional value returned when switch is False, or as fallback if on_true is missing."),
+                io.MatchType.Input("on_true", template=template, lazy=True, optional=True, tooltip="Optional value returned when switch is True, or as fallback if on_false is missing."),
             ],
             outputs=[
-                io.MatchType.Output(template=template, display_name="output"),
+                io.MatchType.Output(template=template, display_name="output", tooltip="The selected input value based on switch condition and available inputs."),
             ],
         )
 
@@ -103,10 +107,12 @@ class CustomComboNode(io.ComfyNode):
             display_name="Custom Combo",
             category="utils",
             is_experimental=True,
-            inputs=[io.Combo.Input("choice", options=[])],
+            description="Allows custom user-defined options in a dropdown combo widget.",
+            search_aliases=["custom dropdown", "user combo", "custom choice"],
+            inputs=[io.Combo.Input("choice", options=[], tooltip="Selected item from the custom combo dropdown.")],
             outputs=[
-                io.String.Output(display_name="STRING"),
-                io.Int.Output(display_name="INDEX"),
+                io.String.Output(display_name="STRING", tooltip="The selected item value as a string."),
+                io.Int.Output(display_name="INDEX", tooltip="The zero-based index of the selected item."),
             ],
             accept_all_inputs=True,
         )
@@ -231,8 +237,9 @@ class ConvertStringToComboNode(io.ComfyNode):
             search_aliases=["string to dropdown", "text to combo"],
             display_name="Convert String to Combo",
             category="logic",
-            inputs=[io.String.Input("string")],
-            outputs=[io.Combo.Output()],
+            description="Converts a string input into a combo dropdown value.",
+            inputs=[io.String.Input("string", tooltip="The text string to convert into a combo value.")],
+            outputs=[io.Combo.Output(tooltip="The converted combo value.")],
         )
 
     @classmethod
@@ -247,8 +254,9 @@ class InvertBooleanNode(io.ComfyNode):
             search_aliases=["not", "toggle", "negate", "flip boolean"],
             display_name="Invert Boolean",
             category="logic",
-            inputs=[io.Boolean.Input("boolean")],
-            outputs=[io.Boolean.Output()],
+            description="Inverts a boolean value (returns False if True, and True if False).",
+            inputs=[io.Boolean.Input("boolean", tooltip="The boolean value to invert.")],
+            outputs=[io.Boolean.Output(tooltip="The inverted boolean value.")],
         )
 
     @classmethod
