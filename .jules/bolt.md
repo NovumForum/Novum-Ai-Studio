@@ -1,0 +1,3 @@
+## 2025-05-18 - Vectorized Image Batch Rebatching
+**Learning:** `ImageRebatch.execute` previously unrolled all batch tensors into individual 1-frame Python tensor slices (`img[i:i+1]`) before re-grouping and calling `torch.cat` iteratively per batch slice. When image spatial shapes (H, W, C) match across input tensors, calling `torch.cat(images, dim=0)` once followed by `torch.split(cat_images, batch_size, dim=0)` avoids creating N Python tensor views and N/B redundant `torch.cat` calls.
+**Action:** Always check tensor shape uniformity across batch list inputs before batch operations in node execute routines to vectorize `cat` and `split` operations safely while maintaining a fallback for mixed-shape inputs.

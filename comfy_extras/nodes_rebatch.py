@@ -128,14 +128,23 @@ class ImageRebatch(io.ComfyNode):
     def execute(cls, images, batch_size):
         batch_size = batch_size[0]
 
-        output_list = []
-        all_images = []
-        for img in images:
-            for i in range(img.shape[0]):
-                all_images.append(img[i:i+1])
+        if not images:
+            return io.NodeOutput([])
 
-        for i in range(0, len(all_images), batch_size):
-            output_list.append(torch.cat(all_images[i:i+batch_size], dim=0))
+        # Vectorized optimization: single torch.cat + torch.split when all image spatial dimensions match
+        if all(img.shape[1:] == images[0].shape[1:] for img in images):
+            cat_images = torch.cat(images, dim=0)
+            output_list = list(torch.split(cat_images, batch_size, dim=0))
+        else:
+            # Fallback for mismatched spatial dimensions across images
+            output_list = []
+            all_images = []
+            for img in images:
+                for i in range(img.shape[0]):
+                    all_images.append(img[i:i+1])
+
+            for i in range(0, len(all_images), batch_size):
+                output_list.append(torch.cat(all_images[i:i+batch_size], dim=0))
 
         return io.NodeOutput(output_list)
 
