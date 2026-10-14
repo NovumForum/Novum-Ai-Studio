@@ -11,15 +11,16 @@ class Canny(io.ComfyNode):
         return io.Schema(
             node_id="Canny",
             display_name="Canny",
+            description="Applies Canny edge detection to extract line art and edge maps from images.",
             search_aliases=["edge detection", "outline", "contour detection", "line art"],
             category="image/preprocessors",
             essentials_category="Image Tools",
             inputs=[
-                io.Image.Input("image"),
-                io.Float.Input("low_threshold", default=0.4, min=0.01, max=0.99, step=0.01),
-                io.Float.Input("high_threshold", default=0.8, min=0.01, max=0.99, step=0.01),
+                io.Image.Input("image", tooltip="The image to detect edges on."),
+                io.Float.Input("low_threshold", default=0.4, min=0.01, max=0.99, step=0.01, tooltip="Lower bound gradient threshold. Edge pixels below this intensity are discarded."),
+                io.Float.Input("high_threshold", default=0.8, min=0.01, max=0.99, step=0.01, tooltip="Upper bound gradient threshold. Edge pixels above this intensity are retained as strong edges."),
             ],
-            outputs=[io.Image.Output()],
+            outputs=[io.Image.Output(tooltip="The output edge map image with detected contours.")],
         )
 
     @classmethod
