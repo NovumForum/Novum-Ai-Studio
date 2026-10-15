@@ -287,3 +287,51 @@ async def test_listuserdata_v2_url_encoded_path(aiohttp_client, app, tmp_path):
     assert entry["name"] == "file.txt"
     # Ensure the path is correctly decoded and uses forward slash
     assert entry["path"] == "my dir/file.txt"
+
+
+async def test_delete_userdata_file(aiohttp_client, app, tmp_path):
+    test_file = tmp_path / "file_to_delete.txt"
+    test_file.write_text("content")
+    assert test_file.exists()
+
+    client = await aiohttp_client(app)
+    resp = await client.delete("/userdata/file_to_delete.txt")
+    assert resp.status == 204
+    assert not test_file.exists()
+
+
+async def test_delete_userdata_directory(aiohttp_client, app, tmp_path):
+    test_dir = tmp_path / "dir_to_delete"
+    test_dir.mkdir()
+    (test_dir / "nested.txt").write_text("nested content")
+    assert test_dir.exists()
+
+    client = await aiohttp_client(app)
+    resp = await client.delete("/userdata/dir_to_delete")
+    assert resp.status == 204
+    assert not test_dir.exists()
+
+
+async def test_delete_userdata_unknown_user(aiohttp_client, app, user_manager, monkeypatch):
+    # Enable multi_user mode so comfy-user header is checked
+    monkeypatch.setattr("comfy.cli_args.args.multi_user", True)
+    # Restore original get_request_user_filepath behavior to trigger KeyError via get_request_user_id
+    user_manager.get_request_user_filepath = UserManager.get_request_user_filepath.__get__(user_manager, UserManager)
+    client = await aiohttp_client(app)
+    resp = await client.delete("/userdata/somefile.txt", headers={"comfy-user": "nonexistent_user"})
+    assert resp.status == 403
+
+
+async def test_delete_userdata_os_error(aiohttp_client, app, tmp_path, monkeypatch):
+    test_file = tmp_path / "error_file.txt"
+    test_file.write_text("content")
+
+    def mock_remove(path):
+        raise OSError("Permission denied")
+
+    monkeypatch.setattr(os, "remove", mock_remove)
+
+    client = await aiohttp_client(app)
+    resp = await client.delete("/userdata/error_file.txt")
+    assert resp.status == 400
+    assert "Failed to delete" in await resp.text()
