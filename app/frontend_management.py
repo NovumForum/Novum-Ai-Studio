@@ -177,6 +177,11 @@ def download_release_asset_zip(release: Release, destination_path: str) -> None:
 
         # Extract the zip file content to the destination path
         with zipfile.ZipFile(tmp_file, "r") as zip_ref:
+            dest_abs = os.path.abspath(destination_path)
+            for member in zip_ref.infolist():
+                member_path = os.path.abspath(os.path.join(destination_path, member.filename))
+                if os.path.commonpath([dest_abs, member_path]) != dest_abs:
+                    raise ValueError(f"Path traversal attempt detected in zip archive entry: {member.filename}")
             zip_ref.extractall(destination_path)
 
 
