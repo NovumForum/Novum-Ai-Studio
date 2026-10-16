@@ -30,15 +30,17 @@ class FreeU(IO.ComfyNode):
         return IO.Schema(
             node_id="FreeU",
             category="model_patches/unet",
+            description="Enhance diffusion image quality without re-training by rebalancing backbone model feature maps and skip connections.",
+            search_aliases=["freeu", "free u", "quality enhancement", "unet patch"],
             inputs=[
-                IO.Model.Input("model"),
-                IO.Float.Input("b1", default=1.1, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("b2", default=1.2, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("s1", default=0.9, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("s2", default=0.2, min=0.0, max=10.0, step=0.01, advanced=True),
+                IO.Model.Input("model", tooltip="The model to apply FreeU skip-connection rebalancing to."),
+                IO.Float.Input("b1", default=1.1, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Backbone 1 scaling factor for main feature map amplification."),
+                IO.Float.Input("b2", default=1.2, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Backbone 2 scaling factor for second-stage feature map amplification."),
+                IO.Float.Input("s1", default=0.9, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Skip 1 scaling factor for high-frequency skip connection filtering."),
+                IO.Float.Input("s2", default=0.2, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Skip 2 scaling factor for second-stage skip connection filtering."),
             ],
             outputs=[
-                IO.Model.Output(),
+                IO.Model.Output(tooltip="The model patched with FreeU feature rebalancing."),
             ],
         )
 
@@ -77,15 +79,17 @@ class FreeU_V2(IO.ComfyNode):
         return IO.Schema(
             node_id="FreeU_V2",
             category="model_patches/unet",
+            description="Improved FreeU v2 quality enhancement with mean-normalized feature map scaling.",
+            search_aliases=["freeu v2", "free u v2", "freeu2", "quality enhancement", "unet patch"],
             inputs=[
-                IO.Model.Input("model"),
-                IO.Float.Input("b1", default=1.3, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("b2", default=1.4, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("s1", default=0.9, min=0.0, max=10.0, step=0.01, advanced=True),
-                IO.Float.Input("s2", default=0.2, min=0.0, max=10.0, step=0.01, advanced=True),
+                IO.Model.Input("model", tooltip="The model to apply FreeU v2 skip-connection rebalancing to."),
+                IO.Float.Input("b1", default=1.3, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Backbone 1 scaling factor for main feature map amplification."),
+                IO.Float.Input("b2", default=1.4, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Backbone 2 scaling factor for second-stage feature map amplification."),
+                IO.Float.Input("s1", default=0.9, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Skip 1 scaling factor for high-frequency skip connection filtering."),
+                IO.Float.Input("s2", default=0.2, min=0.0, max=10.0, step=0.01, advanced=True, tooltip="Skip 2 scaling factor for second-stage skip connection filtering."),
             ],
             outputs=[
-                IO.Model.Output(),
+                IO.Model.Output(tooltip="The model patched with FreeU v2 feature rebalancing."),
             ],
         )
 

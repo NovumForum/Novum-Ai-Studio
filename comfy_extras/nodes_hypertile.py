@@ -28,15 +28,17 @@ class HyperTile(io.ComfyNode):
         return io.Schema(
             node_id="HyperTile",
             category="model_patches/unet",
+            description="Optimize UNet self-attention computation by dynamically split-tiling latent features to save memory during generation.",
+            search_aliases=["hypertile", "attention tiling", "speedup", "tile attention", "vram optimization"],
             inputs=[
-                io.Model.Input("model"),
-                io.Int.Input("tile_size", default=256, min=1, max=2048, advanced=True),
-                io.Int.Input("swap_size", default=2, min=1, max=128, advanced=True),
-                io.Int.Input("max_depth", default=0, min=0, max=10, advanced=True),
-                io.Boolean.Input("scale_depth", default=False, advanced=True),
+                io.Model.Input("model", tooltip="The model to apply HyperTile self-attention patch to."),
+                io.Int.Input("tile_size", default=256, min=1, max=2048, advanced=True, tooltip="Target tile size in pixel dimensions for splitting self-attention maps."),
+                io.Int.Input("swap_size", default=2, min=1, max=128, advanced=True, tooltip="Divisor swap parameter controlling random tiling granularity."),
+                io.Int.Input("max_depth", default=0, min=0, max=10, advanced=True, tooltip="Maximum UNet depth level to apply attention split-tiling."),
+                io.Boolean.Input("scale_depth", default=False, advanced=True, tooltip="Whether to scale tile size factor relative to depth level."),
             ],
             outputs=[
-                io.Model.Output(),
+                io.Model.Output(tooltip="The model patched with HyperTile self-attention optimization."),
             ],
         )
 
