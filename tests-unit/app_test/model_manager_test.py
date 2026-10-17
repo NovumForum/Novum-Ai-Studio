@@ -60,3 +60,32 @@ async def test_get_model_preview_safetensors(aiohttp_client, app, tmp_path):
 
         # Clean up
         img.close()
+
+async def test_get_model_preview_invalid_path_index(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+        response = await client.get('/experiment/models/preview/test_folder/not_an_int/test.safetensors')
+        assert response.status == 400
+
+async def test_get_model_preview_path_index_out_of_bounds(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+        response = await client.get('/experiment/models/preview/test_folder/999/test.safetensors')
+        assert response.status == 404
+        response_neg = await client.get('/experiment/models/preview/test_folder/-1/test.safetensors')
+        assert response_neg.status == 404
+
+import yarl
+
+async def test_get_model_preview_path_traversal(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+        url = yarl.URL('/experiment/models/preview/test_folder/0/..%2f..%2fsecret.txt', encoded=True)
+        response = await client.get(url)
+        assert response.status == 403
