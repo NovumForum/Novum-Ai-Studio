@@ -320,16 +320,20 @@ class VAEDecode:
 class VAEDecodeTiled:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": {"samples": ("LATENT", ), "vae": ("VAE", ),
-                             "tile_size": ("INT", {"default": 512, "min": 64, "max": 4096, "step": 32, "advanced": True}),
-                             "overlap": ("INT", {"default": 64, "min": 0, "max": 4096, "step": 32, "advanced": True}),
+        return {"required": {"samples": ("LATENT", {"tooltip": "The latent to be decoded."}),
+                             "vae": ("VAE", {"tooltip": "The VAE model used for decoding the latent."}),
+                             "tile_size": ("INT", {"default": 512, "min": 64, "max": 4096, "step": 32, "advanced": True, "tooltip": "The width and height of each tile in pixels processed at a time."}),
+                             "overlap": ("INT", {"default": 64, "min": 0, "max": 4096, "step": 32, "advanced": True, "tooltip": "The pixel overlap between adjacent tiles to prevent seam artifacts."}),
                              "temporal_size": ("INT", {"default": 64, "min": 8, "max": 4096, "step": 4, "tooltip": "Only used for video VAEs: Amount of frames to decode at a time.", "advanced": True}),
                              "temporal_overlap": ("INT", {"default": 8, "min": 4, "max": 4096, "step": 4, "tooltip": "Only used for video VAEs: Amount of frames to overlap.", "advanced": True}),
                             }}
     RETURN_TYPES = ("IMAGE",)
+    OUTPUT_TOOLTIPS = ("The decoded image.",)
     FUNCTION = "decode"
 
     CATEGORY = "_for_testing"
+    DESCRIPTION = "Decodes latent images into pixel space images using tile processing to significantly reduce memory usage during high-resolution decoding."
+    SEARCH_ALIASES = ["tiled vae decode", "tiled decode", "decode tiled", "tile decode", "low vram decode", "memory efficient decode"]
 
     def decode(self, vae, samples, tile_size, overlap=64, temporal_size=64, temporal_overlap=8):
         if tile_size < overlap * 4:
@@ -367,16 +371,20 @@ class VAEEncode:
 class VAEEncodeTiled:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": {"pixels": ("IMAGE", ), "vae": ("VAE", ),
-                             "tile_size": ("INT", {"default": 512, "min": 64, "max": 4096, "step": 64, "advanced": True}),
-                             "overlap": ("INT", {"default": 64, "min": 0, "max": 4096, "step": 32, "advanced": True}),
+        return {"required": {"pixels": ("IMAGE", {"tooltip": "The image to be encoded into latent space."}),
+                             "vae": ("VAE", {"tooltip": "The VAE model used for encoding the image."}),
+                             "tile_size": ("INT", {"default": 512, "min": 64, "max": 4096, "step": 64, "advanced": True, "tooltip": "The width and height of each tile in pixels processed at a time."}),
+                             "overlap": ("INT", {"default": 64, "min": 0, "max": 4096, "step": 32, "advanced": True, "tooltip": "The pixel overlap between adjacent tiles to prevent seam artifacts."}),
                              "temporal_size": ("INT", {"default": 64, "min": 8, "max": 4096, "step": 4, "tooltip": "Only used for video VAEs: Amount of frames to encode at a time.", "advanced": True}),
                              "temporal_overlap": ("INT", {"default": 8, "min": 4, "max": 4096, "step": 4, "tooltip": "Only used for video VAEs: Amount of frames to overlap.", "advanced": True}),
                             }}
     RETURN_TYPES = ("LATENT",)
+    OUTPUT_TOOLTIPS = ("The encoded latent image.",)
     FUNCTION = "encode"
 
     CATEGORY = "_for_testing"
+    DESCRIPTION = "Encodes pixel space images into latent space using tile processing to significantly reduce memory usage during high-resolution encoding."
+    SEARCH_ALIASES = ["tiled vae encode", "tiled encode", "encode tiled", "tile encode", "low vram encode", "memory efficient encode"]
 
     def encode(self, vae, pixels, tile_size, overlap, temporal_size=64, temporal_overlap=8):
         t = vae.encode_tiled(pixels, tile_x=tile_size, tile_y=tile_size, overlap=overlap, tile_t=temporal_size, overlap_t=temporal_overlap)
