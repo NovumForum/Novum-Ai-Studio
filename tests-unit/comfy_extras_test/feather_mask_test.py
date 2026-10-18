@@ -1,4 +1,3 @@
-import pytest
 import torch
 from comfy_extras.nodes_mask import FeatherMask
 
