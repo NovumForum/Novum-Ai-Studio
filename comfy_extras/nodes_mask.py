@@ -177,13 +177,16 @@ class SolidMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="SolidMask",
+            display_name="Solid Mask",
+            description="Generates a solid uniform mask filled with a specified scalar value.",
+            search_aliases=["constant mask", "fill mask", "blank mask", "uniform mask", "create mask"],
             category="mask",
             inputs=[
-                IO.Float.Input("value", default=1.0, min=0.0, max=1.0, step=0.01),
-                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
+                IO.Float.Input("value", default=1.0, min=0.0, max=1.0, step=0.01, tooltip="Fill value for the mask from 0.0 (black/fully transparent) to 1.0 (white/fully opaque)."),
+                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="Width of the generated solid mask in pixels."),
+                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="Height of the generated solid mask in pixels."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The generated solid uniform mask tensor.")],
         )
 
     @classmethod
@@ -199,12 +202,14 @@ class InvertMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="InvertMask",
-            search_aliases=["reverse mask", "flip mask"],
+            display_name="Invert Mask",
+            description="Inverts a mask by subtracting each pixel value from 1.0 (flips black and white areas).",
+            search_aliases=["reverse mask", "flip mask", "negate mask", "invert alpha"],
             category="mask",
             inputs=[
-                IO.Mask.Input("mask"),
+                IO.Mask.Input("mask", tooltip="The mask tensor to invert."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The inverted mask tensor.")],
         )
 
     @classmethod
@@ -220,16 +225,18 @@ class CropMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="CropMask",
-            search_aliases=["cut mask", "extract mask region", "mask slice"],
+            display_name="Crop Mask",
+            description="Crops a rectangular bounding box region from the input mask.",
+            search_aliases=["cut mask", "extract mask region", "mask slice", "trim mask", "crop alpha"],
             category="mask",
             inputs=[
-                IO.Mask.Input("mask"),
-                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
+                IO.Mask.Input("mask", tooltip="The input mask tensor to crop."),
+                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="The starting X (horizontal) coordinate for cropping."),
+                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="The starting Y (vertical) coordinate for cropping."),
+                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="The width of the cropped mask area."),
+                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="The height of the cropped mask area."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The cropped mask region tensor.")],
         )
 
     @classmethod
@@ -380,13 +387,15 @@ class ThresholdMask(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ThresholdMask",
-            search_aliases=["binary mask"],
+            display_name="Threshold Mask",
+            description="Converts a grayscale mask into a binary mask by thresholding values above a specified limit to 1.0 and others to 0.0.",
+            search_aliases=["binary mask", "mask threshold", "binarize mask", "mask cutoff", "black and white mask"],
             category="mask",
             inputs=[
-                IO.Mask.Input("mask"),
-                IO.Float.Input("value", default=0.5, min=0.0, max=1.0, step=0.01),
+                IO.Mask.Input("mask", tooltip="The input mask tensor to threshold."),
+                IO.Float.Input("value", default=0.5, min=0.0, max=1.0, step=0.01, tooltip="Threshold cutoff limit between 0.0 and 1.0. Values greater than this threshold become 1.0, others become 0.0."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The binarized threshold mask tensor.")],
         )
 
     @classmethod
