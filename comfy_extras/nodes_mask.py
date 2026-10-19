@@ -355,22 +355,47 @@ class GrowMask(IO.ComfyNode):
 
     @classmethod
     def execute(cls, mask, expand, tapered_corners) -> IO.NodeOutput:
-        c = 0 if tapered_corners else 1
-        kernel = np.array([[c, 1, c],
-                           [1, 1, 1],
-                           [c, 1, c]])
-        mask = mask.reshape((-1, mask.shape[-2], mask.shape[-1]))
-        out = []
-        for m in mask:
-            output = m.numpy()
-            for _ in range(abs(expand)):
-                if expand < 0:
-                    output = scipy.ndimage.grey_erosion(output, footprint=kernel)
-                else:
-                    output = scipy.ndimage.grey_dilation(output, footprint=kernel)
-            output = torch.from_numpy(output)
-            out.append(output)
-        return IO.NodeOutput(torch.stack(out, dim=0))
+        if expand == 0:
+            return IO.NodeOutput(mask)
+
+        # Vectorized PyTorch mask expansion/erosion across the batch
+        mask_3d = mask.reshape((-1, mask.shape[-2], mask.shape[-1]))
+        mask_4d = mask_3d.unsqueeze(1)  # Shape: (B, 1, H, W)
+        abs_expand = abs(expand)
+
+        if not tapered_corners:
+            # Square 3x3 structuring element: max_pool2d over a (2*abs_expand + 1) window
+            padding = abs_expand
+            kernel_size = 2 * padding + 1
+            if expand > 0:
+                out = torch.nn.functional.max_pool2d(mask_4d, kernel_size=kernel_size, stride=1, padding=padding)
+            else:
+                out = -torch.nn.functional.max_pool2d(-mask_4d, kernel_size=kernel_size, stride=1, padding=padding)
+        else:
+            # Cross 3x3 structuring element
+            out = mask_4d
+            if expand > 0:
+                for _ in range(abs_expand):
+                    padded = torch.nn.functional.pad(out, (1, 1, 1, 1), mode="replicate")
+                    out = torch.maximum(
+                        padded[:, :, 1:-1, 1:-1],
+                        torch.maximum(
+                            torch.maximum(padded[:, :, :-2, 1:-1], padded[:, :, 2:, 1:-1]),
+                            torch.maximum(padded[:, :, 1:-1, :-2], padded[:, :, 1:-1, 2:])
+                        )
+                    )
+            else:
+                for _ in range(abs_expand):
+                    padded = torch.nn.functional.pad(out, (1, 1, 1, 1), mode="replicate")
+                    out = torch.minimum(
+                        padded[:, :, 1:-1, 1:-1],
+                        torch.minimum(
+                            torch.minimum(padded[:, :, :-2, 1:-1], padded[:, :, 2:, 1:-1]),
+                            torch.minimum(padded[:, :, 1:-1, :-2], padded[:, :, 1:-1, 2:])
+                        )
+                    )
+
+        return IO.NodeOutput(out.squeeze(1))
 
     expand_mask = execute  # TODO: remove
 
