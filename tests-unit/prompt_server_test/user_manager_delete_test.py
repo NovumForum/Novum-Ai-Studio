@@ -2,7 +2,6 @@ import os
 import pytest
 from aiohttp import web
 from app.user_manager import UserManager
-from unittest.mock import patch
 
 pytestmark = pytest.mark.asyncio
 
