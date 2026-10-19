@@ -21,14 +21,15 @@ class LatentAdd(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="LatentAdd",
+            description="Adds two latent representations together element-wise. Automatically rescales spatial dimensions if sizes differ.",
             search_aliases=["combine latents", "sum latents"],
             category="latent/advanced",
             inputs=[
-                io.Latent.Input("samples1"),
-                io.Latent.Input("samples2"),
+                io.Latent.Input("samples1", tooltip="The primary latent samples tensor."),
+                io.Latent.Input("samples2", tooltip="The secondary latent samples tensor to add to samples1."),
             ],
             outputs=[
-                io.Latent.Output(),
+                io.Latent.Output(tooltip="The element-wise sum of the input latent representations."),
             ],
         )
 
@@ -48,14 +49,15 @@ class LatentSubtract(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="LatentSubtract",
+            description="Subtracts one latent representation from another element-wise (samples1 - samples2). Automatically rescales spatial dimensions if sizes differ.",
             search_aliases=["difference latent", "remove features"],
             category="latent/advanced",
             inputs=[
-                io.Latent.Input("samples1"),
-                io.Latent.Input("samples2"),
+                io.Latent.Input("samples1", tooltip="The base latent samples tensor."),
+                io.Latent.Input("samples2", tooltip="The latent samples tensor to subtract from samples1."),
             ],
             outputs=[
-                io.Latent.Output(),
+                io.Latent.Output(tooltip="The element-wise difference of the input latent representations."),
             ],
         )
 
@@ -75,14 +77,15 @@ class LatentMultiply(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="LatentMultiply",
+            description="Multiplies a latent representation by a scalar multiplier to scale latent feature magnitudes.",
             search_aliases=["scale latent", "amplify latent", "latent gain"],
             category="latent/advanced",
             inputs=[
-                io.Latent.Input("samples"),
-                io.Float.Input("multiplier", default=1.0, min=-10.0, max=10.0, step=0.01),
+                io.Latent.Input("samples", tooltip="The input latent samples tensor to scale."),
+                io.Float.Input("multiplier", default=1.0, min=-10.0, max=10.0, step=0.01, tooltip="The scalar factor to multiply the latent tensor by."),
             ],
             outputs=[
-                io.Latent.Output(),
+                io.Latent.Output(tooltip="The scaled latent representation."),
             ],
         )
 
@@ -99,15 +102,16 @@ class LatentInterpolate(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="LatentInterpolate",
+            description="Blends two latent representations using spherical vector norm interpolation based on the given ratio.",
             search_aliases=["blend latent", "mix latent", "lerp latent", "transition"],
             category="latent/advanced",
             inputs=[
-                io.Latent.Input("samples1"),
-                io.Latent.Input("samples2"),
-                io.Float.Input("ratio", default=1.0, min=0.0, max=1.0, step=0.01),
+                io.Latent.Input("samples1", tooltip="The first latent samples tensor (weight = ratio)."),
+                io.Latent.Input("samples2", tooltip="The second latent samples tensor (weight = 1.0 - ratio)."),
+                io.Float.Input("ratio", default=1.0, min=0.0, max=1.0, step=0.01, tooltip="The blend weight ratio. 1.0 produces 100% samples1, while 0.0 produces 100% samples2."),
             ],
             outputs=[
-                io.Latent.Output(),
+                io.Latent.Output(tooltip="The interpolated latent representation."),
             ],
         )
 
@@ -138,15 +142,16 @@ class LatentConcat(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="LatentConcat",
+            description="Concatenates two latent representations along the specified dimension (width x, height y, or time/batch t).",
             search_aliases=["join latents", "stitch latents"],
             category="latent/advanced",
             inputs=[
-                io.Latent.Input("samples1"),
-                io.Latent.Input("samples2"),
-                io.Combo.Input("dim", options=["x", "-x", "y", "-y", "t", "-t"]),
+                io.Latent.Input("samples1", tooltip="The first latent samples tensor."),
+                io.Latent.Input("samples2", tooltip="The second latent samples tensor to concatenate with samples1."),
+                io.Combo.Input("dim", options=["x", "-x", "y", "-y", "t", "-t"], tooltip="The axis and direction along which to concatenate the latents."),
             ],
             outputs=[
-                io.Latent.Output(),
+                io.Latent.Output(tooltip="The concatenated latent representation."),
             ],
         )
 
