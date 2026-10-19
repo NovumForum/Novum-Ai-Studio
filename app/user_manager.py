@@ -400,7 +400,16 @@ class UserManager():
             if not isinstance(path, str):
                 return path
 
-            os.remove(path)
+            try:
+                if os.path.isdir(path):
+                    shutil.rmtree(path)
+                else:
+                    os.remove(path)
+            except FileNotFoundError:
+                return web.Response(status=404, text="File or directory not found")
+            except OSError as e:
+                logging.warning(f"Error deleting user data file/directory '{path}': {e}")
+                return web.Response(status=400, text="Error deleting item")
 
             return web.Response(status=204)
 
