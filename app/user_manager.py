@@ -321,7 +321,11 @@ class UserManager():
             if not file:
                 return web.Response(status=400)
 
-            path = self.get_request_user_filepath(request, file)
+            try:
+                path = self.get_request_user_filepath(request, file)
+            except KeyError:
+                return web.Response(status=403)
+
             if not path:
                 return web.Response(status=403)
 
@@ -400,7 +404,16 @@ class UserManager():
             if not isinstance(path, str):
                 return path
 
-            os.remove(path)
+            try:
+                if os.path.isdir(path):
+                    shutil.rmtree(path)
+                else:
+                    os.remove(path)
+            except FileNotFoundError:
+                return web.Response(status=404)
+            except OSError as e:
+                logging.warning(f"Error deleting user data path '{path}': {e}")
+                return web.Response(status=400)
 
             return web.Response(status=204)
 
