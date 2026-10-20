@@ -180,9 +180,13 @@ class SplitImageWithAlpha(io.ComfyNode):
 
     @classmethod
     def execute(cls, image: torch.Tensor) -> io.NodeOutput:
-        out_images = [i[:,:,:3] for i in image]
-        out_alphas = [i[:,:,3] if i.shape[2] > 3 else torch.ones_like(i[:,:,0]) for i in image]
-        return io.NodeOutput(torch.stack(out_images), 1.0 - torch.stack(out_alphas))
+        # Vectorized 4D tensor slicing across the batch eliminates per-frame Python loops and torch.stack
+        out_images = image[..., :3]
+        if image.shape[-1] > 3:
+            out_alphas = image[..., 3]
+        else:
+            out_alphas = torch.ones(image.shape[:3], device=image.device, dtype=image.dtype)
+        return io.NodeOutput(out_images, 1.0 - out_alphas)
 
 
 class JoinImageWithAlpha(io.ComfyNode):
