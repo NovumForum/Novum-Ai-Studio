@@ -60,3 +60,36 @@ async def test_get_model_preview_safetensors(aiohttp_client, app, tmp_path):
 
         # Clean up
         img.close()
+
+
+async def test_get_model_preview_invalid_path_index(aiohttp_client, app, tmp_path):
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(tmp_path)], None)
+    }):
+        client = await aiohttp_client(app)
+        # Non-integer path_index
+        response = await client.get('/experiment/models/preview/test_folder/abc/test_model.safetensors')
+        assert response.status == 400
+
+        # Out-of-bounds path_index (positive)
+        response = await client.get('/experiment/models/preview/test_folder/999/test_model.safetensors')
+        assert response.status == 404
+
+        # Out-of-bounds path_index (negative)
+        response = await client.get('/experiment/models/preview/test_folder/-1/test_model.safetensors')
+        assert response.status == 404
+
+
+async def test_get_model_preview_path_traversal(aiohttp_client, app, tmp_path):
+    sub_dir = tmp_path / "subfolder"
+    sub_dir.mkdir()
+    with patch('folder_paths.folder_names_and_paths', {
+        'test_folder': ([str(sub_dir)], None)
+    }):
+        client = await aiohttp_client(app)
+        # Directory traversal attempt pointing outside sub_dir to tmp_path
+        file_outside = tmp_path / "outside.png"
+        file_outside.write_bytes(b"fake")
+
+        response = await client.get('/experiment/models/preview/test_folder/0/..%2Foutside.png')
+        assert response.status == 403
