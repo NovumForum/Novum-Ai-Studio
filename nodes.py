@@ -413,11 +413,9 @@ class VAEEncodeForInpaint:
 
             mask_erosion = torch.clamp(torch.nn.functional.conv2d(mask.round(), kernel_tensor, padding=padding), 0, 1)
 
-        m = (1.0 - mask.round()).squeeze(1)
-        for i in range(3):
-            pixels[:,:,:,i] -= 0.5
-            pixels[:,:,:,i] *= m
-            pixels[:,:,:,i] += 0.5
+        # Vectorized 4D broadcast calculation across all channels to replace per-channel loop
+        m = (1.0 - mask.round()).squeeze(1).unsqueeze(-1)
+        pixels = (pixels - 0.5) * m + 0.5
         t = vae.encode(pixels)
 
         return ({"samples":t, "noise_mask": (mask_erosion[:,:,:x,:y].round())}, )
@@ -453,11 +451,9 @@ class InpaintModelConditioning:
             pixels = pixels[:,x_offset:x + x_offset, y_offset:y + y_offset,:]
             mask = mask[:,:,x_offset:x + x_offset, y_offset:y + y_offset]
 
-        m = (1.0 - mask.round()).squeeze(1)
-        for i in range(3):
-            pixels[:,:,:,i] -= 0.5
-            pixels[:,:,:,i] *= m
-            pixels[:,:,:,i] += 0.5
+        # Vectorized 4D broadcast calculation across all channels to replace per-channel loop
+        m = (1.0 - mask.round()).squeeze(1).unsqueeze(-1)
+        pixels = (pixels - 0.5) * m + 0.5
         concat_latent = vae.encode(pixels)
         orig_latent = vae.encode(orig_pixels)
 
