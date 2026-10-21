@@ -173,8 +173,9 @@ class ImageAddNoise(IO.ComfyNode):
 
     @classmethod
     def execute(cls, image, seed, strength) -> IO.NodeOutput:
-        generator = torch.manual_seed(seed)
-        s = torch.clip((image + strength * torch.randn(image.size(), generator=generator, device="cpu").to(image)), min=0.0, max=1.0)
+        generator = torch.Generator(device=image.device).manual_seed(seed)
+        noise = torch.randn(image.size(), generator=generator, device=image.device, dtype=image.dtype)
+        s = torch.clamp(image + strength * noise, min=0.0, max=1.0)
         return IO.NodeOutput(s)
 
     repeat = execute  # TODO: remove
