@@ -342,7 +342,26 @@ def recursive_search(directory: str, excluded_dir_names: list[str] | None=None) 
     return result, dirs
 
 def filter_files_extensions(files: Collection[str], extensions: Collection[str]) -> list[str]:
-    return sorted(list(filter(lambda a: os.path.splitext(a)[-1].lower() in extensions or len(extensions) == 0, files)))
+    if not extensions:
+        return sorted(files)
+    ext_set = {e.lower() for e in extensions}
+
+    sep = os.sep
+    altsep = os.altsep
+
+    filtered = []
+    for f in files:
+        dot_idx = f.rfind('.')
+        if dot_idx > 0:
+            sep_idx = f.rfind(sep)
+            if altsep:
+                alt_idx = f.rfind(altsep)
+                if alt_idx > sep_idx:
+                    sep_idx = alt_idx
+            if dot_idx > sep_idx + 1:
+                if f[dot_idx:].lower() in ext_set:
+                    filtered.append(f)
+    return sorted(filtered)
 
 
 
