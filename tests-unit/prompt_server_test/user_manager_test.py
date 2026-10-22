@@ -287,3 +287,30 @@ async def test_listuserdata_v2_url_encoded_path(aiohttp_client, app, tmp_path):
     assert entry["name"] == "file.txt"
     # Ensure the path is correctly decoded and uses forward slash
     assert entry["path"] == "my dir/file.txt"
+
+
+async def test_delete_userdata_file(aiohttp_client, app, tmp_path):
+    file_path = tmp_path / "to_delete.txt"
+    file_path.write_text("content")
+
+    client = await aiohttp_client(app)
+    resp = await client.delete("/userdata/to_delete.txt")
+    assert resp.status == 204
+    assert not file_path.exists()
+
+
+async def test_delete_userdata_directory(aiohttp_client, app, tmp_path):
+    dir_path = tmp_path / "to_delete_dir"
+    dir_path.mkdir()
+    (dir_path / "nested.txt").write_text("nested content")
+
+    client = await aiohttp_client(app)
+    resp = await client.delete("/userdata/to_delete_dir")
+    assert resp.status == 204
+    assert not dir_path.exists()
+
+
+async def test_delete_userdata_nonexistent(aiohttp_client, app):
+    client = await aiohttp_client(app)
+    resp = await client.delete("/userdata/nonexistent.txt")
+    assert resp.status == 404
