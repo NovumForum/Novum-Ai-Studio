@@ -1,4 +1,4 @@
-#from: https://research.nvidia.com/labs/toronto-ai/AlignYourSteps/howto.html
+# from: https://research.nvidia.com/labs/toronto-ai/AlignYourSteps/howto.html
 import numpy as np
 import torch
 from typing_extensions import override
@@ -19,23 +19,92 @@ def loglinear_interp(t_steps, num_steps):
     interped_ys = np.exp(new_ys)[::-1].copy()
     return interped_ys
 
-NOISE_LEVELS = {"SD1": [14.6146412293, 6.4745760956,  3.8636745985,  2.6946151520, 1.8841921177,  1.3943805092,  0.9642583904,  0.6523686016, 0.3977456272,  0.1515232662,  0.0291671582],
-                "SDXL":[14.6146412293, 6.3184485287,  3.7681790315,  2.1811480769, 1.3405244945,  0.8620721141,  0.5550693289,  0.3798540708, 0.2332364134,  0.1114188177,  0.0291671582],
-                "SVD": [700.00, 54.5, 15.886, 7.977, 4.248, 1.789, 0.981, 0.403, 0.173, 0.034, 0.002]}
+
+NOISE_LEVELS = {
+    "SD1": [
+        14.6146412293,
+        6.4745760956,
+        3.8636745985,
+        2.6946151520,
+        1.8841921177,
+        1.3943805092,
+        0.9642583904,
+        0.6523686016,
+        0.3977456272,
+        0.1515232662,
+        0.0291671582,
+    ],
+    "SDXL": [
+        14.6146412293,
+        6.3184485287,
+        3.7681790315,
+        2.1811480769,
+        1.3405244945,
+        0.8620721141,
+        0.5550693289,
+        0.3798540708,
+        0.2332364134,
+        0.1114188177,
+        0.0291671582,
+    ],
+    "SVD": [
+        700.00,
+        54.5,
+        15.886,
+        7.977,
+        4.248,
+        1.789,
+        0.981,
+        0.403,
+        0.173,
+        0.034,
+        0.002,
+    ],
+}
+
 
 class AlignYourStepsScheduler(io.ComfyNode):
     @classmethod
     def define_schema(cls) -> io.Schema:
         return io.Schema(
             node_id="AlignYourStepsScheduler",
-            search_aliases=["AYS scheduler"],
+            display_name="Align Your Steps Scheduler",
+            description="Generates model-specific noise schedule sigmas (SD1, SDXL, SVD) optimized using the Align Your Steps (AYS) technique.",
+            search_aliases=[
+                "ays",
+                "align your steps",
+                "ays scheduler",
+                "noise schedule",
+                "sigmas",
+            ],
             category="sampling/custom_sampling/schedulers",
             inputs=[
-                io.Combo.Input("model_type", options=["SD1", "SDXL", "SVD"]),
-                io.Int.Input("steps", default=10, min=1, max=10000),
-                io.Float.Input("denoise", default=1.0, min=0.0, max=1.0, step=0.01),
+                io.Combo.Input(
+                    "model_type",
+                    options=["SD1", "SDXL", "SVD"],
+                    tooltip="Model architecture to select the pre-computed optimal noise schedule for (SD1, SDXL, or SVD).",
+                ),
+                io.Int.Input(
+                    "steps",
+                    default=10,
+                    min=1,
+                    max=10000,
+                    tooltip="Number of total sampling steps for the noise schedule.",
+                ),
+                io.Float.Input(
+                    "denoise",
+                    default=1.0,
+                    min=0.0,
+                    max=1.0,
+                    step=0.01,
+                    tooltip="Denoise strength multiplier (0.0 to 1.0) controlling the total step count.",
+                ),
             ],
-            outputs=[io.Sigmas.Output()],
+            outputs=[
+                io.Sigmas.Output(
+                    tooltip="Generated sigmas noise schedule for custom sampler nodes."
+                )
+            ],
         )
 
     def get_sigmas(self, model_type, steps, denoise):
@@ -54,7 +123,7 @@ class AlignYourStepsScheduler(io.ComfyNode):
         if (steps + 1) != len(sigmas):
             sigmas = loglinear_interp(sigmas, steps + 1)
 
-        sigmas = sigmas[-(total_steps + 1):]
+        sigmas = sigmas[-(total_steps + 1) :]
         sigmas[-1] = 0
         return io.NodeOutput(torch.FloatTensor(sigmas))
 
@@ -65,6 +134,7 @@ class AlignYourStepsExtension(ComfyExtension):
         return [
             AlignYourStepsScheduler,
         ]
+
 
 async def comfy_entrypoint() -> AlignYourStepsExtension:
     return AlignYourStepsExtension()
