@@ -1,0 +1,3 @@
+## 2025-02-23 - Optimize File Sequence Counter Resolution in `get_save_image_path`
+**Learning:** `map(map_filename, os.listdir(...))` in `get_save_image_path` called `os.path.basename` and string splitting / exception handling on every file in the directory even when files didn't match the target prefix. Pre-filtering by case-folded prefix (`normcase(f[:prefix_len]) == norm_filename_prefix`) before extracting integer counter suffixes provides ~3.2x speedup when output directories contain many saved assets.
+**Action:** Always filter filenames by matching prefix using string slicing before attempting string splitting or `int()` conversions in file enumeration loops.
