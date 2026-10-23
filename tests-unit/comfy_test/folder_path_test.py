@@ -116,6 +116,33 @@ def test_get_save_image_path(temp_dir):
         assert filename_prefix == "test"
 
 
+def test_get_save_image_path_counters(temp_dir):
+    # Test counter increments when matching files exist
+    open(os.path.join(temp_dir, "test_00001_.png"), "w").close()
+    open(os.path.join(temp_dir, "test_00005_.png"), "w").close()
+    open(os.path.join(temp_dir, "other_00010_.png"), "w").close()
+
+    _, _, counter, _, _ = folder_paths.get_save_image_path("test", temp_dir)
+    assert counter == 6
+
+    # Test with non-matching prefixes returns counter 1
+    _, _, counter, _, _ = folder_paths.get_save_image_path("non_existent_prefix", temp_dir)
+    assert counter == 1
+
+    # Test handling files without valid integer suffix
+    open(os.path.join(temp_dir, "invalid_abc_.png"), "w").close()
+    _, _, counter, _, _ = folder_paths.get_save_image_path("invalid", temp_dir)
+    assert counter == 1
+
+    # Test auto-creation of missing nested output folder
+    nested_dir = os.path.join(temp_dir, "sub_folder")
+    full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path("sub_folder/test", temp_dir)
+    assert os.path.isdir(nested_dir)
+    assert filename == "test"
+    assert counter == 1
+    assert subfolder == "sub_folder"
+
+
 def test_base_path_changes(set_base_dir):
     test_dir = os.path.abspath("/test/dir")
     set_base_dir(test_dir)
