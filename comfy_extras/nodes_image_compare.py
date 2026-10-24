@@ -13,13 +13,14 @@ class ImageCompare(IO.ComfyNode):
             node_id="ImageCompare",
             display_name="Image Compare",
             description="Compares two images side by side with a slider.",
+            search_aliases=["image comparison", "side by side", "diff", "compare images"],
             category="image",
             is_experimental=True,
             is_output_node=True,
             inputs=[
-                IO.Image.Input("image_a", optional=True),
-                IO.Image.Input("image_b", optional=True),
-                IO.ImageCompare.Input("compare_view"),
+                IO.Image.Input("image_a", optional=True, tooltip="First image or image batch to compare."),
+                IO.Image.Input("image_b", optional=True, tooltip="Second image or image batch to compare."),
+                IO.ImageCompare.Input("compare_view", tooltip="Interactive side-by-side visual comparison view widget."),
             ],
             outputs=[],
         )
