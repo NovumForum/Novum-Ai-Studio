@@ -129,4 +129,6 @@ class SubgraphManager:
         async def get_global_subgraph(request):
             id = request.match_info.get("id", None)
             subgraph = await self.get_subgraph(id, loadedModules)
+            if subgraph is None:
+                return web.json_response({"error": "Subgraph not found"}, status=404)
             return web.json_response(await self.sanitize_entry(subgraph))
