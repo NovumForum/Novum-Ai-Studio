@@ -1,6 +1,5 @@
 import ast
 import torch
-import pytest
 from comfy_extras.nodes_compositing import JoinImageWithAlpha, resize_mask
 
 def old_join_image_with_alpha_execute(image: torch.Tensor, alpha: torch.Tensor):
