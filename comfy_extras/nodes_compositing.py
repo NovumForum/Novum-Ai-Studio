@@ -111,17 +111,18 @@ class PorterDuffImageComposite(io.ComfyNode):
             node_id="PorterDuffImageComposite",
             search_aliases=["alpha composite", "blend modes", "layer blend", "transparency blend"],
             display_name="Porter-Duff Image Composite",
+            description="Composites a source image onto a destination image using Porter-Duff blend modes and alpha channels.",
             category="mask/compositing",
             inputs=[
-                io.Image.Input("source"),
-                io.Mask.Input("source_alpha"),
-                io.Image.Input("destination"),
-                io.Mask.Input("destination_alpha"),
-                io.Combo.Input("mode", options=[mode.name for mode in PorterDuffMode], default=PorterDuffMode.DST.name),
+                io.Image.Input("source", tooltip="The source image tensor for compositing."),
+                io.Mask.Input("source_alpha", tooltip="The source mask tensor representing transparency."),
+                io.Image.Input("destination", tooltip="The destination background image tensor."),
+                io.Mask.Input("destination_alpha", tooltip="The destination mask tensor representing transparency."),
+                io.Combo.Input("mode", options=[mode.name for mode in PorterDuffMode], default=PorterDuffMode.DST.name, tooltip="The Porter-Duff compositing operator mode (e.g. DST_OVER, SRC_OVER, CLEAR, ADD)."),
             ],
             outputs=[
-                io.Image.Output(),
-                io.Mask.Output(),
+                io.Image.Output(display_name="image", tooltip="The composited RGBA/RGB image tensor."),
+                io.Mask.Output(display_name="mask", tooltip="The combined output mask tensor."),
             ],
         )
 
@@ -168,13 +169,14 @@ class SplitImageWithAlpha(io.ComfyNode):
             node_id="SplitImageWithAlpha",
             search_aliases=["extract alpha", "separate transparency", "remove alpha"],
             display_name="Split Image with Alpha",
+            description="Splits an RGBA image into an RGB image tensor and an alpha channel mask tensor.",
             category="mask/compositing",
             inputs=[
-                io.Image.Input("image"),
+                io.Image.Input("image", tooltip="The input RGBA image tensor to extract alpha transparency from."),
             ],
             outputs=[
-                io.Image.Output(),
-                io.Mask.Output(),
+                io.Image.Output(display_name="image", tooltip="The RGB image tensor with alpha removed."),
+                io.Mask.Output(display_name="mask", tooltip="The extracted alpha mask tensor."),
             ],
         )
 
@@ -192,24 +194,22 @@ class JoinImageWithAlpha(io.ComfyNode):
             node_id="JoinImageWithAlpha",
             search_aliases=["add transparency", "apply alpha", "composite alpha", "RGBA"],
             display_name="Join Image with Alpha",
+            description="Combines an RGB image tensor and a mask tensor into an RGBA image with alpha transparency.",
             category="mask/compositing",
             inputs=[
-                io.Image.Input("image"),
-                io.Mask.Input("alpha"),
+                io.Image.Input("image", tooltip="The input RGB image tensor to combine with an alpha channel."),
+                io.Mask.Input("alpha", tooltip="The mask tensor to use as the alpha channel (transparency)."),
             ],
-            outputs=[io.Image.Output()],
+            outputs=[io.Image.Output(display_name="image", tooltip="The resulting RGBA image tensor with combined alpha channel.")],
         )
 
     @classmethod
     def execute(cls, image: torch.Tensor, alpha: torch.Tensor) -> io.NodeOutput:
         batch_size = min(len(image), len(alpha))
-        out_images = []
-
         alpha = 1.0 - resize_mask(alpha, image.shape[1:])
-        for i in range(batch_size):
-           out_images.append(torch.cat((image[i][:,:,:3], alpha[i].unsqueeze(2)), dim=2))
-
-        return io.NodeOutput(torch.stack(out_images))
+        # Vectorized 4D batch operation: concatenate RGB image tensor and alpha channel along dim -1
+        out_images = torch.cat((image[:batch_size, ..., :3], alpha[:batch_size, ..., None]), dim=-1)
+        return io.NodeOutput(out_images)
 
 
 class CompositingExtension(ComfyExtension):
