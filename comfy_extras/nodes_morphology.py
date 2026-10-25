@@ -12,19 +12,21 @@ class Morphology(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="Morphology",
-            search_aliases=["erode", "dilate"],
+            search_aliases=["morphology", "erode", "dilate", "opening", "closing", "top hat", "bottom hat"],
             display_name="ImageMorphology",
             category="image/postprocessing",
+            description="Applies mathematical morphology operations (erode, dilate, open, close, gradient, top hat, bottom hat) to image tensors.",
             inputs=[
-                io.Image.Input("image"),
+                io.Image.Input("image", tooltip="The input image tensor."),
                 io.Combo.Input(
                     "operation",
                     options=["erode", "dilate", "open", "close", "gradient", "bottom_hat", "top_hat"],
+                    tooltip="The morphology operation: 'erode' shrinks bright regions, 'dilate' expands bright regions, 'open' removes small noise, 'close' fills small holes, 'gradient' highlights boundaries, 'top_hat' extracts bright details, 'bottom_hat' extracts dark details.",
                 ),
-                io.Int.Input("kernel_size", default=3, min=3, max=999, step=1),
+                io.Int.Input("kernel_size", default=3, min=3, max=999, step=1, tooltip="The structuring element kernel size in pixels (must be odd)."),
             ],
             outputs=[
-                io.Image.Output(),
+                io.Image.Output(tooltip="The image tensor after applying the morphological operation."),
             ],
         )
 
@@ -58,15 +60,16 @@ class ImageRGBToYUV(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="ImageRGBToYUV",
-            search_aliases=["color space conversion"],
+            search_aliases=["rgb to yuv", "ycbcr", "color space conversion", "yuv split", "separate channels"],
             category="image/batch",
+            description="Converts an RGB image tensor into separate Y (Luminance), U (Chroma blue-difference), and V (Chroma red-difference) channel images.",
             inputs=[
-                io.Image.Input("image"),
+                io.Image.Input("image", tooltip="The input RGB image tensor."),
             ],
             outputs=[
-                io.Image.Output(display_name="Y"),
-                io.Image.Output(display_name="U"),
-                io.Image.Output(display_name="V"),
+                io.Image.Output(display_name="Y", tooltip="The Luminance (Y) channel image tensor."),
+                io.Image.Output(display_name="U", tooltip="The Chroma blue-difference (U) channel image tensor."),
+                io.Image.Output(display_name="V", tooltip="The Chroma red-difference (V) channel image tensor."),
             ],
         )
 
@@ -80,15 +83,16 @@ class ImageYUVToRGB(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="ImageYUVToRGB",
-            search_aliases=["color space conversion"],
+            search_aliases=["yuv to rgb", "ycbcr", "color space conversion", "yuv merge", "combine channels"],
             category="image/batch",
+            description="Reconstructs an RGB image tensor from separate Y (Luminance), U (Chroma blue-difference), and V (Chroma red-difference) channel images.",
             inputs=[
-                io.Image.Input("Y"),
-                io.Image.Input("U"),
-                io.Image.Input("V"),
+                io.Image.Input("Y", tooltip="The Luminance (Y) channel image tensor."),
+                io.Image.Input("U", tooltip="The Chroma blue-difference (U) channel image tensor."),
+                io.Image.Input("V", tooltip="The Chroma red-difference (V) channel image tensor."),
             ],
             outputs=[
-                io.Image.Output(),
+                io.Image.Output(tooltip="The reconstructed RGB image tensor."),
             ],
         )
 
