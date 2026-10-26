@@ -769,7 +769,6 @@ class ImageMergeTileList(IO.ComfyNode):
         w = final_width[0]
         h = final_height[0]
         ovlp = overlap[0]
-        feather_str = 1.0
 
         first_tile = image_list[0]
         b, t_h, t_w, c = first_tile.shape
@@ -779,7 +778,9 @@ class ImageMergeTileList(IO.ComfyNode):
         coords = SplitImageToTileList.get_grid_coords(w, h, t_w, t_h, ovlp)
 
         canvas = torch.zeros((b, h, w, c), device=device, dtype=dtype)
-        weights = torch.zeros((b, h, w, 1), device=device, dtype=dtype)
+        # Performance optimization: single-batch weight map (1, h, w, 1) broadcasted across batch dimension B,
+        # avoiding B-fold redundant memory allocations and accumulation operations.
+        weights = torch.zeros((1, h, w, 1), device=device, dtype=dtype)
 
         if ovlp > 0:
             y_w = torch.sin(math.pi * torch.linspace(0, 1, t_h, device=device, dtype=dtype))
@@ -787,10 +788,7 @@ class ImageMergeTileList(IO.ComfyNode):
             y_w = torch.clamp(y_w, min=1e-5)
             x_w = torch.clamp(x_w, min=1e-5)
 
-            sine_mask = (y_w.unsqueeze(1) * x_w.unsqueeze(0)).unsqueeze(0).unsqueeze(-1)
-            flat_mask = torch.ones_like(sine_mask)
-
-            weight_mask = torch.lerp(flat_mask, sine_mask, feather_str)
+            weight_mask = (y_w.unsqueeze(1) * x_w.unsqueeze(0)).unsqueeze(0).unsqueeze(-1)
         else:
             weight_mask = torch.ones((1, t_h, t_w, 1), device=device, dtype=dtype)
 
