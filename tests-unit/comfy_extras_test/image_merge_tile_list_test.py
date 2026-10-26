@@ -1,5 +1,4 @@
 import torch
-import pytest
 from comfy_extras.nodes_images import ImageMergeTileList, SplitImageToTileList
 
 def test_image_merge_tile_list_execute():

@@ -769,7 +769,6 @@ class ImageMergeTileList(IO.ComfyNode):
         w = final_width[0]
         h = final_height[0]
         ovlp = overlap[0]
-        feather_str = 1.0
 
         first_tile = image_list[0]
         b, t_h, t_w, c = first_tile.shape
