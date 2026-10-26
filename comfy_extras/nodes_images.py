@@ -106,13 +106,15 @@ class RepeatImageBatch(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="RepeatImageBatch",
-            search_aliases=["duplicate image", "clone image"],
+            display_name="Repeat Image Batch",
+            description="Duplicates an input image tensor batch a specified number of times along the batch dimension.",
+            search_aliases=["duplicate image", "clone image", "repeat batch", "copy batch"],
             category="image/batch",
             inputs=[
-                IO.Image.Input("image"),
-                IO.Int.Input("amount", default=1, min=1, max=4096),
+                IO.Image.Input("image", tooltip="The input image batch to duplicate."),
+                IO.Int.Input("amount", default=1, min=1, max=4096, tooltip="The number of times to duplicate the image batch."),
             ],
-            outputs=[IO.Image.Output()],
+            outputs=[IO.Image.Output(tooltip="The repeated image batch.")],
         )
 
     @classmethod
@@ -128,14 +130,16 @@ class ImageFromBatch(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ImageFromBatch",
-            search_aliases=["select image", "pick from batch", "extract image"],
+            display_name="Image From Batch",
+            description="Extracts a sub-batch of images from an input image batch starting at batch_index with length images.",
+            search_aliases=["select image", "pick from batch", "extract image", "slice batch", "get image from batch"],
             category="image/batch",
             inputs=[
-                IO.Image.Input("image"),
-                IO.Int.Input("batch_index", default=0, min=0, max=4095),
-                IO.Int.Input("length", default=1, min=1, max=4096),
+                IO.Image.Input("image", tooltip="The source image batch to extract images from."),
+                IO.Int.Input("batch_index", default=0, min=0, max=4095, tooltip="The starting index (0-based) in the batch to slice from."),
+                IO.Int.Input("length", default=1, min=1, max=4096, tooltip="The number of consecutive images to extract from the batch."),
             ],
-            outputs=[IO.Image.Output()],
+            outputs=[IO.Image.Output(tooltip="The extracted slice of the image batch.")],
         )
 
     @classmethod
@@ -590,14 +594,15 @@ class ImageRotate(IO.ComfyNode):
         return IO.Schema(
             node_id="ImageRotate",
             display_name="Image Rotate",
-            search_aliases=["turn", "flip orientation"],
+            description="Rotates an input image batch by 0, 90, 180, or 270 degrees clockwise.",
+            search_aliases=["turn", "flip orientation", "rotate image", "spin image"],
             category="image/transform",
             essentials_category="Image Tools",
             inputs=[
-                IO.Image.Input("image"),
-                IO.Combo.Input("rotation", options=["none", "90 degrees", "180 degrees", "270 degrees"]),
+                IO.Image.Input("image", tooltip="The input image batch to rotate."),
+                IO.Combo.Input("rotation", options=["none", "90 degrees", "180 degrees", "270 degrees"], tooltip="The angle of clockwise rotation to apply (none, 90, 180, or 270 degrees)."),
             ],
-            outputs=[IO.Image.Output()],
+            outputs=[IO.Image.Output(tooltip="The rotated image batch.")],
         )
 
     @classmethod
@@ -621,13 +626,15 @@ class ImageFlip(IO.ComfyNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="ImageFlip",
-            search_aliases=["mirror", "reflect"],
+            display_name="Image Flip",
+            description="Flips an input image batch horizontally (y-axis) or vertically (x-axis).",
+            search_aliases=["mirror", "reflect", "flip image", "horizontal flip", "vertical flip"],
             category="image/transform",
             inputs=[
-                IO.Image.Input("image"),
-                IO.Combo.Input("flip_method", options=["x-axis: vertically", "y-axis: horizontally"]),
+                IO.Image.Input("image", tooltip="The input image batch to flip."),
+                IO.Combo.Input("flip_method", options=["x-axis: vertically", "y-axis: horizontally"], tooltip="Whether to flip vertically along the x-axis or horizontally along the y-axis."),
             ],
-            outputs=[IO.Image.Output()],
+            outputs=[IO.Image.Output(tooltip="The flipped image batch.")],
         )
 
     @classmethod
