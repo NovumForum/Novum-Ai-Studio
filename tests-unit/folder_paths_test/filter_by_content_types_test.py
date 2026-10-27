@@ -64,3 +64,17 @@ def test_handles_no_extension():
 def test_handles_no_files():
     files = []
     assert filter_files_content_types(files, ["image", "audio", "video"]) == []
+
+
+def test_handles_uppercase_extensions():
+    files = ["sample1.PNG", "sample2.JPG", "sample3.MP4"]
+    images = filter_files_content_types(files, ["image"])
+    assert images == ["sample1.PNG", "sample2.JPG"]
+
+
+def test_caches_unresolvable_extensions(patched_mimetype_cache):
+    files = ["file1.unknown_ext_123", "file2_no_ext"]
+    filter_files_content_types(files, ["image"])
+    from folder_paths import extension_mimetypes_cache
+    assert extension_mimetypes_cache.get("unknown_ext_123") == ""
+    assert extension_mimetypes_cache.get("") == ""

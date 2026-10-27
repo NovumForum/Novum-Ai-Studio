@@ -222,19 +222,31 @@ def filter_files_content_types(files: list[str], content_types: List[Literal["im
         - 'model' in MIME context refers to 3D models, not files containing trained weights and parameters
     """
     global extension_mimetypes_cache
+    target_types = set(content_types)
+    cache = extension_mimetypes_cache
     result = []
-    for file in files:
-        extension = file.split('.')[-1]
-        if extension not in extension_mimetypes_cache:
-            mime_type, _ = mimetypes.guess_type(file, strict=False)
-            if not mime_type:
-                continue
-            content_type = mime_type.split('/')[0]
-            extension_mimetypes_cache[extension] = content_type
-        else:
-            content_type = extension_mimetypes_cache[extension]
 
-        if content_type in content_types:
+    # Fast path: O(1) set lookups, rfind extension extraction without string splitting allocations,
+    # and caching unknown/unresolvable extensions as empty string to prevent redundant mimetypes.guess_type calls.
+    for file in files:
+        dot_idx = file.rfind('.')
+        if dot_idx != -1:
+            raw_ext = file[dot_idx + 1:]
+            ext = raw_ext.lower()
+        else:
+            raw_ext = ''
+            ext = ''
+
+        content_type = cache.get(ext)
+        if content_type is None and ext not in cache:
+            if raw_ext in cache:
+                content_type = cache[raw_ext]
+            else:
+                mime_type, _ = mimetypes.guess_type(file, strict=False)
+                content_type = mime_type.split('/')[0] if mime_type else ''
+                cache[ext] = content_type
+
+        if content_type in target_types:
             result.append(file)
     return result
 
