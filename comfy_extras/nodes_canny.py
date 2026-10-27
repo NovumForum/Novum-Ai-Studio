@@ -11,15 +11,16 @@ class Canny(io.ComfyNode):
         return io.Schema(
             node_id="Canny",
             display_name="Canny",
+            description="Detects structural boundaries and outlines in images using the Canny edge detection algorithm.",
             search_aliases=["edge detection", "outline", "contour detection", "line art"],
             category="image/preprocessors",
             essentials_category="Image Tools",
             inputs=[
-                io.Image.Input("image"),
-                io.Float.Input("low_threshold", default=0.4, min=0.01, max=0.99, step=0.01),
-                io.Float.Input("high_threshold", default=0.8, min=0.01, max=0.99, step=0.01),
+                io.Image.Input("image", tooltip="The input image to process for edge detection."),
+                io.Float.Input("low_threshold", default=0.4, min=0.01, max=0.99, step=0.01, tooltip="Lower bound threshold for hysteresis edge tracing. Edges with gradient intensity below this value are discarded."),
+                io.Float.Input("high_threshold", default=0.8, min=0.01, max=0.99, step=0.01, tooltip="Upper bound threshold for hysteresis edge tracing. Edges with gradient intensity above this value are preserved."),
             ],
-            outputs=[io.Image.Output()],
+            outputs=[io.Image.Output(tooltip="The output black-and-white edge map image.")],
         )
 
     @classmethod
