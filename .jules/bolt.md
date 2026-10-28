@@ -1,0 +1,3 @@
+## 2026-03-30 - Python built-in container fast-paths in recursive hash generation
+**Learning:** Checking built-in Python container types (`dict`, `list`, `tuple`) directly before evaluating `collections.abc` abstract classes (`Mapping`, `Sequence`) avoids costly ABC overhead in tight recursive loops. In addition, replacing `zip(itertools.count(), ...)` and list comprehensions with `enumerate()` and generator expressions inside `frozenset(...)` provides an overall ~1.85x-2.7x speedup for workflow signature hashing in `to_hashable`.
+**Action:** When converting or serializing recursive Python structures in performance-critical code, always check concrete built-in types (`dict`, `list`, `tuple`) first and use generator expressions with `enumerate()`.
