@@ -1,6 +1,5 @@
 import ast
 import os
-import pytest
 
 def test_model_manager_security_ast():
     filepath = os.path.join(os.path.dirname(__file__), "..", "..", "app", "model_manager.py")
