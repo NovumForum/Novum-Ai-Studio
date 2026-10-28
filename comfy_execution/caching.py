@@ -1,6 +1,5 @@
 import bisect
 import gc
-import itertools
 import psutil
 import time
 import torch
