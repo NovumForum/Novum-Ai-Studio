@@ -33,9 +33,21 @@ class InternalRoutes:
 
         @self.routes.patch('/logs/subscribe')
         async def subscribe_logs(request):
-            json_data = await request.json()
-            client_id = json_data["clientId"]
-            enabled = json_data["enabled"]
+            # Security: Validate input payload to prevent unhandled exceptions and HTTP 500 errors
+            try:
+                json_data = await request.json()
+            except Exception:
+                return web.json_response({"error": "Invalid JSON body"}, status=400)
+
+            if not isinstance(json_data, dict):
+                return web.json_response({"error": "Request body must be a JSON object"}, status=400)
+
+            client_id = json_data.get("clientId")
+            enabled = json_data.get("enabled")
+
+            if not isinstance(client_id, str) or not client_id or not isinstance(enabled, bool):
+                return web.json_response({"error": "Invalid or missing clientId or enabled parameter"}, status=400)
+
             if enabled:
                 self.terminal_service.subscribe(client_id)
             else:
