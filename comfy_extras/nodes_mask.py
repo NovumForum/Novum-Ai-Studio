@@ -52,15 +52,16 @@ class LatentCompositeMasked(IO.ComfyNode):
             node_id="LatentCompositeMasked",
             search_aliases=["overlay latent", "layer latent", "paste latent", "inpaint latent"],
             category="latent",
+            description="Composites a source latent into a destination latent batch at specified offsets, optionally masked.",
             inputs=[
-                IO.Latent.Input("destination"),
-                IO.Latent.Input("source"),
-                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=8),
-                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=8),
-                IO.Boolean.Input("resize_source", default=False),
-                IO.Mask.Input("mask", optional=True),
+                IO.Latent.Input("destination", tooltip="The destination latent batch to receive the composite operation."),
+                IO.Latent.Input("source", tooltip="The source latent batch to paste onto the destination."),
+                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=8, tooltip="X-offset position in pixels for overlaying the source latent."),
+                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=8, tooltip="Y-offset position in pixels for overlaying the source latent."),
+                IO.Boolean.Input("resize_source", default=False, tooltip="When enabled, resizes source latent to match destination dimensions."),
+                IO.Mask.Input("mask", optional=True, tooltip="Optional mask specifying blending opacity for compositing source onto destination."),
             ],
-            outputs=[IO.Latent.Output()],
+            outputs=[IO.Latent.Output(tooltip="The composited latent batch.")],
         )
 
     @classmethod
@@ -81,15 +82,16 @@ class ImageCompositeMasked(IO.ComfyNode):
             node_id="ImageCompositeMasked",
             search_aliases=["paste image", "overlay", "layer"],
             category="image",
+            description="Overlays a source image onto a destination image at specified pixel coordinates with optional mask blending.",
             inputs=[
-                IO.Image.Input("destination"),
-                IO.Image.Input("source"),
-                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Boolean.Input("resize_source", default=False),
-                IO.Mask.Input("mask", optional=True),
+                IO.Image.Input("destination", tooltip="The background destination image tensor."),
+                IO.Image.Input("source", tooltip="The foreground source image tensor to overlay."),
+                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="X pixel coordinate position for the top-left of the source image."),
+                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Y pixel coordinate position for the top-left of the source image."),
+                IO.Boolean.Input("resize_source", default=False, tooltip="When enabled, resizes source image to match destination dimensions."),
+                IO.Mask.Input("mask", optional=True, tooltip="Optional opacity mask for blending the source image."),
             ],
-            outputs=[IO.Image.Output()],
+            outputs=[IO.Image.Output(tooltip="The composited output image tensor.")],
         )
 
     @classmethod
@@ -110,10 +112,11 @@ class MaskToImage(IO.ComfyNode):
             search_aliases=["convert mask"],
             display_name="Convert Mask to Image",
             category="mask",
+            description="Converts a single-channel grayscale mask into a 3-channel RGB image tensor.",
             inputs=[
-                IO.Mask.Input("mask"),
+                IO.Mask.Input("mask", tooltip="The input single-channel mask tensor."),
             ],
-            outputs=[IO.Image.Output()],
+            outputs=[IO.Image.Output(tooltip="The resulting 3-channel RGB image tensor.")],
         )
 
     @classmethod
@@ -132,11 +135,12 @@ class ImageToMask(IO.ComfyNode):
             search_aliases=["extract channel", "channel to mask"],
             display_name="Convert Image to Mask",
             category="mask",
+            description="Extracts a specified color or alpha channel from an image into a single-channel mask.",
             inputs=[
-                IO.Image.Input("image"),
-                IO.Combo.Input("channel", options=["red", "green", "blue", "alpha"]),
+                IO.Image.Input("image", tooltip="The input RGB or RGBA image tensor."),
+                IO.Combo.Input("channel", options=["red", "green", "blue", "alpha"], tooltip="The specific color or alpha channel to extract as a mask."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The extracted single-channel mask tensor.")],
         )
 
     @classmethod
@@ -155,11 +159,12 @@ class ImageColorToMask(IO.ComfyNode):
             node_id="ImageColorToMask",
             search_aliases=["color keying", "chroma key"],
             category="mask",
+            description="Generates a binary mask isolating matching pixels of a target hex color code.",
             inputs=[
-                IO.Image.Input("image"),
-                IO.Int.Input("color", default=0, min=0, max=0xFFFFFF, step=1, display_mode=IO.NumberDisplay.number),
+                IO.Image.Input("image", tooltip="The input image tensor to perform color keying on."),
+                IO.Int.Input("color", default=0, min=0, max=0xFFFFFF, step=1, display_mode=IO.NumberDisplay.number, tooltip="Target RGB color code in integer hex format (e.g. 0x00FF00 for green screen)."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The resulting binary mask isolating matching target color pixels.")],
         )
 
     @classmethod
@@ -178,12 +183,13 @@ class SolidMask(IO.ComfyNode):
         return IO.Schema(
             node_id="SolidMask",
             category="mask",
+            description="Creates a solid single-channel mask tensor of specified dimensions and uniform value.",
             inputs=[
-                IO.Float.Input("value", default=1.0, min=0.0, max=1.0, step=0.01),
-                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
+                IO.Float.Input("value", default=1.0, min=0.0, max=1.0, step=0.01, tooltip="Uniform mask fill value ranging from 0.0 (black/unmasked) to 1.0 (white/fully masked)."),
+                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="Width of the generated mask tensor in pixels."),
+                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="Height of the generated mask tensor in pixels."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The generated solid mask tensor.")],
         )
 
     @classmethod
@@ -201,10 +207,11 @@ class InvertMask(IO.ComfyNode):
             node_id="InvertMask",
             search_aliases=["reverse mask", "flip mask"],
             category="mask",
+            description="Inverts a mask, swapping masked (1.0) and unmasked (0.0) regions.",
             inputs=[
-                IO.Mask.Input("mask"),
+                IO.Mask.Input("mask", tooltip="The input mask tensor to invert."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The inverted mask tensor.")],
         )
 
     @classmethod
@@ -222,14 +229,15 @@ class CropMask(IO.ComfyNode):
             node_id="CropMask",
             search_aliases=["cut mask", "extract mask region", "mask slice"],
             category="mask",
+            description="Crops a rectangular sub-region from an input mask tensor.",
             inputs=[
-                IO.Mask.Input("mask"),
-                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
+                IO.Mask.Input("mask", tooltip="The input mask tensor to crop."),
+                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Starting X coordinate pixel position for the cropping rectangle."),
+                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Starting Y coordinate pixel position for the cropping rectangle."),
+                IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="Width of the cropped mask region in pixels."),
+                IO.Int.Input("height", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="Height of the cropped mask region in pixels."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The cropped rectangular sub-mask tensor.")],
         )
 
     @classmethod
@@ -248,14 +256,15 @@ class MaskComposite(IO.ComfyNode):
             node_id="MaskComposite",
             search_aliases=["combine masks", "blend masks", "layer masks"],
             category="mask",
+            description="Combines two masks using arithmetic or logical boolean operations (multiply, add, subtract, and, or, xor).",
             inputs=[
-                IO.Mask.Input("destination"),
-                IO.Mask.Input("source"),
-                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Combo.Input("operation", options=["multiply", "add", "subtract", "and", "or", "xor"]),
+                IO.Mask.Input("destination", tooltip="The base destination mask tensor."),
+                IO.Mask.Input("source", tooltip="The source mask tensor to overlay onto destination."),
+                IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="X coordinate offset in pixels for placing source onto destination."),
+                IO.Int.Input("y", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Y coordinate offset in pixels for placing source onto destination."),
+                IO.Combo.Input("operation", options=["multiply", "add", "subtract", "and", "or", "xor"], tooltip="The blending or boolean logic operation used to merge masks."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The combined composite mask tensor.")],
         )
 
     @classmethod
@@ -297,14 +306,15 @@ class FeatherMask(IO.ComfyNode):
             node_id="FeatherMask",
             search_aliases=["soft edge mask", "blur mask edges", "gradient mask edge"],
             category="mask",
+            description="Applies a soft linear gradient feather to the outer edges of a mask.",
             inputs=[
-                IO.Mask.Input("mask"),
-                IO.Int.Input("left", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("top", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("right", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Int.Input("bottom", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
+                IO.Mask.Input("mask", tooltip="The input mask tensor to feather."),
+                IO.Int.Input("left", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Feather distance in pixels for the left border."),
+                IO.Int.Input("top", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Feather distance in pixels for the top border."),
+                IO.Int.Input("right", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Feather distance in pixels for the right border."),
+                IO.Int.Input("bottom", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1, tooltip="Feather distance in pixels for the bottom border."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The edge-feathered mask tensor.")],
         )
 
     @classmethod
@@ -345,12 +355,13 @@ class GrowMask(IO.ComfyNode):
             search_aliases=["expand mask", "shrink mask"],
             display_name="Grow Mask",
             category="mask",
+            description="Expands (dilates) or shrinks (erodes) a mask by a specified pixel distance.",
             inputs=[
-                IO.Mask.Input("mask"),
-                IO.Int.Input("expand", default=0, min=-nodes.MAX_RESOLUTION, max=nodes.MAX_RESOLUTION, step=1),
-                IO.Boolean.Input("tapered_corners", default=True, advanced=True),
+                IO.Mask.Input("mask", tooltip="The input mask tensor to expand or shrink."),
+                IO.Int.Input("expand", default=0, min=-nodes.MAX_RESOLUTION, max=nodes.MAX_RESOLUTION, step=1, tooltip="Amount in pixels to expand (positive values) or shrink (negative values) the mask."),
+                IO.Boolean.Input("tapered_corners", default=True, advanced=True, tooltip="When enabled, uses a rounded/tapered kernel for smoother corner expansion."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The expanded or contracted mask tensor.")],
         )
 
     @classmethod
@@ -382,11 +393,12 @@ class ThresholdMask(IO.ComfyNode):
             node_id="ThresholdMask",
             search_aliases=["binary mask"],
             category="mask",
+            description="Converts a soft grayscale mask into a binary mask by thresholding values above a cutoff.",
             inputs=[
-                IO.Mask.Input("mask"),
-                IO.Float.Input("value", default=0.5, min=0.0, max=1.0, step=0.01),
+                IO.Mask.Input("mask", tooltip="The input grayscale mask tensor."),
+                IO.Float.Input("value", default=0.5, min=0.0, max=1.0, step=0.01, tooltip="Threshold cutoff value between 0.0 and 1.0."),
             ],
-            outputs=[IO.Mask.Output()],
+            outputs=[IO.Mask.Output(tooltip="The binary thresholded mask tensor.")],
         )
 
     @classmethod
@@ -408,9 +420,9 @@ class MaskPreview(IO.ComfyNode):
             search_aliases=["show mask", "view mask", "inspect mask", "debug mask"],
             display_name="Preview Mask",
             category="mask",
-            description="Saves the input images to your ComfyUI output directory.",
+            description="Previews a mask tensor directly in the ComfyUI interface and saves it to the output directory.",
             inputs=[
-                IO.Mask.Input("mask"),
+                IO.Mask.Input("mask", tooltip="The mask tensor to preview and save."),
             ],
             hidden=[IO.Hidden.prompt, IO.Hidden.extra_pnginfo],
             is_output_node=True,
