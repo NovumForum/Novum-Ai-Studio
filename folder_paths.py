@@ -485,11 +485,15 @@ def get_input_subfolders() -> list[str]:
         if not os.path.exists(input_dir):
             return []
 
+        # Optimization: precalculate input_dir prefix length to avoid os.path.relpath call overhead per directory level
+        prefix = input_dir if input_dir.endswith(('/', '\\')) else input_dir + os.sep
+        prefix_len = len(prefix)
+
         for root, dirs, _ in os.walk(input_dir):
-            rel_path = os.path.relpath(root, input_dir)
-            if rel_path != ".":  # Only include non-root directories
+            if root != input_dir:
+                rel_path = root[prefix_len:]
                 # Normalize path separators to forward slashes
-                folders.append(rel_path.replace(os.sep, '/'))
+                folders.append(rel_path.replace('\\', '/'))
 
         return sorted(folders)
     except FileNotFoundError:
