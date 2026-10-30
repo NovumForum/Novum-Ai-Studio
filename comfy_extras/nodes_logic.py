@@ -16,14 +16,16 @@ class SwitchNode(io.ComfyNode):
             node_id="ComfySwitchNode",
             display_name="Switch",
             category="logic",
+            description="Routes execution between two inputs based on a boolean condition.",
+            search_aliases=["switch", "if", "branch", "condition", "toggle", "if else"],
             is_experimental=True,
             inputs=[
-                io.Boolean.Input("switch"),
-                io.MatchType.Input("on_false", template=template, lazy=True),
-                io.MatchType.Input("on_true", template=template, lazy=True),
+                io.Boolean.Input("switch", tooltip="When true, outputs on_true; when false, outputs on_false."),
+                io.MatchType.Input("on_false", template=template, lazy=True, tooltip="Value or condition to output when switch is false."),
+                io.MatchType.Input("on_true", template=template, lazy=True, tooltip="Value or condition to output when switch is true."),
             ],
             outputs=[
-                io.MatchType.Output(template=template, display_name="output"),
+                io.MatchType.Output(template=template, display_name="output", tooltip="The selected input value (on_true or on_false) based on switch."),
             ],
         )
 
@@ -47,14 +49,16 @@ class SoftSwitchNode(io.ComfyNode):
             node_id="ComfySoftSwitchNode",
             display_name="Soft Switch",
             category="logic",
+            description="Routes execution between two inputs based on a boolean condition, allowing fallback when an input is disconnected.",
+            search_aliases=["soft switch", "conditional fallback", "optional switch"],
             is_experimental=True,
             inputs=[
-                io.Boolean.Input("switch"),
-                io.MatchType.Input("on_false", template=template, lazy=True, optional=True),
-                io.MatchType.Input("on_true", template=template, lazy=True, optional=True),
+                io.Boolean.Input("switch", tooltip="When true, outputs on_true; when false, outputs on_false."),
+                io.MatchType.Input("on_false", template=template, lazy=True, optional=True, tooltip="Optional value or condition to output when switch is false."),
+                io.MatchType.Input("on_true", template=template, lazy=True, optional=True, tooltip="Optional value or condition to output when switch is true."),
             ],
             outputs=[
-                io.MatchType.Output(template=template, display_name="output"),
+                io.MatchType.Output(template=template, display_name="output", tooltip="The selected input value based on switch state and input availability."),
             ],
         )
 
@@ -102,11 +106,13 @@ class CustomComboNode(io.ComfyNode):
             node_id="CustomCombo",
             display_name="Custom Combo",
             category="utils",
+            description="Allows dynamic user-defined combo dropdown selections.",
+            search_aliases=["custom combo", "dynamic dropdown", "user combo"],
             is_experimental=True,
-            inputs=[io.Combo.Input("choice", options=[])],
+            inputs=[io.Combo.Input("choice", options=[], tooltip="The selected option from the custom combo list.")],
             outputs=[
-                io.String.Output(display_name="STRING"),
-                io.Int.Output(display_name="INDEX"),
+                io.String.Output(display_name="STRING", tooltip="The selected string option."),
+                io.Int.Output(display_name="INDEX", tooltip="The index of the selected option."),
             ],
             accept_all_inputs=True,
         )
@@ -228,11 +234,12 @@ class ConvertStringToComboNode(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="ConvertStringToComboNode",
+            description="Converts a string input into a combo dropdown selection.",
             search_aliases=["string to dropdown", "text to combo"],
             display_name="Convert String to Combo",
             category="logic",
-            inputs=[io.String.Input("string")],
-            outputs=[io.Combo.Output()],
+            inputs=[io.String.Input("string", tooltip="The string value to convert to a combo option.")],
+            outputs=[io.Combo.Output(tooltip="The resulting combo option.")],
         )
 
     @classmethod
@@ -244,11 +251,12 @@ class InvertBooleanNode(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="InvertBooleanNode",
+            description="Inverts a boolean value (True becomes False, False becomes True).",
             search_aliases=["not", "toggle", "negate", "flip boolean"],
             display_name="Invert Boolean",
             category="logic",
-            inputs=[io.Boolean.Input("boolean")],
-            outputs=[io.Boolean.Output()],
+            inputs=[io.Boolean.Input("boolean", tooltip="The boolean value to invert.")],
+            outputs=[io.Boolean.Output(tooltip="The inverted boolean value.")],
         )
 
     @classmethod
