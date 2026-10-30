@@ -49,8 +49,13 @@ class AppSettings():
 
         @routes.post("/settings")
         async def post_settings(request):
+            try:
+                new_settings = await request.json()
+            except Exception:
+                return web.Response(status=400, text="Invalid JSON body")
+            if not isinstance(new_settings, dict):
+                return web.Response(status=400, text="Settings payload must be a JSON object")
             settings = self.get_settings(request)
-            new_settings = await request.json()
             self.save_settings(request, {**settings, **new_settings})
             return web.Response(status=200)
 
@@ -59,7 +64,11 @@ class AppSettings():
             setting_id = request.match_info.get("id", None)
             if not setting_id:
                 return web.Response(status=400)
+            try:
+                setting_val = await request.json()
+            except Exception:
+                return web.Response(status=400, text="Invalid JSON body")
             settings = self.get_settings(request)
-            settings[setting_id] = await request.json()
+            settings[setting_id] = setting_val
             self.save_settings(request, settings)
             return web.Response(status=200)
