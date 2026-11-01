@@ -806,11 +806,18 @@ class VAELoader:
 
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": { "vae_name": (s.vae_list(s), )}}
+        return {
+            "required": {
+                "vae_name": (s.vae_list(s), {"tooltip": "The name of the VAE model to load."}),
+            }
+        }
     RETURN_TYPES = ("VAE",)
+    OUTPUT_TOOLTIPS = ("The VAE model used for encoding and decoding images to and from latent space.",)
     FUNCTION = "load_vae"
 
     CATEGORY = "loaders"
+    DESCRIPTION = "Loads a VAE (Variational Autoencoder) model used for encoding pixel images into latent space and decoding latents back into pixel space."
+    SEARCH_ALIASES = ["load vae", "vae loader", "vae", "taesd"]
 
     #TODO: scale factor?
     def load_vae(self, vae_name):
