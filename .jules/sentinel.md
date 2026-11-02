@@ -1,0 +1,5 @@
+## 2026-03-31 - Internal Routes Request JSON and Parameter Validation
+
+**Vulnerability:** In `api_server/routes/internal/internal_routes.py`, `PATCH /internal/logs/subscribe` directly awaited `request.json()` and indexed dictionary keys without error handling for malformed JSON or type checking on `clientId` and `enabled`. Malformed or non-dict payloads caused unhandled `json.JSONDecodeError`, `TypeError`, or `KeyError`, triggering 500 Internal Server Errors.
+**Learning:** In aiohttp route handlers across ComfyUI, `request.json()` raises `json.JSONDecodeError` on malformed bodies and returns non-dict types if JSON primitives or lists are posted. Unvalidated payloads can easily crash the handler into a 500 error instead of failing securely with HTTP 400 Bad Request.
+**Prevention:** Always wrap `request.json()` in a `try...except json.JSONDecodeError` block returning HTTP 400, verify `isinstance(json_data, dict)`, and explicitly validate required keys and value types before accessing or passing to downstream services.
