@@ -3,6 +3,7 @@ from typing import Optional
 from folder_paths import folder_names_and_paths, get_directory_by_type
 from api_server.services.terminal_service import TerminalService
 import app.logger
+import json
 import os
 
 class InternalRoutes:
@@ -33,9 +34,23 @@ class InternalRoutes:
 
         @self.routes.patch('/logs/subscribe')
         async def subscribe_logs(request):
-            json_data = await request.json()
-            client_id = json_data["clientId"]
-            enabled = json_data["enabled"]
+            # Input validation: ensure valid JSON body
+            try:
+                json_data = await request.json()
+            except json.JSONDecodeError:
+                return web.json_response({"error": "Invalid JSON"}, status=400)
+
+            # Ensure payload is a dictionary
+            if not isinstance(json_data, dict):
+                return web.json_response({"error": "Invalid payload format"}, status=400)
+
+            client_id = json_data.get("clientId")
+            enabled = json_data.get("enabled")
+
+            # Validate parameters: clientId must be non-empty string, enabled must be boolean
+            if not isinstance(client_id, str) or not client_id.strip() or not isinstance(enabled, bool):
+                return web.json_response({"error": "Invalid clientId or enabled parameter"}, status=400)
+
             if enabled:
                 self.terminal_service.subscribe(client_id)
             else:
