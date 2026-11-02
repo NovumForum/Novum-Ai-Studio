@@ -22,11 +22,13 @@ class UpscaleModelLoader(io.ComfyNode):
             node_id="UpscaleModelLoader",
             display_name="Load Upscale Model",
             category="loaders",
+            description="Loads a model used to upscale images (e.g. ESRGAN, RealESRGAN, SwinIR).",
+            search_aliases=["load upscale model", "upscale loader", "esrgan loader", "super resolution model"],
             inputs=[
-                io.Combo.Input("model_name", options=folder_paths.get_filename_list("upscale_models")),
+                io.Combo.Input("model_name", options=folder_paths.get_filename_list("upscale_models"), tooltip="The upscale model file to load."),
             ],
             outputs=[
-                io.UpscaleModel.Output(),
+                io.UpscaleModel.Output(tooltip="The loaded upscale model."),
             ],
         )
 
@@ -53,13 +55,14 @@ class ImageUpscaleWithModel(io.ComfyNode):
             node_id="ImageUpscaleWithModel",
             display_name="Upscale Image (using Model)",
             category="image/upscaling",
+            description="Upscales an image using a loaded super-resolution upscale model.",
             search_aliases=["upscale", "upscaler", "upsc", "enlarge image", "super resolution", "hires", "superres", "increase resolution"],
             inputs=[
-                io.UpscaleModel.Input("upscale_model"),
-                io.Image.Input("image"),
+                io.UpscaleModel.Input("upscale_model", tooltip="The upscale model to perform the image scaling."),
+                io.Image.Input("image", tooltip="The input image to upscale."),
             ],
             outputs=[
-                io.Image.Output(),
+                io.Image.Output(tooltip="The upscaled image."),
             ],
         )
 
