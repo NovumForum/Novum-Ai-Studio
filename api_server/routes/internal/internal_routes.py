@@ -21,13 +21,15 @@ class InternalRoutes:
     def setup_routes(self):
         @self.routes.get('/logs')
         async def get_logs(request):
-            return web.json_response("".join([(l["t"] + " - " + l["m"]) for l in app.logger.get_logs()]))
+            logs = app.logger.get_logs() or []
+            return web.json_response("".join([(l["t"] + " - " + l["m"]) for l in logs]))
 
         @self.routes.get('/logs/raw')
         async def get_raw_logs(request):
             self.terminal_service.update_size()
+            logs = app.logger.get_logs() or []
             return web.json_response({
-                "entries": list(app.logger.get_logs()),
+                "entries": list(logs),
                 "size": {"cols": self.terminal_service.cols, "rows": self.terminal_service.rows}
             })
 
@@ -58,6 +60,8 @@ class InternalRoutes:
                 return web.json_response({"error": "Invalid directory type"}, status=400)
 
             directory = get_directory_by_type(directory_type)
+            if not directory or not os.path.exists(directory):
+                return web.json_response([], status=200)
 
             def is_visible_file(entry: os.DirEntry) -> bool:
                 """Filter out hidden files (e.g., .DS_Store on macOS)."""
