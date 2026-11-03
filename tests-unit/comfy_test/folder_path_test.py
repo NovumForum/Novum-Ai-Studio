@@ -116,6 +116,44 @@ def test_get_save_image_path(temp_dir):
         assert filename_prefix == "test"
 
 
+def test_get_save_image_path_counters(temp_dir):
+    with patch("folder_paths.output_directory", temp_dir):
+        # Empty directory -> counter 1
+        _, _, counter, _, _ = folder_paths.get_save_image_path("test", temp_dir)
+        assert counter == 1
+
+        # Single matching file
+        open(os.path.join(temp_dir, "test_00001_.png"), "w").close()
+        _, _, counter, _, _ = folder_paths.get_save_image_path("test", temp_dir)
+        assert counter == 2
+
+        # Multiple matching files with gaps
+        open(os.path.join(temp_dir, "test_00005_.png"), "w").close()
+        open(os.path.join(temp_dir, "test_00003_.png"), "w").close()
+        _, _, counter, _, _ = folder_paths.get_save_image_path("test", temp_dir)
+        assert counter == 6
+
+        # Non-matching prefix
+        open(os.path.join(temp_dir, "other_00010_.png"), "w").close()
+        _, _, counter_other, _, _ = folder_paths.get_save_image_path("other", temp_dir)
+        assert counter_other == 11
+        # Original prefix should not be affected by 'other'
+        _, _, counter, _, _ = folder_paths.get_save_image_path("test", temp_dir)
+        assert counter == 6
+
+        # Invalid/non-integer suffix
+        open(os.path.join(temp_dir, "test_temp_.png"), "w").close()
+        open(os.path.join(temp_dir, "test_invalid_0001.png"), "w").close()
+        _, _, counter, _, _ = folder_paths.get_save_image_path("test", temp_dir)
+        assert counter == 6
+
+        # Subdirectory handling and auto-creation of missing directory
+        sub_dir_target = os.path.join(temp_dir, "sub", "dir")
+        _, _, counter_sub, subfolder, _ = folder_paths.get_save_image_path("sub/dir/img", temp_dir)
+        assert counter_sub == 1
+        assert os.path.isdir(sub_dir_target)
+
+
 def test_base_path_changes(set_base_dir):
     test_dir = os.path.abspath("/test/dir")
     set_base_dir(test_dir)
