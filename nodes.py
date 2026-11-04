@@ -385,11 +385,22 @@ class VAEEncodeTiled:
 class VAEEncodeForInpaint:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": { "pixels": ("IMAGE", ), "vae": ("VAE", ), "mask": ("MASK", ), "grow_mask_by": ("INT", {"default": 6, "min": 0, "max": 64, "step": 1}),}}
+        return {
+            "required": {
+                "pixels": ("IMAGE", {"tooltip": "The image to be encoded into latent space for inpainting."}),
+                "vae": ("VAE", {"tooltip": "The VAE model used for encoding the image."}),
+                "mask": ("MASK", {"tooltip": "The mask indicating regions to inpaint (white areas will be modified)."}),
+                "grow_mask_by": ("INT", {"default": 6, "min": 0, "max": 64, "step": 1, "tooltip": "Amount of pixels to expand the inpaint mask by to ensure seamless blending in latent space."}),
+            }
+        }
     RETURN_TYPES = ("LATENT",)
+    RETURN_NAMES = ("latent",)
+    OUTPUT_TOOLTIPS = ("The encoded latent containing inpaint noise masking.",)
     FUNCTION = "encode"
 
     CATEGORY = "latent/inpaint"
+    DESCRIPTION = "Encodes an image and inpaint mask into latent space with optional mask dilation for seamless inpainting."
+    SEARCH_ALIASES = ["inpaint", "inpaint encode", "mask encode", "vae inpaint", "image to latent inpaint"]
 
     def encode(self, vae, pixels, mask, grow_mask_by=6):
         downscale_ratio = vae.spacial_compression_encode()
