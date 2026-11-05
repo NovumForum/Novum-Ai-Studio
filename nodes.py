@@ -353,11 +353,18 @@ class VAEDecodeTiled:
 class VAEEncode:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": { "pixels": ("IMAGE", ), "vae": ("VAE", )}}
+        return {
+            "required": {
+                "pixels": ("IMAGE", {"tooltip": "The image to be encoded into latent space."}),
+                "vae": ("VAE", {"tooltip": "The VAE model used for encoding the image."}),
+            }
+        }
     RETURN_TYPES = ("LATENT",)
+    OUTPUT_TOOLTIPS = ("The encoded latent.",)
     FUNCTION = "encode"
 
     CATEGORY = "latent"
+    DESCRIPTION = "Encodes pixel space images into latent space images using a VAE model."
     SEARCH_ALIASES = ["encode", "encode image", "image to latent"]
 
     def encode(self, vae, pixels):
