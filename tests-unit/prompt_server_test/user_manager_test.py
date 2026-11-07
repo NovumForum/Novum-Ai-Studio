@@ -287,3 +287,48 @@ async def test_listuserdata_v2_url_encoded_path(aiohttp_client, app, tmp_path):
     assert entry["name"] == "file.txt"
     # Ensure the path is correctly decoded and uses forward slash
     assert entry["path"] == "my dir/file.txt"
+
+
+async def test_post_users_invalid_json(aiohttp_client, app):
+    client = await aiohttp_client(app)
+    resp = await client.post(
+        "/users",
+        data="invalid-json{",
+        headers={"Content-Type": "application/json"}
+    )
+    assert resp.status == 400
+    data = await resp.json()
+    assert data["error"] == "Invalid JSON"
+
+
+async def test_post_users_non_dict_payload(aiohttp_client, app):
+    client = await aiohttp_client(app)
+    resp = await client.post("/users", json=["user1"])
+    assert resp.status == 400
+    data = await resp.json()
+    assert "Invalid request body" in data["error"]
+
+
+async def test_post_users_missing_username_field(aiohttp_client, app):
+    client = await aiohttp_client(app)
+    resp = await client.post("/users", json={"wrong_key": "user1"})
+    assert resp.status == 400
+    data = await resp.json()
+    assert "Invalid request body" in data["error"]
+
+
+async def test_post_users_non_string_username(aiohttp_client, app):
+    client = await aiohttp_client(app)
+    resp = await client.post("/users", json={"username": 12345})
+    assert resp.status == 400
+    data = await resp.json()
+    assert "Invalid request body" in data["error"]
+
+
+async def test_post_users_success(aiohttp_client, app):
+    client = await aiohttp_client(app)
+    resp = await client.post("/users", json={"username": "alice"})
+    assert resp.status == 200
+    user_id = await resp.json()
+    assert isinstance(user_id, str)
+    assert "alice" in user_id
