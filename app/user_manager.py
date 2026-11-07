@@ -135,7 +135,14 @@ class UserManager():
 
         @routes.post("/users")
         async def post_users(request):
-            body = await request.json()
+            try:
+                body = await request.json()
+            except Exception:
+                return web.json_response({"error": "Invalid JSON"}, status=400)
+
+            if not isinstance(body, dict) or "username" not in body or not isinstance(body["username"], str):
+                return web.json_response({"error": "Invalid request body: 'username' string is required"}, status=400)
+
             username = body["username"]
             if username in self.users.values():
                 return web.json_response({"error": "Duplicate username."}, status=400)

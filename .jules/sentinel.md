@@ -1,0 +1,4 @@
+## 2025-02-23 - POST /users Input Validation & Error Handling
+**Vulnerability:** In `app/user_manager.py`, `POST /users` directly invoked `await request.json()` and accessed `body["username"]` without verifying JSON syntax, payload structure (dictionary), existence of `"username"`, or value type (`str`). Malformed JSON or non-string inputs raised unhandled `JSONDecodeError`, `TypeError`, `KeyError`, or `AttributeError`, resulting in HTTP 500 errors and server trace logs.
+**Learning:** In aiohttp endpoints that expect JSON payloads, unhandled `request.json()` exceptions and unvalidated dictionary lookups turn malformed client requests into 500 server crashes rather than standard 400 Bad Request responses.
+**Prevention:** Always wrap `await request.json()` in a `try...except Exception` returning HTTP 400, and explicitly validate container and key types (`isinstance(body, dict)` and `isinstance(body["username"], str)`) before access.
