@@ -1706,14 +1706,16 @@ class LoadImage:
         files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
         files = folder_paths.filter_files_content_types(files, ["image"])
         return {"required":
-                    {"image": (sorted(files), {"image_upload": True})},
+                    {"image": (sorted(files), {"image_upload": True, "tooltip": "The image file to load from your input directory or upload."})},
                 }
 
     CATEGORY = "image"
     ESSENTIALS_CATEGORY = "Basics"
+    DESCRIPTION = "Loads an image from the ComfyUI input directory or an uploaded file, outputting the image tensor and its alpha mask if available."
     SEARCH_ALIASES = ["load image", "open image", "import image", "image input", "upload image", "read image", "image loader"]
 
     RETURN_TYPES = ("IMAGE", "MASK")
+    OUTPUT_TOOLTIPS = ("The loaded image.", "The alpha mask channel of the image, or an empty mask if no alpha channel is present.")
     FUNCTION = "load_image"
     def load_image(self, image):
         image_path = folder_paths.get_annotated_filepath(image)
@@ -1787,13 +1789,15 @@ class LoadImageMask:
         input_dir = folder_paths.get_input_directory()
         files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
         return {"required":
-                    {"image": (sorted(files), {"image_upload": True}),
-                     "channel": (s._color_channels, ), }
+                    {"image": (sorted(files), {"image_upload": True, "tooltip": "The image file to extract a mask from."}),
+                     "channel": (s._color_channels, {"tooltip": "The color or alpha channel to extract as a mask."}), }
                 }
 
     CATEGORY = "mask"
+    DESCRIPTION = "Loads an image from the ComfyUI input directory and extracts a specific channel (alpha, red, green, or blue) as a mask."
 
     RETURN_TYPES = ("MASK",)
+    OUTPUT_TOOLTIPS = ("The extracted mask channel.",)
     FUNCTION = "load_image"
     def load_image(self, image, channel):
         image_path = folder_paths.get_annotated_filepath(image)
