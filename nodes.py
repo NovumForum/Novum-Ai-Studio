@@ -1690,12 +1690,15 @@ class PreviewImage(SaveImage):
         self.prefix_append = "_temp_" + ''.join(random.choice("abcdefghijklmnopqrstupvxyz") for x in range(5))
         self.compress_level = 1
 
+    CATEGORY = "image"
+    ESSENTIALS_CATEGORY = "Basics"
+    DESCRIPTION = "Displays the input images directly in the ComfyUI user interface without permanently saving them to disk."
     SEARCH_ALIASES = ["preview", "preview image", "show image", "view image", "display image", "image viewer"]
 
     @classmethod
     def INPUT_TYPES(s):
         return {"required":
-                    {"images": ("IMAGE", ), },
+                    {"images": ("IMAGE", {"tooltip": "The images to preview in the UI."}), },
                 "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO"},
                 }
 
